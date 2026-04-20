@@ -27,6 +27,33 @@ const nextConfig: NextConfig = {
     ]
     // Suppress langchain dynamic require warnings
     config.module.exprContextCritical = false
+
+    // Stub Node.js built-ins on client side so server-only code doesn't break the bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        child_process: false,
+        net: false,
+        tls: false,
+        dns: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        util: false,
+        url: false,
+        assert: false,
+        buffer: false,
+        events: false,
+        querystring: false,
+        string_decoder: false,
+      }
+    }
+
     return config
   },
 }

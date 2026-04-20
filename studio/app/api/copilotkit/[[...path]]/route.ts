@@ -46,7 +46,6 @@ const PRECONFIGURED_MCPS = [
 
 const LANGGRAPH_URL = process.env.LANGGRAPH_DEPLOYMENT_URL
 
-// Use LangGraph agent if deployment URL is configured, otherwise copilot runs without agent backend
 const agents: Record<string, any> = {}
 if (LANGGRAPH_URL) {
   const agent = new LangGraphAgent({
@@ -57,7 +56,7 @@ if (LANGGRAPH_URL) {
 }
 
 const runtime = new CopilotRuntime({
-  ...(Object.keys(agents).length > 0 ? { agents } : {}),
+  agents,
   runner: new InMemoryAgentRunner(),
   mcpApps: { servers: [...PRECONFIGURED_MCPS, ...getMcpServers()] },
 })
