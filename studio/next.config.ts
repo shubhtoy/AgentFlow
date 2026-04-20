@@ -4,13 +4,19 @@ import { createMDX } from 'fumadocs-mdx/next'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  transpilePackages: ['@agentflow/core'],
   serverExternalPackages: [
     'simple-git',
     '@modelcontextprotocol/sdk',
     'jszip',
     'glob',
   ],
+  turbopack: {
+    root: path.resolve(__dirname, '..'),
+    resolveAlias: {
+      '@agentflow/*': '../src/*',
+    },
+    resolveExtensions: ['.js', '.ts', '.tsx', '.jsx', '.json'],
+  },
   async rewrites() {
     return [
       {
