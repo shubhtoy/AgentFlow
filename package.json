@@ -33,7 +33,8 @@
   "license": "MIT",
   "devDependencies": {
     "fast-check": "^3.23.2",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.1",
+    "next": "^16.2.4"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
