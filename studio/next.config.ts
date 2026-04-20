@@ -9,8 +9,9 @@ const nextConfig: NextConfig = {
     'simple-git',
     '@modelcontextprotocol/sdk',
   ],
-  experimental: {
-    turbopackFileSystemCacheForDev: true,
+  // Suppress type errors from dynamic requires in src/ files
+  typescript: {
+    ignoreBuildErrors: false,
   },
   async rewrites() {
     return [
@@ -25,10 +26,8 @@ const nextConfig: NextConfig = {
       ...(config.resolve.modules || []),
       path.resolve(__dirname, '..', 'node_modules'),
     ]
-    // Suppress langchain dynamic require warnings
     config.module.exprContextCritical = false
-
-    // Stub Node.js built-ins on client side so server-only code doesn't break the bundle
+    // Client-side: stub Node.js built-ins
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -41,19 +40,9 @@ const nextConfig: NextConfig = {
         dns: false,
         crypto: false,
         stream: false,
-        http: false,
-        https: false,
-        zlib: false,
-        util: false,
-        url: false,
-        assert: false,
-        buffer: false,
-        events: false,
-        querystring: false,
-        string_decoder: false,
+        glob: false,
       }
     }
-
     return config
   },
 }
