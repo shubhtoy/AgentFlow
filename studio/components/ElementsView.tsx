@@ -180,7 +180,7 @@ export const ElementsView = memo(function ElementsView() {
 
   const loadMcpTools = useCallback(() => {
     setMcpLoading(true)
-    fetch('/api/mcp/tools').then(r => r.ok ? r.json() : { tools: [] }).then(d => setMcpTools(d.tools || [])).catch(() => setMcpTools([])).finally(() => setMcpLoading(false))
+    fetch('/api/mcp?action=tools').then(r => r.ok ? r.json() : { tools: [] }).then(d => setMcpTools(d.tools || [])).catch(() => setMcpTools([])).finally(() => setMcpLoading(false))
   }, [])
   useEffect(() => { loadMcpTools() }, [loadMcpTools])
   useEffect(() => { const h = () => loadMcpTools(); window.addEventListener('mcp-tools-changed', h); return () => window.removeEventListener('mcp-tools-changed', h) }, [loadMcpTools])

@@ -24,7 +24,7 @@ export function CopilotReadables() {
   const [mcpServers, setMcpServers] = useState<any[]>([])
   useEffect(() => {
     const load = () =>
-      fetch('/api/mcp/config')
+      fetch('/api/mcp?action=config')
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d?.servers) setMcpServers(d.servers) })
         .catch(() => {})

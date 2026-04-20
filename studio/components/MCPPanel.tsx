@@ -100,7 +100,22 @@ function ServerCard({ server, onToggle, onRemove, onDiscover, onTest, onConfigur
     <div className={`rounded-lg border overflow-hidden transition-all ${server.disabled ? 'opacity-60 bg-muted/30' : 'bg-card'} ${isMisconfigured ? 'border-destructive/30' : expanded ? 'border-primary/40' : 'border-border'}`}>
       {/* Header row */}
       <div onClick={() => setExpanded(e => !e)} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
-        <div className={`w-2 h-2 rounded-full shrink-0 ${server.disabled ? 'bg-muted-foreground' : isMisconfigured ? 'bg-destructive' : envMissing ? 'bg-orange-400' : 'bg-green-500'}`} />
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[0.6rem] font-medium shrink-0 ${
+          server.disabled ? 'bg-muted text-muted-foreground' :
+          isMisconfigured ? 'bg-destructive/10 text-destructive' :
+          envMissing ? 'bg-orange-500/10 text-orange-500' :
+          testResult?.ok ? 'bg-emerald-500/15 text-emerald-500' :
+          'bg-emerald-500/10 text-emerald-500'
+        }`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${
+            server.disabled ? 'bg-muted-foreground' :
+            isMisconfigured ? 'bg-destructive' :
+            envMissing ? 'bg-orange-400' :
+            testResult?.ok ? 'bg-emerald-500' :
+            'bg-emerald-500 animate-pulse'
+          }`} />
+          {server.disabled ? 'off' : isMisconfigured ? 'error' : envMissing ? 'env' : testResult?.ok ? `connected · ${testResult.latencyMs}ms` : 'ready'}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-[0.8125rem] font-semibold truncate">{server.name}</span>
@@ -318,9 +333,9 @@ function AddServerDialog({ open, onClose, registryEntry, onAdded }: {
         // If user left it empty, use ${env:KEY} token; if they typed a value, use it directly
         env[p.key.trim()] = p.value.trim() || `\${env:${p.key.trim()}}`
       }
-      const res = await fetch('/api/mcp/add', {
+      const res = await fetch('/api/mcp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), registryName: registryEntry?.name, env: Object.keys(env).length > 0 ? env : undefined }),
+        body: JSON.stringify({ action: "add", name: name.trim(), registryName: registryEntry?.name, env: Object.keys(env).length > 0 ? env : undefined }),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || `HTTP ${res.status}`) }
       toast.success(`Added ${name.trim()}`)
@@ -445,9 +460,9 @@ function AddCustomDialog({ open, onClose, onAdded }: {
         source.packages = [{ registryType: cmd === 'uvx' ? 'pypi' : 'npm', identifier: cmdArgs[cmdArgs.length - 1] || cmd, transport: { type: 'stdio' } }]
       }
 
-      const res = await fetch('/api/mcp/add', {
+      const res = await fetch('/api/mcp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), env: Object.keys(env).length > 0 ? env : undefined }),
+        body: JSON.stringify({ action: "add", name: name.trim(), env: Object.keys(env).length > 0 ? env : undefined }),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || `HTTP ${res.status}`) }
 
@@ -456,9 +471,9 @@ function AddCustomDialog({ open, onClose, onAdded }: {
       const updateBody: any = { name: name.trim() }
       if (transport === 'url') {
         // Patch the server entry to set the url directly
-        await fetch('/api/mcp/update', {
+        await fetch('/api/mcp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim(), url: url.trim() }),
+          body: JSON.stringify({ action: "update", name: name.trim(), url: url.trim() }),
         })
       }
 
@@ -565,9 +580,9 @@ function ConfigureDialog({ open, onClose, server, onSaved }: {
     const env: Record<string, string> = {}
     for (const p of envPairs) { if (p.key.trim()) env[p.key.trim()] = p.value }
     try {
-      const res = await fetch('/api/mcp/update', {
+      const res = await fetch('/api/mcp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: server.name, env }),
+        body: JSON.stringify({ action: "update", name: server.name, env }),
       })
       if (!res.ok) throw new Error('Failed to save')
       toast.success(`Updated ${server.name}`)
@@ -657,7 +672,7 @@ export function MCPPanel() {
   const loadConfig = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/mcp/config')
+      const res = await fetch('/api/mcp?action=config')
       if (!res.ok) throw new Error()
       setConfig(await res.json())
     } catch { setConfig({ servers: [], configPath: '.agentflow/mcp.json' }) }
@@ -671,7 +686,7 @@ export function MCPPanel() {
     recentLoaded.current = true; setRecentLoading(true)
     try {
       const since = new Date(Date.now() - 7 * 86400000).toISOString()
-      const res = await fetch(`/api/mcp/search?updated_since=${encodeURIComponent(since)}&limit=30`)
+      const res = await fetch(`/api/mcp?action=search&updated_since=${encodeURIComponent(since)}&limit=30`)
       if (!res.ok) throw new Error()
       const data = await res.json()
       setRecentServers(dedupeByName(data.servers || []))
@@ -685,7 +700,7 @@ export function MCPPanel() {
     if (!q.trim()) { setSearchResults([]); setSearchError(null); return }
     setSearching(true); setSearchError(null)
     try {
-      const res = await fetch(`/api/mcp/search?q=${encodeURIComponent(q)}&limit=20`)
+      const res = await fetch(`/api/mcp?action=search&q=${encodeURIComponent(q)}&limit=20`)
       if (!res.ok) throw new Error()
       const data = await res.json()
       setSearchResults(dedupeByName(data.servers || []))
@@ -702,14 +717,14 @@ export function MCPPanel() {
 
   const handleToggle = useCallback(async (name: string, enabled: boolean) => {
     try {
-      await fetch('/api/mcp/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, disabled: !enabled }) })
+      await fetch('/api/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggle', name, disabled: !enabled }) })
       loadConfig(); window.dispatchEvent(new CustomEvent('mcp-tools-changed'))
     } catch {}
   }, [loadConfig])
 
   const handleRemove = useCallback(async (name: string) => {
     try {
-      await fetch('/api/mcp/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      await fetch('/api/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', name }) })
       toast.success(`Removed ${name}`)
       loadConfig(); window.dispatchEvent(new CustomEvent('mcp-tools-changed'))
     } catch {}
@@ -724,7 +739,7 @@ export function MCPPanel() {
         const { discoverMcpTools } = await import('@/lib/mcp-discover-client')
         data = await discoverMcpTools(cfg)
       } else {
-        const res = await fetch('/api/mcp/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+        const res = await fetch('/api/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'discover', name }) })
         const text = await res.text()
         try { data = JSON.parse(text) } catch { toast.error(`Non-JSON response`); return }
       }
@@ -751,7 +766,7 @@ export function MCPPanel() {
 
   const handleTest = useCallback(async (name: string) => {
     try {
-      const res = await fetch('/api/mcp/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const res = await fetch('/api/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'test', name }) })
       return await res.json()
     } catch (err: any) { return { ok: false, status: 'error', error: err.message } }
   }, [])

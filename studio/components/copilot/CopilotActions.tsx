@@ -142,7 +142,7 @@ export function CopilotActions() {
     description: 'List all configured MCP servers from the panel, including status, tool count, and enabled state.',
     parameters: z.object({}),
     handler: async () => {
-      const res = await fetch('/api/mcp/config')
+      const res = await fetch('/api/mcp?action=config')
       if (!res.ok) return 'Failed to load MCP config'
       const data = await res.json()
       return data.servers
@@ -158,10 +158,10 @@ export function CopilotActions() {
       enabled: z.boolean().describe('true to enable, false to disable'),
     }),
     handler: async ({ name, enabled }) => {
-      await fetch('/api/mcp/toggle', {
+      await fetch('/api/mcp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, disabled: !enabled }),
+        body: JSON.stringify({ action: "toggle", name, disabled: !enabled }),
       })
       window.dispatchEvent(new CustomEvent('mcp-tools-changed'))
       return `${enabled ? 'Enabled' : 'Disabled'} MCP server "${name}"`
@@ -176,10 +176,10 @@ export function CopilotActions() {
       name: z.string().describe('Server name to discover tools from'),
     }),
     handler: async ({ name }) => {
-      const res = await fetch('/api/mcp/discover', {
+      const res = await fetch('/api/mcp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ action: "discover", name }),
       })
       const data = await res.json()
       if (!res.ok) return `Discovery failed: ${data.error}`

@@ -9,10 +9,10 @@ export async function discoverMcpTools(
 ): Promise<{ ok: true; source: string; toolCount: number; tools: { name: string; description: string }[] } | { ok: false; error: string }> {
   // stdio → must use server
   if (!serverConfig.url) {
-    const res = await fetch('/api/mcp/discover', {
+    const res = await fetch('/api/mcp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: serverConfig.name }),
+      body: JSON.stringify({ action: "discover", name: serverConfig.name }),
     })
     return res.json()
   }
