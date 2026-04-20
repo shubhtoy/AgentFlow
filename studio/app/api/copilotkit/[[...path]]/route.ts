@@ -44,15 +44,20 @@ const PRECONFIGURED_MCPS = [
   { type: 'sse' as const, url: 'https://gitmcp.io/shubhtoy/agentflow/sse' },
 ]
 
-const LANGGRAPH_URL = process.env.LANGGRAPH_DEPLOYMENT_URL || 'http://localhost:2024'
+const LANGGRAPH_URL = process.env.LANGGRAPH_DEPLOYMENT_URL
 
-const agent = new LangGraphAgent({
-  deploymentUrl: LANGGRAPH_URL,
-  graphId: process.env.LANGGRAPH_GRAPH_ID || 'agent',
-})
+// Use LangGraph agent if deployment URL is configured, otherwise copilot runs without agent backend
+const agents: Record<string, any> = {}
+if (LANGGRAPH_URL) {
+  const agent = new LangGraphAgent({
+    deploymentUrl: LANGGRAPH_URL,
+    graphId: process.env.LANGGRAPH_GRAPH_ID || 'agent',
+  })
+  agents.default = agent
+}
 
 const runtime = new CopilotRuntime({
-  agents: { default: agent },
+  ...(Object.keys(agents).length > 0 ? { agents } : {}),
   runner: new InMemoryAgentRunner(),
   mcpApps: { servers: [...PRECONFIGURED_MCPS, ...getMcpServers()] },
 })
