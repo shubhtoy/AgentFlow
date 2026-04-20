@@ -187,7 +187,7 @@ describe('PlatformMappingConfigSchema', () => {
 
 describe('AdapterFactory', () => {
   it('loads built-in platform configs', () => {
-    const builtInDir = path.join(__dirname, '../../src/transport/platforms');
+    const builtInDir = path.join(__dirname, '../../packages/core/src/transport/platforms');
     const factory = new AdapterFactory(builtInDir);
     const adapters = factory.loadAll();
     expect(adapters.length).toBeGreaterThanOrEqual(2);
@@ -196,7 +196,7 @@ describe('AdapterFactory', () => {
   });
 
   it('registers all adapters into a registry', () => {
-    const builtInDir = path.join(__dirname, '../../src/transport/platforms');
+    const builtInDir = path.join(__dirname, '../../packages/core/src/transport/platforms');
     const factory = new AdapterFactory(builtInDir);
     const registry = new TransportRegistry();
     factory.registerAll(registry);

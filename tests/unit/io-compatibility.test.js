@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseIOContract, checkCompatibility } from '../../src/utils/compatibility.js'
+import { parseIOContract, checkCompatibility } from '../../packages/core/src/utils/compatibility.js'
 
 describe('parseIOContract', () => {
   it('returns null for null/undefined frontmatter', () => {

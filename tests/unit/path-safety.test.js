@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPathSafe, validateOutputPaths } from '../../src/transport/utils.js';
+import { isPathSafe, validateOutputPaths } from '../../packages/core/src/transport/utils.js';
 
 describe('isPathSafe', () => {
   it('accepts relative paths', () => {

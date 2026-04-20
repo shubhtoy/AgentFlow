@@ -7,7 +7,7 @@ const { exportToPlatform } = require('../../packages/core/src/transport/export-p
 const { importFromPlatform } = require('../../packages/cli/src/transport/import-pipeline');
 const { defaultExport, resolveRefs } = require('../../packages/core/src/transport/default-export');
 
-const platformsDir = path.join(__dirname, '..', '..', 'src', 'transport', 'platforms');
+const platformsDir = path.join(__dirname, '..', '..', 'packages', 'core', 'src', 'transport', 'platforms');
 
 function createMockGraph() {
   return {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DEFAULT_NARRATIVE, getNarrativeScaffolding } from '../../src/utils/narrative.js'
+import { DEFAULT_NARRATIVE, getNarrativeScaffolding } from '../../packages/core/src/utils/narrative.js'
 
 describe('DEFAULT_NARRATIVE', () => {
   it('defines entries for all resource categories', () => {

@@ -255,7 +255,7 @@ describe('memory annotation round-trip', () => {
 
 // TODO: Rewrite for claude-code.json platform (claude.json archived to _archive/claude-platform-v1.json)
 describe.skip('claude.json platform config', () => {
-  const configPath = path.join(__dirname, '../../src/transport/platforms/claude-code.json');
+  const configPath = path.join(__dirname, '../../packages/core/src/transport/platforms/claude-code.json');
   let config;
   beforeAll(() => { config = JSON.parse(fs.readFileSync(configPath, 'utf8')); });
 

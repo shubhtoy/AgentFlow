@@ -3,7 +3,7 @@ import {
   TAXONOMY_REGISTRY, CANONICAL_CATEGORIES, RESERVED_DIRS,
   DIR_TO_CATEGORY, RESOURCE_TYPE_MAP,
   getCategory, getCategoryByDir, isReservedDir, inferScope,
-} from '../../src/taxonomy.js';
+} from '../../packages/core/src/taxonomy.js';
 
 describe('taxonomy registry', () => {
   it('has exactly 5 canonical categories', () => {

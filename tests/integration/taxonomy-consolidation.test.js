@@ -13,7 +13,7 @@ const { importFromPlatform } = require('../../packages/cli/src/transport/import-
 const { CANONICAL_CATEGORIES, RESERVED_DIRS } = require('../../packages/core/src/taxonomy');
 
 const ROOT_DIR = path.join(__dirname, '../..');
-const PLATFORMS_DIR = path.join(ROOT_DIR, 'src/transport/platforms');
+const PLATFORMS_DIR = path.join(ROOT_DIR, 'packages/core/src/transport/platforms');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'taxonomy-integ-'));
