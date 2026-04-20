@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     'simple-git',
     '@modelcontextprotocol/sdk',
+    'jszip',
+    'glob',
   ],
   async rewrites() {
     return [
@@ -23,12 +25,6 @@ const nextConfig: NextConfig = {
       path.resolve(__dirname, '..', 'node_modules'),
     ]
     config.module.exprContextCritical = false
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false, child_process: false, net: false, tls: false, dns: false,
-      }
-    }
     return config
   },
 }
