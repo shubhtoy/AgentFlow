@@ -8,7 +8,7 @@ const {
   scanIncremental,
   findAgentflowDirs,
   RESERVED_DIRS,
-} = require('../../src/git/repo-scanner');
+} = require('../../packages/cli/src/git/repo-scanner');
 
 const {
   simpleTreeArb,

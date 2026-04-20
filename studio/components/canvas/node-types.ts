@@ -8,4 +8,4 @@ export const nodeTypes = {
   'sub-workflow': WorkflowNode,
   resource: ResourceNode,
 }
-export const edgeTypes = { custom: WorkflowEdge }
+export const edgeTypes = { custom: WorkflowEdge, workflow: WorkflowEdge }

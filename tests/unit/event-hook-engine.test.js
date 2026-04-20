@@ -5,7 +5,7 @@ const {
   evaluateCondition,
   BUILT_IN_EVENTS,
   isSafeRegex,
-} = require('../../src/services/event-hook-engine');
+} = require('../../packages/core/src/services/event-hook-engine');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

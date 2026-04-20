@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-const { createImportService } = require('../../src/services/import-service')
+const { createImportService } = require('../../packages/cli/src/services/import-service')
 
 describe('ImportService', () => {
   let tmpDir, rootDir, svc

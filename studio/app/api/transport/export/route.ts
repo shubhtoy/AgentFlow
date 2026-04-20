@@ -6,10 +6,10 @@ import { parseClientFiles } from '@/lib/parse-client-files'
 
 export async function POST(req: NextRequest) {
   const path = require('path')
-  const { TransportRegistry } = require('@agentflow/transport/transport-registry')
-  const { AdapterFactory } = require('@agentflow/transport/adapter-factory')
-  const { ExportPipeline } = require('@agentflow/transport/export-pipeline')
-  const { parseRoot } = require('@agentflow/parser')
+  const { TransportRegistry } = require('@agentflow/core/transport/transport-registry')
+  const { AdapterFactory } = require('@agentflow/core/transport/adapter-factory')
+  const { ExportPipeline } = require('@agentflow/core/transport/export-pipeline')
+  const { parseRoot } = require('@agentflow/cli/parser')
 
   const s = getServices()
   const body = await jsonBody(req)

@@ -326,7 +326,7 @@ export function NodeDetailTabs({ file, allRefs, onRefNavigate, sourceNodeId, tab
   }
 
   return (
-    <Tabs value={tab} onValueChange={onTabChange} className="flex flex-col flex-1 min-h-0">
+    <Tabs value={tab} onValueChange={onTabChange} className="flex flex-col flex-1 h-0">
       <TabsList className="w-full rounded-none border-b border-border/50 h-9 bg-transparent px-1 justify-start shrink-0">
         <TabsTrigger value="content" className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none">
           Content
@@ -348,7 +348,7 @@ export function NodeDetailTabs({ file, allRefs, onRefNavigate, sourceNodeId, tab
         )}
       </TabsList>
 
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="flex-1 h-0 overflow-hidden flex flex-col">
         {tab === 'content' && (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {isMarkdown(file.relativePath) ? (
@@ -364,18 +364,18 @@ export function NodeDetailTabs({ file, allRefs, onRefNavigate, sourceNodeId, tab
           </div>
         )}
         {tab === 'properties' && (
-          <ScrollArea className="flex-1 min-h-0">
+          <ScrollArea className="flex-1 h-0">
             <FrontmatterForm file={file} onSave={handleFrontmatterSave} />
           </ScrollArea>
         )}
         {tab === 'references' && (
-          <ScrollArea className="flex-1 min-h-0">
+          <ScrollArea className="flex-1 h-0">
             <ReferencesList refs={allRefs} onNavigate={onRefNavigate} sourceNodeId={sourceNodeId} />
           </ScrollArea>
         )}
         {tab === 'preview' && hasPreview(file.relativePath) && (
           isMarkdown(file.relativePath) ? (
-            <ScrollArea className="flex-1 min-h-0">
+            <ScrollArea className="flex-1 h-0">
               <MarkdownPreview content={file.rawContent} />
             </ScrollArea>
           ) : (

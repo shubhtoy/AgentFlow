@@ -6,7 +6,7 @@ const {
   loadMcpConfig,
   saveMcpConfig,
   mcpConfigPath,
-} = require('../../src/mcp/config-manager');
+} = require('../../packages/cli/src/mcp/config-manager');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -282,7 +282,7 @@ describe('load/save round-trip', () => {
 const {
   addServer,
   removeServer,
-} = require('../../src/mcp/config-manager');
+} = require('../../packages/cli/src/mcp/config-manager');
 
 describe('addServer', () => {
   let tmpDir;
@@ -644,7 +644,7 @@ describe('removeServer', () => {
 /*  resolveEnvTokens                                                   */
 /* ------------------------------------------------------------------ */
 
-const { resolveEnvTokens } = require('../../src/mcp/config-manager');
+const { resolveEnvTokens } = require('../../packages/cli/src/mcp/config-manager');
 
 describe('resolveEnvTokens', () => {
   const originalEnv = { ...process.env };

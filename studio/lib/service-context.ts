@@ -23,18 +23,18 @@ let _services: any = null
 export function getServices() {
   if (_services) return _services
 
-  const { createWorkflowService } = require('@agentflow/services/workflow-service')
-  const { createValidationService } = require('@agentflow/services/validation-service')
-  const { createTemplateService } = require('@agentflow/services/template-service')
-  const { createGitService } = require('@agentflow/services/git-service')
-  const { createScaffoldGenService } = require('@agentflow/services/scaffold-gen-service')
-  const { createMCPBridge } = require('@agentflow/services/mcp-bridge')
-  const { createExportService } = require('@agentflow/services/export-service')
-  const { createImportService } = require('@agentflow/services/import-service')
-  const { HookRegistry } = require('@agentflow/services/hook-registry')
-  const { EventHookEngine } = require('@agentflow/services/event-hook-engine')
-  const { createInstructionManager } = require('@agentflow/services/instruction-manager')
-  const { loadBrandConfig } = require('@agentflow/branding')
+  const { createWorkflowService } = require('@agentflow/cli/services/workflow-service')
+  const { createValidationService } = require('@agentflow/cli/services/validation-service')
+  const { createTemplateService } = require('@agentflow/cli/services/template-service')
+  const { createGitService } = require('@agentflow/cli/services/git-service')
+  const { createScaffoldGenService } = require('@agentflow/cli/services/scaffold-gen-service')
+  const { createMCPBridge } = require('@agentflow/cli/services/mcp-bridge')
+  const { createExportService } = require('@agentflow/cli/services/export-service')
+  const { createImportService } = require('@agentflow/cli/services/import-service')
+  const { HookRegistry } = require('@agentflow/cli/services/hook-registry')
+  const { EventHookEngine } = require('@agentflow/core/services/event-hook-engine')
+  const { createInstructionManager } = require('@agentflow/cli/services/instruction-manager')
+  const { loadBrandConfig } = require('@agentflow/cli/branding')
 
   const brandConfig = loadBrandConfig(ROOT_DIR)
   const ctx = { rootDir: ROOT_DIR, logger: consoleLogger, brandConfig }

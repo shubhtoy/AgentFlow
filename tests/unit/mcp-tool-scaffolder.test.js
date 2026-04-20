@@ -8,10 +8,10 @@ const {
   toFileName,
   convertParameters,
   generateToolContent,
-} = require('../../src/mcp/tool-scaffolder');
+} = require('../../packages/cli/src/mcp/tool-scaffolder');
 
-const { loadMcpConfig, saveMcpConfig } = require('../../src/mcp/config-manager');
-const { parseMarkdownFile, classifyResource } = require('../../src/parser');
+const { loadMcpConfig, saveMcpConfig } = require('../../packages/cli/src/mcp/config-manager');
+const { parseMarkdownFile, classifyResource } = require('../../packages/cli/src/parser');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

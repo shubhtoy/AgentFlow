@@ -1,4 +1,1 @@
-@import "tailwindcss";
-@source "../../node_modules/fumadocs-ui/dist/**/*.js";
-@import "fumadocs-ui/css/emerald.css";
-@import "fumadocs-ui/css/preset.css";
+/* Fumadocs CSS is loaded via app/globals.css to avoid a second Tailwind instance */

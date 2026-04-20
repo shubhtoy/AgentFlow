@@ -163,7 +163,7 @@ export function ExportDialogContent({ onClose }: { onClose?: () => void } = {}) 
       const { requireWorkspace } = await import('@/lib/workspace')
       const w = await requireWorkspace()
       const files = await w.readAll()
-      const { parseFromFiles } = await import('@agentflow/parser-core')
+      const { parseFromFiles } = await import('@agentflow/core/parser-core')
       const graph = parseFromFiles(Object.fromEntries(files.map(f => [f.path, f.content]))) as unknown as WorkflowGraph
       const result = await exportPlatformClientSide(selectedPlatform, graph, { workflowId: workflow })
       if (cancelled) return
@@ -214,7 +214,7 @@ export function ExportDialogContent({ onClose }: { onClose?: () => void } = {}) 
         const { exportPlatformClientSide } = await import('@/lib/export-client')
         const w = await (await import('@/lib/workspace')).requireWorkspace()
         const wsFiles = await w.readAll()
-        const { parseFromFiles } = await import('@agentflow/parser-core')
+        const { parseFromFiles } = await import('@agentflow/core/parser-core')
         const graph = parseFromFiles(Object.fromEntries(wsFiles.map(f => [f.path, f.content]))) as unknown as WorkflowGraph
         const result = await exportPlatformClientSide(selectedPlatform, graph, { workflowId: exportWf })
         if (!result.ok) throw new Error((result as { ok: false; error: string }).error)

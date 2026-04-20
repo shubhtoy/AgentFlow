@@ -14,7 +14,10 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
     <CopilotKitProvider
       runtimeUrl="/api/copilotkit"
       showDevConsole={false}
+      agent="none"
       onError={(event) => {
+        // Suppress agent errors — no backend agent configured
+        if (['runtime_info_fetch_failed', 'agent_connect_failed', 'agent_run_failed_event'].includes(event.code)) return
         const msg = event.error?.message || 'An error occurred'
         console.error(`[CopilotKit ${event.code}]`, msg, event)
         toast.error(msg, { description: event.code })

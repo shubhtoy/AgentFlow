@@ -67,7 +67,7 @@ function TokenIndicator({ workflowId }: { workflowId: string }) {
         <div className="w-12 h-1.5 rounded-full bg-muted/60 overflow-hidden">
           <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-[9px] tabular-nums">{fmt}</span>
+        <span className="text-xs tabular-nums">{fmt}</span>
       </div>
     </Seg>
   )
@@ -102,7 +102,7 @@ export function StatusBar() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <footer data-tour="statusbar" className="h-7 flex items-center border-t border-border/30 text-[10px] text-muted-foreground/70 shrink-0 z-50 select-none
+      <footer data-tour="statusbar" className="h-8 flex items-center border-t border-border/30 text-xs text-muted-foreground/70 shrink-0 z-50 select-none
         bg-background/80 backdrop-blur-xl backdrop-saturate-150
         shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-1px_3px_rgba(0,0,0,0.03)]
         dark:shadow-[0_-1px_0_rgba(255,255,255,0.02),0_-1px_3px_rgba(0,0,0,0.15)]">
@@ -132,11 +132,11 @@ export function StatusBar() {
 
         <Seg onClick={() => emit('agentflow:show-validation')} tip="Open validation panel">
           {errorCount > 0 ? (
-            <span className="flex items-center gap-1 text-red-400"><AlertCircle size={11} />{errorCount} error{errorCount > 1 ? 's' : ''}</span>
+            <span className="flex items-center gap-1 text-red-400"><AlertCircle size={13} />{errorCount} error{errorCount > 1 ? 's' : ''}</span>
           ) : warningCount > 0 ? (
-            <span className="flex items-center gap-1 text-amber-400"><AlertTriangle size={11} />{warningCount} warning{warningCount > 1 ? 's' : ''}</span>
+            <span className="flex items-center gap-1 text-amber-400"><AlertTriangle size={13} />{warningCount} warning{warningCount > 1 ? 's' : ''}</span>
           ) : (
-            <span className="flex items-center gap-1 text-emerald-500/60"><CheckCircle2 size={11} />No issues</span>
+            <span className="flex items-center gap-1 text-emerald-500/60"><CheckCircle2 size={13} />No issues</span>
           )}
         </Seg>
       </footer>

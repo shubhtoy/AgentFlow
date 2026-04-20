@@ -1,58 +1,20 @@
 {
   "name": "agentflow",
   "version": "0.1.0",
-  "description": "Directory-based agent workflow orchestration. Parse, validate, visualize, and export agent workflows defined in markdown.",
-  "main": "src/parser.js",
-  "bin": {
-    "agentflow": "bin/cli.js"
-  },
+  "private": true,
+  "description": "Directory-based agent workflow orchestration.",
+  "workspaces": [
+    "packages/core",
+    "packages/cli"
+  ],
   "scripts": {
     "dev": "npm run dev --prefix studio",
-    "dev:agent": "npm run agent --prefix studio",
-    "dev:all": "npx concurrently -k -n next,agent -c blue,green \"npm run dev\" \"sleep 2 && npm run dev:agent\"",
-    "dev:api": "node src/cli.js ui examples/.agentflow",
-    "dev:next": "npm run dev --prefix studio",
-    "dev:studio": "npm run dev --prefix studio",
-    "dev:legacy": "node src/cli.js ui examples/.agentflow & npm run dev --prefix ui",
-    "setup": "npm install && npm install --prefix ui",
-    "build:ui": "npm run build --prefix ui",
-    "start": "npm run build:ui && node src/cli.js ui examples/.agentflow",
-    "graph": "node src/cli.js graph examples/.agentflow",
-    "parse": "node src/cli.js parse examples/.agentflow",
-    "validate": "node src/cli.js validate examples/.agentflow",
-    "ui": "node src/cli.js ui examples/.agentflow",
+    "build": "npm run build --prefix studio",
     "test": "vitest --run"
   },
-  "keywords": [
-    "agent",
-    "workflow",
-    "markdown",
-    "orchestration",
-    "ai"
-  ],
-  "license": "MIT",
   "devDependencies": {
     "fast-check": "^3.23.2",
-    "vitest": "^3.2.1",
-    "next": "^16.2.4"
+    "vitest": "^3.2.1"
   },
-  "dependencies": {
-    "@fastify/cors": "^11.2.0",
-    "@fastify/rate-limit": "^10.3.0",
-    "@fastify/static": "^9.0.0",
-    "@langchain/anthropic": "^1.3.25",
-    "@langchain/core": "^1.1.35",
-    "@langchain/openai": "^1.3.0",
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "commander": "^14.0.3",
-    "fastify": "^5.8.2",
-    "glob": "^13.0.6",
-    "gray-matter": "^4.0.3",
-    "js-yaml": "^4.1.1",
-    "jszip": "^3.10.1",
-    "langchain": "^1.2.36",
-    "serve-handler": "^6.1.7",
-    "simple-git": "^3.33.0",
-    "zod": "^3.25.76"
-  }
+  "license": "MIT"
 }

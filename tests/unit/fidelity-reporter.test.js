@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-const { FidelityReporter, FIDELITY_ICONS } = require('../../src/transport/fidelity-reporter.js');
+const { FidelityReporter, FIDELITY_ICONS } = require('../../packages/core/src/transport/fidelity-reporter.js');
 
 const reporter = new FidelityReporter();
 

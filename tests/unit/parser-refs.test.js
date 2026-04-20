@@ -1,4 +1,4 @@
-const { parseRef, extractRefs, REF_PATTERNS } = require('../../src/parser');
+const { parseRef, extractRefs, REF_PATTERNS } = require('../../packages/cli/src/parser');
 
 describe('REF_PATTERNS', () => {
   it('exports 4 patterns in the correct order', () => {

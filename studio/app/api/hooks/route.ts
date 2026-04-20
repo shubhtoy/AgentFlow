@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest } from 'next/server'
 import { getServices, jsonBody, json } from '@/lib/service-context'
 
-const { HookDefinitionSchema } = require('@agentflow/services/hook-registry')
+const { HookDefinitionSchema } = require('@agentflow/cli/services/hook-registry')
 
 export async function GET(_req: NextRequest) {
   const s = getServices()

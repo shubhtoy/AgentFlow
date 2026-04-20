@@ -4,7 +4,7 @@ const {
   identifyPrimaryFile,
   RESOURCE_TYPE_MAP,
   NODE_TYPE_ALIASES,
-} = require('../../src/parser');
+} = require('../../packages/cli/src/parser');
 
 describe('classifyResource', () => {
   /** Helper to build a minimal ParsedFile-like object. */

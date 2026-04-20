@@ -228,7 +228,7 @@ export function Editor({ filePath, content }: { filePath: string; content: strin
           if (rawLibrary) { e.preventDefault(); try { const payload = JSON.parse(rawLibrary); if (payload.entryType === 'workflow') { useAppStore.getState().showNotification(`"${payload.name}" is a workflow and can't be inserted as a reference.`, 'warning'); return }; const category = payload.entryType.endsWith('s') ? payload.entryType : payload.entryType + 's'; editor.chain().focus().insertContent(`{{${category}/${payload.name}}} `).run(); setDirty(true); markDirty() } catch {} }
         }}>
         {!editing ? (
-          <div className="px-6 py-5 text-[15px] leading-relaxed prose prose-sm dark:prose-invert max-w-none"><MarkdownWithRefs content={previewContent} /></div>
+          <div className="px-6 py-5 text-base leading-relaxed max-w-none"><MarkdownWithRefs content={previewContent} /></div>
         ) : mode === 'visual' ? (
           <EditorContent editor={editor} style={{ padding: '20px 24px', fontSize: '0.9375rem', lineHeight: 1.7, minHeight: '100%', color: 'inherit' }} />
         ) : (

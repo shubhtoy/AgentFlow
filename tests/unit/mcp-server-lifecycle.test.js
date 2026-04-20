@@ -5,7 +5,7 @@
  * avoiding module-level mocking issues with the MCP SDK.
  */
 
-const { discoverTools, DEFAULT_TIMEOUT } = require('../../src/mcp/server-lifecycle');
+const { discoverTools, DEFAULT_TIMEOUT } = require('../../packages/cli/src/mcp/server-lifecycle');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

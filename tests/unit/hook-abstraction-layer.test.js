@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-const { HookAbstractionLayer, HOOK_EVENT_MAP, HOOK_ACTION_MAP } = require('../../src/transport/hook-abstraction-layer.js');
+const { HookAbstractionLayer, HOOK_EVENT_MAP, HOOK_ACTION_MAP } = require('../../packages/core/src/transport/hook-abstraction-layer.js');
 
 const hal = new HookAbstractionLayer();
 

@@ -15,10 +15,10 @@ export async function exportPlatformClientSide(
   options: { workflowId?: string } = {}
 ): Promise<ExportResult> {
   try {
-    const { TransportRegistry } = require('@agentflow/transport/transport-registry')
-    const { AdapterFactory } = require('@agentflow/transport/adapter-factory')
-    const { ExportPipeline } = require('@agentflow/transport/export-pipeline')
-    const platformConfigs = require('@agentflow/transport/platform-configs')
+    const { TransportRegistry } = require('@agentflow/core/transport/transport-registry')
+    const { AdapterFactory } = require('@agentflow/core/transport/adapter-factory')
+    const { ExportPipeline } = require('@agentflow/core/transport/export-pipeline')
+    const platformConfigs = require('@agentflow/core/transport/platform-configs')
 
     const registry = new TransportRegistry()
     AdapterFactory.fromConfigs(platformConfigs).registerAll(registry)

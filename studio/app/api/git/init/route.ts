@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest } from 'next/server'
 import { getServices, jsonBody, sendResult } from '@/lib/service-context'
 
-const { fail, ErrorCode } = require('@agentflow/errors')
+const { fail, ErrorCode } = require('@agentflow/core/errors')
 
 export async function POST(req: NextRequest) {
   const s = getServices()

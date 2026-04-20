@@ -1,0 +1,49 @@
+{
+  "name": "agent-spec",
+  "displayName": "Agent Spec (Oracle Open Agent Spec)",
+  "version": "2.1.0",
+  "tier": "runtime",
+  "capabilities": [
+    "export"
+  ],
+  "exportRules": [
+    {
+      "source": "identity",
+      "target": "agent-spec.json",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "graph-to-agent-spec",
+      "note": "Full graph exported as Agent Spec JSON"
+    },
+    {
+      "source": "workflow-descriptor",
+      "target": "workflow/AGENTS.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "hooks/*",
+      "target": "hooks/{name}.json",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "json-passthrough",
+      "note": "Hooks exported as native platform hooks"
+    },
+    {
+      "source": "memory/*",
+      "target": "memory/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "customFiles",
+      "target": "{name}",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    }
+  ],
+  "importRules": []
+}

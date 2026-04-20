@@ -1,5 +1,5 @@
 import type { WorkspaceAdapter, WorkspaceFile } from './types'
-import { WORKSPACE_EXTENSIONS } from '@agentflow/parser-core'
+import { WORKSPACE_EXTENSIONS } from '@agentflow/core/parser-core'
 
 /**
  * Browser adapter using File System Access API.

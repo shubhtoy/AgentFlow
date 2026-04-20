@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-const { createInstructionManager } = require('../../src/services/instruction-manager')
+const { createInstructionManager } = require('../../packages/cli/src/services/instruction-manager')
 
 describe('InstructionManager', () => {
   let tmpDir, rootDir, mgr

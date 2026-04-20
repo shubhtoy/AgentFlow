@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
-const { resolveRoot } = require('../../src/utils/resolve-root.js');
+const { resolveRoot } = require('../../packages/cli/src/utils/resolve-root.js');
 
 describe('resolveRoot', () => {
   let savedEnv;

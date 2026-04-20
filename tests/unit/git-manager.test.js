@@ -15,7 +15,7 @@ import os from 'os';
  * via the exported _git factory.
  */
 
-const gitManager = require('../../src/git/git-manager');
+const gitManager = require('../../packages/cli/src/git/git-manager');
 const {
   attach,
   sanitiseOutput,

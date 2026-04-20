@@ -10,8 +10,8 @@ const {
   McpToolManager,
   buildToolEntry,
   defaultMcpDeps,
-} = require('../../src/mcp/tool-provider');
-const { parseRoot } = require('../../src/parser');
+} = require('../../packages/cli/src/mcp/tool-provider');
+const { parseRoot } = require('../../packages/cli/src/parser');
 
 const EXAMPLES_DIR = path.join(__dirname, '../../examples/.agentflow');
 const ROOT_DIR = path.join(__dirname, '../..');

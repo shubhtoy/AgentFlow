@@ -14,7 +14,7 @@ function classifySkill(content: string): string {
   return 'instructions'
 }
 
-const { parseFrontmatter: parseFM } = require('@agentflow/parser-core')
+const { parseFrontmatter: parseFM } = require('@agentflow/core/parser-core')
 
 function parseFrontmatter(content: string) {
   return parseFM(content).data || {}

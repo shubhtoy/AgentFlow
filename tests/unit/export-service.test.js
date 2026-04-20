@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-const { createExportService } = require('../../src/services/export-service')
+const { createExportService } = require('../../packages/cli/src/services/export-service')
 
 describe('ExportService', () => {
   let tmpDir, rootDir, svc

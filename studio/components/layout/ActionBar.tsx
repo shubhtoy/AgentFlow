@@ -19,7 +19,7 @@ function Btn({ icon: Icon, label, shortcut, onClick, disabled, className = '' }:
         <button onClick={onClick} disabled={disabled}
           className={`p-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed
             text-muted-foreground hover:text-foreground hover:bg-foreground/5 ${className}`}>
-          <Icon className="size-4" />
+          <Icon className="size-[18px]" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">{label}{shortcut && ` ${shortcut}`}</TooltipContent>
@@ -56,7 +56,7 @@ function SecondaryMenu({ isDragging }: { isDragging: boolean }) {
         <TooltipTrigger asChild>
           <button onClick={() => { if (!isDragging) setOpen(o => !o) }}
             className={`p-2 rounded-lg transition-colors ${open ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'}`}>
-            <MoreHorizontal className="size-4" />
+            <MoreHorizontal className="size-[18px]" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs">More actions</TooltipContent>
@@ -152,7 +152,7 @@ export function ActionBar() {
         <button onClick={() => setVisible(true)}
           className="p-2 rounded-full bg-background/60 backdrop-blur-xl border border-border/40
             shadow-lg hover:bg-background/80 transition-colors text-muted-foreground hover:text-foreground">
-          <Eye className="size-4" />
+          <Eye className="size-[18px]" />
         </button>
       </div>
     )
@@ -160,7 +160,7 @@ export function ActionBar() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div ref={constraintsRef} className="absolute inset-0 z-50 pointer-events-none">
+      <div ref={constraintsRef} className="absolute inset-0 z-20 pointer-events-none">
         <motion.div
           drag dragMomentum={false} dragConstraints={constraintsRef} dragElastic={0.05}
           onDragStart={handleDragStart} onDragEnd={handleDragEnd}
@@ -193,13 +193,13 @@ export function ActionBar() {
                 {breadcrumbs.map((crumbId, idx) => (
                   <div key={crumbId} className="flex items-center gap-0.5">
                     <button onClick={() => { if (!isDragging) navigateBreadcrumb(idx) }}
-                      className="text-xs text-muted-foreground hover:text-foreground truncate max-w-[80px] transition-colors">
+                      className="text-sm text-muted-foreground hover:text-foreground truncate max-w-[80px] transition-colors">
                       {data?.workflows[crumbId]?.name || crumbId}
                     </button>
                     <ChevronRight className="size-3 text-muted-foreground/50 shrink-0" />
                   </div>
                 ))}
-                <span className="text-xs font-medium truncate max-w-[100px]">{activeLabel}</span>
+                <span className="text-sm font-medium truncate max-w-[100px]">{activeLabel}</span>
               </div>
             ) : (
               <div className="relative" ref={wfRef}>

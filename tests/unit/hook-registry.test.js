@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
-const { HookRegistry, HookDefinitionSchema } = require('../../src/services/hook-registry');
+const { HookRegistry, HookDefinitionSchema } = require('../../packages/cli/src/services/hook-registry');
 
 let tmpDir;
 let hooksDir;

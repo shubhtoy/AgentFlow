@@ -1,7 +1,7 @@
 'use strict';
 
-const { getTransform, listTransforms } = require('../../src/transport/transforms');
-const { PlatformMappingConfigSchema } = require('../../src/transport/schemas');
+const { getTransform, listTransforms } = require('../../packages/core/src/transport/transforms');
+const { PlatformMappingConfigSchema } = require('../../packages/core/src/transport/schemas');
 const fs = require('fs');
 const path = require('path');
 

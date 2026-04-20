@@ -7,7 +7,7 @@ const path = require('path')
 
 export async function GET(_req: NextRequest) {
   const s = getServices()
-  const { loadMcpConfig } = require('@agentflow/mcp/config-manager')
+  const { loadMcpConfig } = require('@agentflow/cli/mcp/config-manager')
   const result = loadMcpConfig(s.rootDir)
   const servers = Object.entries(result.servers || {}).map(([name, cfg]: [string, any]) => {
     const toolNames = Array.isArray(cfg.discoveredTools) ? cfg.discoveredTools : []

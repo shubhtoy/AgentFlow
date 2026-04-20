@@ -82,13 +82,13 @@ export function FloatingPanel({
         <div
           onPointerDown={maximized ? undefined : onDragStart}
           onDoubleClick={toggleMaximize}
-          className="flex items-center gap-1.5 px-3 h-10 shrink-0 select-none cursor-grab active:cursor-grabbing
-                     border-b border-border/30 bg-muted/30"
+          className="flex items-center gap-2 px-3 py-2.5 shrink-0 select-none cursor-grab active:cursor-grabbing
+                     border-b border-border/30"
         >
           <GripVertical size={12} className="text-muted-foreground/30 shrink-0 mr-0.5" />
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <Icon size={14} className="text-primary shrink-0" />
-            <span className="text-xs font-medium flex-1 truncate text-foreground/80">{title}</span>
+            <Icon size={15} className="text-primary shrink-0" />
+            <span className="text-sm font-semibold flex-1 truncate text-foreground/90">{title}</span>
           </div>
 
           {headerExtra}
@@ -110,7 +110,7 @@ export function FloatingPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
           {children}
         </div>
 

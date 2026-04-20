@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server'
 import { json } from '@/lib/service-context'
 
 export async function GET(req: NextRequest) {
-  const { searchRegistry } = require('@agentflow/mcp/registry-client')
+  const { searchRegistry } = require('@agentflow/core/mcp/registry-client')
   const q = req.nextUrl.searchParams.get('q') || req.nextUrl.searchParams.get('search') || ''
   const limit = parseInt(req.nextUrl.searchParams.get('limit') || '20', 10)
   const cursor = req.nextUrl.searchParams.get('cursor') || undefined

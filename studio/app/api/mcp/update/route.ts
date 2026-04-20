@@ -9,7 +9,7 @@ import { getServices, jsonBody, json } from '@/lib/service-context'
  */
 export async function POST(req: NextRequest) {
   const s = getServices()
-  const { loadMcpConfig, saveMcpConfig } = require('@agentflow/mcp/config-manager')
+  const { loadMcpConfig, saveMcpConfig } = require('@agentflow/cli/mcp/config-manager')
   const { name, env, disabled, url, command, args } = await jsonBody(req)
   if (!name) return json({ error: 'name is required' }, 400)
   const { servers } = loadMcpConfig(s.rootDir)

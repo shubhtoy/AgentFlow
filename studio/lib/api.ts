@@ -41,7 +41,7 @@ async function request<T = unknown>(url: string, opts?: RequestInit): Promise<T>
 
 function parseClientSide(files: { path: string; content: string }[]): WorkflowGraph {
   if (!files.length) return { workflows: {}, instructions: {}, capabilities: {}, runbooks: {}, memory: {}, rootDir: '.' } as any
-  const { parseFromFiles } = require('@agentflow/parser-browser')
+  const { parseFromFiles } = require('@agentflow/core/parser-browser')
   const fileMap: Record<string, string> = {}
   for (const f of files) fileMap[f.path] = f.content
   const result = parseFromFiles(fileMap)
@@ -142,7 +142,7 @@ export const api = {
 
   // Validation — client-side
   validate: async (options?: { strict?: boolean }): Promise<ValidationResult> => {
-    const { validate } = require('@agentflow/validator')
+    const { validate } = require('@agentflow/core/validator')
     return validate(await api.getData(), options)
   },
 

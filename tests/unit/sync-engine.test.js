@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-const syncEngine = require('../../src/git/sync-engine');
+const syncEngine = require('../../packages/cli/src/git/sync-engine');
 const {
   matchesSyncRules,
   inferResourceTypeFromPath,
@@ -15,8 +15,8 @@ const {
   SYNCLOCK_FILENAME,
 } = syncEngine;
 
-const gitManager = require('../../src/git/git-manager');
-const { getDefaults } = require('../../src/git/config-manager');
+const gitManager = require('../../packages/cli/src/git/git-manager');
+const { getDefaults } = require('../../packages/cli/src/git/config-manager');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

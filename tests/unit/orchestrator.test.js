@@ -11,8 +11,8 @@ const {
   buildNodeTools,
   BUILTIN_EXECUTORS,
   runWithTools,
-} = require('../../src/orchestrator');
-const { parseRoot } = require('../../src/parser');
+} = require('../../packages/cli/src/orchestrator');
+const { parseRoot } = require('../../packages/cli/src/parser');
 
 const EXAMPLES_DIR = path.join(__dirname, '../../examples/.agentflow');
 

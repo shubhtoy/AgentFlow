@@ -78,7 +78,7 @@ function RefBadge({ raw, invalid, onClick }: { raw: string; invalid?: boolean; o
       default:
         resolved = `_Unknown variable: ${trimmed}_`
     }
-    return <div className="text-sm leading-relaxed whitespace-pre-wrap my-2 pl-2 border-l-2 border-primary/20">{resolved}</div>
+    return <span className="block text-sm leading-relaxed whitespace-pre-wrap my-2 pl-2 border-l-2 border-primary/20">{resolved}</span>
   }
 
   const cat = refCategory(raw)
@@ -175,17 +175,21 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content, invalidR
   }
 
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none px-3 py-2
-      prose-headings:font-semibold prose-headings:tracking-tight
-      prose-h1:text-lg prose-h2:text-base prose-h3:text-sm
-      prose-p:text-[13px] prose-p:leading-relaxed
-      prose-li:text-[13px] prose-li:my-0.5
-      prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
-      prose-pre:bg-zinc-900 prose-pre:text-zinc-100 prose-pre:rounded-lg prose-pre:text-xs
-      prose-blockquote:border-l-2 prose-blockquote:border-primary/50 prose-blockquote:text-muted-foreground
-      prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-      prose-strong:font-semibold prose-strong:text-foreground
-      prose-hr:border-border"
+    <div className="max-w-none px-4 py-3 text-sm leading-relaxed text-foreground
+      [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2
+      [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1.5
+      [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-2.5 [&_h3]:mb-1
+      [&_p]:my-1.5
+      [&_ul]:pl-5 [&_ul]:my-1.5 [&_ul]:list-disc
+      [&_ol]:pl-5 [&_ol]:my-1.5 [&_ol]:list-decimal
+      [&_li]:my-0.5
+      [&_code]:text-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono
+      [&_pre]:bg-zinc-900 [&_pre]:text-zinc-100 [&_pre]:rounded-lg [&_pre]:text-xs [&_pre]:p-3 [&_pre]:my-2
+      [&_pre_code]:bg-transparent [&_pre_code]:p-0
+      [&_blockquote]:border-l-2 [&_blockquote]:border-primary/50 [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_blockquote]:my-2
+      [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline
+      [&_strong]:font-semibold [&_strong]:text-foreground
+      [&_hr]:border-border [&_hr]:my-3"
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}

@@ -1,11 +1,11 @@
 'use strict';
 
 const path = require('path');
-const { TransportRegistry } = require('../../src/transport/transport-registry');
-const { AdapterFactory } = require('../../src/transport/adapter-factory');
-const { exportToPlatform } = require('../../src/transport/export-pipeline');
-const { importFromPlatform } = require('../../src/transport/import-pipeline');
-const { defaultExport, resolveRefs } = require('../../src/transport/default-export');
+const { TransportRegistry } = require('../../packages/core/src/transport/transport-registry');
+const { AdapterFactory } = require('../../packages/core/src/transport/adapter-factory');
+const { exportToPlatform } = require('../../packages/core/src/transport/export-pipeline');
+const { importFromPlatform } = require('../../packages/cli/src/transport/import-pipeline');
+const { defaultExport, resolveRefs } = require('../../packages/core/src/transport/default-export');
 
 const platformsDir = path.join(__dirname, '..', '..', 'src', 'transport', 'platforms');
 

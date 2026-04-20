@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const { preview, workflow, format, platform, files: clientFiles } = body
 
   try {
-    const { parseRoot } = require('@agentflow/parser')
+    const { parseRoot } = require('@agentflow/cli/parser')
     const graph = clientFiles?.length ? parseClientFiles(clientFiles) : parseRoot(s.rootDir)
 
     let exportFiles: Record<string, string>
@@ -18,10 +18,10 @@ export async function POST(req: NextRequest) {
     let mappingReport: any = null
 
     if (format === 'platform' && platform) {
-      const { TransportRegistry } = require('@agentflow/transport/transport-registry')
-      const { AdapterFactory } = require('@agentflow/transport/adapter-factory')
-      const { ExportPipeline } = require('@agentflow/transport/export-pipeline')
-      const platformConfigs = require('@agentflow/transport/platform-configs')
+      const { TransportRegistry } = require('@agentflow/core/transport/transport-registry')
+      const { AdapterFactory } = require('@agentflow/core/transport/adapter-factory')
+      const { ExportPipeline } = require('@agentflow/core/transport/export-pipeline')
+      const platformConfigs = require('@agentflow/core/transport/platform-configs')
 
       const registry = new TransportRegistry()
       AdapterFactory.fromConfigs(platformConfigs).registerAll(registry)
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
       if (preview) return json({ files: exportFiles, warnings, mappingReport })
     } else if (format === 'raw' || format === 'parsed') {
-      const { exportRaw, exportParsed } = require('@agentflow/structured-exporter')
+      const { exportRaw, exportParsed } = require('@agentflow/cli/structured-exporter')
       let wfId = workflow
       if (!wfId) {
         const wfIds = Object.keys(graph.workflows || {})
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       if (wfId && !graph.workflows?.[wfId]) return json({ error: `Workflow "${wfId}" not found` }, 400)
       exportFiles = format === 'parsed' ? exportParsed(graph, wfId) : exportRaw(graph, wfId)
     } else {
-      const { defaultExport } = require('@agentflow/transport/default-export')
+      const { defaultExport } = require('@agentflow/core/transport/default-export')
       const result = defaultExport(graph, { workflowId: workflow })
       if (!result.ok) return json({ error: result.error || 'Export failed' }, 500)
       exportFiles = result.data.files

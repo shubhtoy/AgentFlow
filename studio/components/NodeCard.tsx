@@ -188,11 +188,11 @@ export function NodeCard() {
           style={{ touchAction: 'none' }}
         >
           <div
-            className="rounded-xl bg-background/90 backdrop-blur-xl border border-border/50 shadow-[0_8px_32px_rgba(0,0,0,0.15)] flex flex-col w-[min(460px,85vw)] h-[min(580px,70vh)] min-w-[240px] min-h-[240px] max-w-[90%] max-h-[80%] @container"
+            className="rounded-xl bg-background/80 backdrop-blur-xl border border-border/50 shadow-[0_8px_32px_rgba(0,0,0,0.15)] flex flex-col w-[min(560px,85vw)] h-[min(580px,70vh)] min-w-[240px] min-h-[240px] max-w-[90%] max-h-[80%] @container"
             style={{ resize: 'both', overflow: 'hidden' }}
           >
             {/* Header */}
-            <div className="flex items-center gap-1.5 px-2 py-1.5 @[320px]:px-3 @[320px]:py-2 border-b border-border/30 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-2.5 @[320px]:px-4 @[320px]:py-3 border-b border-border/30 shrink-0">
               <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground/70">
                 <GripVertical size={14} />
               </div>

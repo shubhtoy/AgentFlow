@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { parseRoot } = require('../../src/parser');
+const { parseRoot } = require('../../packages/cli/src/parser');
 
 /**
  * Helper: create a temp directory with a given file tree.
@@ -369,7 +369,7 @@ describe('parseRoot - customFiles', () => {
   });
 
   it('resolves refs to arbitrary file paths', () => {
-    const { resolveRef } = require('../../src/parser');
+    const { resolveRef } = require('../../packages/cli/src/parser');
 
     tmpDir = createTempTree({
       'docs/architecture.md': '# Architecture',

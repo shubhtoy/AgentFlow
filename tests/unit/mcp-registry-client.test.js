@@ -3,7 +3,7 @@ const {
   getServer,
   parseEntry,
   REGISTRY_BASE_URL,
-} = require('../../src/mcp/registry-client');
+} = require('../../packages/core/src/mcp/registry-client');
 
 /* ------------------------------------------------------------------ */
 /*  Mock fetch                                                         */

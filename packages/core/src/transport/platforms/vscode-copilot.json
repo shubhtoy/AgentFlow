@@ -1,0 +1,135 @@
+{
+  "name": "vscode-copilot",
+  "displayName": "VS Code (Copilot)",
+  "version": "2.1.0",
+  "tier": "ide",
+  "capabilities": [
+    "export",
+    "import"
+  ],
+  "detectMarkers": [
+    ".github/copilot-instructions.md",
+    ".github/instructions"
+  ],
+  "exportRules": [
+    {
+      "source": "identity",
+      "target": "AGENTS.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "markdown-passthrough",
+      "contextMode": "always-loaded"
+    },
+    {
+      "source": "workflow-descriptor",
+      "target": "workflow/AGENTS.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "instructions/*",
+      "target": ".github/copilot-instructions.md",
+      "type": "merge-into",
+      "fidelity": "native",
+      "transform": "instructions-to-copilot-instructions",
+      "mergeTarget": ".github/copilot-instructions.md",
+      "contextMode": "always-loaded",
+      "sourceFilter": {
+        "scope": "global"
+      }
+    },
+    {
+      "source": "instructions/*",
+      "target": ".github/instructions/{name}.instructions.md",
+      "type": "glob-copy",
+      "fidelity": "translated",
+      "transform": "markdown-passthrough",
+      "contextMode": "on-demand",
+      "sourceFilter": {
+        "scope": "workflow"
+      }
+    },
+    {
+      "source": "hooks/*",
+      "target": ".github/hooks/agentflow-hooks.json",
+      "type": "merge-into",
+      "fidelity": "native",
+      "transform": "hooks-to-claude-settings",
+      "note": "Hooks exported as native platform hooks"
+    },
+    {
+      "source": "protocols.mcp",
+      "target": ".vscode/mcp.json",
+      "type": "single-file",
+      "fidelity": "translated",
+      "transform": "mcp-remap"
+    },
+    {
+      "source": "capabilities/*",
+      "target": "capabilities/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "runbooks/*",
+      "target": "runbooks/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "memory/*",
+      "target": "memory/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "workflows/*",
+      "target": "workflow/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "customFiles",
+      "target": "{name}",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    }
+  ],
+  "importRules": [
+    {
+      "source": "AGENTS.md",
+      "target": "AGENTS.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": ".github/copilot-instructions.md",
+      "target": "AGENTS.md",
+      "type": "merge-into",
+      "fidelity": "native",
+      "transform": "copilot-instructions-to-identity",
+      "mergeTarget": "AGENTS.md"
+    },
+    {
+      "source": ".github/hooks/*.json",
+      "target": "hooks/{name}.json",
+      "type": "glob-copy",
+      "fidelity": "native",
+      "transform": "json-passthrough"
+    },
+    {
+      "source": ".vscode/mcp.json",
+      "target": "mcp.json",
+      "type": "single-file",
+      "fidelity": "translated",
+      "transform": "mcp-reverse"
+    }
+  ]
+}

@@ -4,13 +4,13 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { execSync } = require('child_process');
-const { parseRoot } = require('../../src/parser');
-const { validate } = require('../../src/validator');
-const { TransportRegistry } = require('../../src/transport/transport-registry');
-const { AdapterFactory } = require('../../src/transport/adapter-factory');
-const { exportToPlatform } = require('../../src/transport/export-pipeline');
-const { importFromPlatform } = require('../../src/transport/import-pipeline');
-const { CANONICAL_CATEGORIES, RESERVED_DIRS } = require('../../src/taxonomy');
+const { parseRoot } = require('../../packages/cli/src/parser');
+const { validate } = require('../../packages/core/src/validator');
+const { TransportRegistry } = require('../../packages/core/src/transport/transport-registry');
+const { AdapterFactory } = require('../../packages/core/src/transport/adapter-factory');
+const { exportToPlatform } = require('../../packages/core/src/transport/export-pipeline');
+const { importFromPlatform } = require('../../packages/cli/src/transport/import-pipeline');
+const { CANONICAL_CATEGORIES, RESERVED_DIRS } = require('../../packages/core/src/taxonomy');
 
 const ROOT_DIR = path.join(__dirname, '../..');
 const PLATFORMS_DIR = path.join(ROOT_DIR, 'src/transport/platforms');
@@ -241,7 +241,7 @@ describe('11.3: Round-trip — parse → export → import → verify', () => {
 
 // Re-enabled: bin/cli.js exists (Phase 2 complete)
 describe('11.4: CLI — init and validate with canonical directories', () => {
-  const CLI_PATH = path.join(ROOT_DIR, 'bin/cli.js');
+  const CLI_PATH = path.join(ROOT_DIR, 'packages/cli/bin/cli.js');
 
   it('init creates all canonical directories', () => {
     const dir = tmpDir();

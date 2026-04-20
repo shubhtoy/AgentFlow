@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next'
-import path from 'path'
 import { createMDX } from 'fumadocs-mdx/next'
 
 const nextConfig: NextConfig = {
@@ -10,13 +9,6 @@ const nextConfig: NextConfig = {
     'jszip',
     'glob',
   ],
-  turbopack: {
-    root: path.resolve(__dirname, '..'),
-    resolveAlias: {
-      '@agentflow/*': '../src/*',
-    },
-    resolveExtensions: ['.js', '.ts', '.tsx', '.jsx', '.json'],
-  },
   async rewrites() {
     return [
       {
@@ -24,14 +16,6 @@ const nextConfig: NextConfig = {
         destination: '/llms.mdx/docs/:path*',
       },
     ]
-  },
-  webpack: (config, { isServer }) => {
-    config.resolve.modules = [
-      ...(config.resolve.modules || []),
-      path.resolve(__dirname, '..', 'node_modules'),
-    ]
-    config.module.exprContextCritical = false
-    return config
   },
 }
 

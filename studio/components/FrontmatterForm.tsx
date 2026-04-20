@@ -49,7 +49,7 @@ export interface FrontmatterFieldDef {
 }
 
 // Schema derived from single source of truth: src/schemas/frontmatter-schemas.js
-const { getFormSchema } = require('@agentflow/schemas/frontmatter-schemas')
+const { getFormSchema } = require('@agentflow/core/schemas/frontmatter-schemas')
 
 function buildFormSchemas(): Record<string, FrontmatterFieldDef[]> {
   const schemas: Record<string, FrontmatterFieldDef[]> = {}
@@ -132,7 +132,7 @@ function serializeFrontmatter(values: Record<string, unknown>): string {
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-2.5 pt-6 pb-3 first:pt-2">
+    <div className="flex items-center gap-2.5 pt-3 pb-2 first:pt-1">
       <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/70">{title}</span>
       <div className="flex-1 h-px bg-border/40" />
     </div>
@@ -559,9 +559,9 @@ export function FrontmatterForm({ file, onSave }: FrontmatterFormProps) {
   }
 
   return (
-    <div className="p-5 space-y-0">
+    <div className="p-3 space-y-0">
       {/* View mode toggle */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest font-medium">
           {currentType || 'untyped'}
         </span>
@@ -598,7 +598,7 @@ export function FrontmatterForm({ file, onSave }: FrontmatterFormProps) {
         return (
           <div key={sectionName}>
             <SectionHeader title={sectionName} />
-            <div className="rounded-lg border border-border/40 bg-card/30 p-4 space-y-4">
+            <div className="rounded-lg border border-border/40 bg-card/30 p-3 space-y-3">
               {visibleFields.map(renderField)}
             </div>
           </div>
@@ -609,7 +609,7 @@ export function FrontmatterForm({ file, onSave }: FrontmatterFormProps) {
       {Object.keys(customFields).length > 0 && (
         <>
           <SectionHeader title="Custom Fields" />
-          <div className="rounded-lg border border-border/40 bg-card/30 p-4 space-y-2">
+          <div className="rounded-lg border border-border/40 bg-card/30 p-3 space-y-2">
             {Object.entries(customFields).map(([k, v]) => (
               <div key={k} className="flex gap-2 items-start">
                 <Input value={k} className="h-8 text-sm flex-1 font-mono" placeholder="field_name" onChange={e => { const next = { ...values }; delete next[k]; next[e.target.value] = values[k]; setValues(next); setDirty(true) }} />

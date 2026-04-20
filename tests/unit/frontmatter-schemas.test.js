@@ -5,7 +5,7 @@ const {
   getValidationSchema,
   getFormSchema,
   resolveSchemaKey,
-} = require('../../src/schemas/frontmatter-schemas');
+} = require('../../packages/core/src/schemas/frontmatter-schemas');
 
 describe('frontmatter-schemas', () => {
   const ALL_TYPES = ['agents', 'node', 'capability', 'instruction', 'runbook', 'memory'];

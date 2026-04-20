@@ -1,4 +1,4 @@
-const { resolveRef } = require('../../src/parser');
+const { resolveRef } = require('../../packages/cli/src/parser');
 
 function makeFile(relativePath, frontmatter = {}) {
   return {

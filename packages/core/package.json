@@ -1,0 +1,28 @@
+{
+  "name": "@agentflow/core",
+  "version": "0.1.0",
+  "description": "AgentFlow core — parser, validator, exporter, transport. Pure logic, no Node.js APIs.",
+  "main": "src/parser-core.js",
+  "exports": {
+    ".": "./src/parser-core.js",
+    "./parser-core": "./src/parser-core.js",
+    "./parser-browser": "./src/parser-browser.js",
+    "./validator": "./src/validator.js",
+    "./exporter": "./src/exporter.js",
+    "./errors": "./src/errors.js",
+    "./taxonomy": "./src/taxonomy.js",
+    "./schemas": "./src/schemas/index.js",
+    "./schemas/*": "./src/schemas/*.js",
+    "./transport/*": "./src/transport/*.js",
+    "./transport/platforms/*": "./src/transport/platforms/*.json",
+    "./utils/*": "./src/utils/*.js",
+    "./services/*": "./src/services/*.js",
+    "./mcp/*": "./src/mcp/*.js"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.1",
+    "zod": "^3.25.76"
+  },
+  "license": "MIT"
+}

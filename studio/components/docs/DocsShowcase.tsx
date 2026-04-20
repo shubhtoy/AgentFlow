@@ -31,7 +31,7 @@ export function DocsShowcase({
     addFromLibrary('workflow', workflow).then(async () => {
       setActiveWf(workflow)
       try {
-        const { validate } = require('@agentflow/validator')
+        const { validate } = require('@agentflow/core/validator')
         const d = useAppStore.getState().data
         if (d) useAppStore.setState({ validationResult: validate(d) })
       } catch {}

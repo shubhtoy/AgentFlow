@@ -1,4 +1,4 @@
-const { validate } = require('../../src/validator');
+const { validate } = require('../../packages/core/src/validator');
 
 /**
  * Helper: build a minimal graph with allFiles and mcpServers.

@@ -5,8 +5,8 @@ import { getServices, jsonBody, json } from '@/lib/service-context'
 
 export async function POST(req: NextRequest) {
   const s = getServices()
-  const { addServer } = require('@agentflow/mcp/config-manager')
-  const { searchRegistry } = require('@agentflow/mcp/registry-client')
+  const { addServer } = require('@agentflow/cli/mcp/config-manager')
+  const { searchRegistry } = require('@agentflow/core/mcp/registry-client')
   const { name, registryName, env, required } = await jsonBody(req)
   if (!name) return json({ error: 'name is required' }, 400)
   try {

@@ -1,0 +1,36 @@
+{
+  "name": "@agentflow/cli",
+  "version": "0.1.0",
+  "description": "AgentFlow CLI — parse, validate, export agent workflows from the command line.",
+  "main": "src/parser.js",
+  "bin": {
+    "agentflow": "bin/cli.js"
+  },
+  "exports": {
+    ".": "./src/parser.js",
+    "./parser": "./src/parser.js",
+    "./branding": "./src/branding.js",
+    "./library": "./src/library.js",
+    "./pretty-printer": "./src/pretty-printer.js",
+    "./structured-exporter": "./src/structured-exporter.js",
+    "./git/*": "./src/git/*.js",
+    "./mcp/*": "./src/mcp/*.js",
+    "./services/*": "./src/services/*.js",
+    "./svc-utils/*": "./src/svc-utils/*.js",
+    "./utils/*": "./src/utils/*.js",
+    "./transport/*": "./src/transport/*.js"
+  },
+  "dependencies": {
+    "@agentflow/core": "*",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "commander": "^14.0.3",
+    "glob": "^13.0.6",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.1",
+    "jszip": "^3.10.1",
+    "minimatch": "^9.0.0",
+    "simple-git": "^3.33.0",
+    "zod": "^3.25.76"
+  },
+  "license": "MIT"
+}

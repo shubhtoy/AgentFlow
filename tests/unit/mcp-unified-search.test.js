@@ -5,9 +5,9 @@
  * so unified-search picks up our stubs via the module references.
  */
 
-const library = require('../../src/library');
-const registryClient = require('../../src/mcp/registry-client');
-const { unifiedSearch } = require('../../src/mcp/unified-search');
+const library = require('../../packages/cli/src/library');
+const registryClient = require('../../packages/core/src/mcp/registry-client');
+const { unifiedSearch } = require('../../packages/cli/src/mcp/unified-search');
 
 /* ------------------------------------------------------------------ */
 /*  Stub management                                                    */

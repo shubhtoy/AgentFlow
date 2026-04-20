@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { parseMarkdownFile } = require('../../src/parser');
+const { parseMarkdownFile } = require('../../packages/cli/src/parser');
 
 /** Create a temp file with the given content and return its path. */
 function tmpFile(content, name = 'test.md') {

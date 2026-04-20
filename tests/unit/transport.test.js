@@ -1,11 +1,11 @@
 'use strict';
 
-const { TransportRegistry } = require('../../src/transport/transport-registry');
-const { PlatformAdapter } = require('../../src/transport/platform-adapter');
-const { AdapterFactory } = require('../../src/transport/adapter-factory');
-const { resolveGraphSource, matchGlob, extractName, deepMerge } = require('../../src/transport/utils');
-const { getTransform, listTransforms } = require('../../src/transport/transforms');
-const { PlatformMappingConfigSchema } = require('../../src/transport/schemas');
+const { TransportRegistry } = require('../../packages/core/src/transport/transport-registry');
+const { PlatformAdapter } = require('../../packages/core/src/transport/platform-adapter');
+const { AdapterFactory } = require('../../packages/core/src/transport/adapter-factory');
+const { resolveGraphSource, matchGlob, extractName, deepMerge } = require('../../packages/core/src/transport/utils');
+const { getTransform, listTransforms } = require('../../packages/core/src/transport/transforms');
+const { PlatformMappingConfigSchema } = require('../../packages/core/src/transport/schemas');
 const path = require('path');
 
 // ── TransportRegistry ──

@@ -1,5 +1,0 @@
-{
-  "graphs": {
-    "agent": "./lib/copilot/agent.ts:graph"
-  }
-}

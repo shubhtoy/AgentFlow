@@ -8,7 +8,7 @@ export function parseClientFiles(files: { path: string; content: string }[]) {
   const os = require('os')
   const fs = require('fs')
   const path = require('path')
-  const { parseRoot } = require('@agentflow/parser')
+  const { parseRoot } = require('@agentflow/cli/parser')
 
   const tmpDir = path.join(os.tmpdir(), `af-parse-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
   fs.mkdirSync(tmpDir, { recursive: true })

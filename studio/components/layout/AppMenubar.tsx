@@ -46,7 +46,7 @@ async function openFolder(reload: () => Promise<any>) {
   }
 }
 
-const MENU_TRIGGER = "text-xs text-muted-foreground px-2 py-1 rounded-md data-[state=open]:bg-foreground/5 data-[state=open]:text-foreground"
+const MENU_TRIGGER = "text-sm text-muted-foreground px-2 py-1 rounded-md data-[state=open]:bg-foreground/5 data-[state=open]:text-foreground"
 
 export function AppMenubar() {
   const data = useAppStore(s => s.data)
@@ -82,7 +82,7 @@ export function AppMenubar() {
         {/* ── Left: Brand + menus ── */}
         <Menubar className="h-auto border-0 bg-transparent p-0 shadow-none gap-0 shrink-0">
           <MenubarMenu>
-            <MenubarTrigger className="text-xs font-semibold tracking-tight px-2 py-1 rounded-md data-[state=open]:bg-foreground/5">
+            <MenubarTrigger className="text-sm font-semibold tracking-tight px-2 py-1 rounded-md data-[state=open]:bg-foreground/5">
               {brandName}
             </MenubarTrigger>
             <MenubarContent>

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { parseWorkflow } = require('../../src/parser');
+const { parseWorkflow } = require('../../packages/cli/src/parser');
 
 /**
  * Helper: create a temp directory with a given file tree.

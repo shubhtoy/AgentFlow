@@ -1,0 +1,122 @@
+{
+  "name": "kiro",
+  "displayName": "Kiro",
+  "version": "2.1.0",
+  "tier": "ide",
+  "capabilities": [
+    "export",
+    "import"
+  ],
+  "detectMarkers": [
+    ".kiro/steering",
+    ".kiro/settings"
+  ],
+  "exportRules": [
+    {
+      "source": "identity",
+      "target": ".kiro/steering/identity.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "identity-to-kiro-steering",
+      "contextMode": "always-loaded"
+    },
+    {
+      "source": "workflow-descriptor",
+      "target": "workflow/AGENTS.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "instructions/*",
+      "target": ".kiro/steering/{name}.md",
+      "type": "glob-transform",
+      "fidelity": "native",
+      "transform": "identity-to-kiro-steering",
+      "contextMode": "on-demand"
+    },
+    {
+      "source": "hooks/*",
+      "target": ".kiro/hooks/{name}.json",
+      "type": "glob-copy",
+      "fidelity": "native",
+      "transform": "json-passthrough",
+      "note": "Hooks exported as native platform hooks"
+    },
+    {
+      "source": "protocols.mcp",
+      "target": ".kiro/settings/mcp.json",
+      "type": "single-file",
+      "fidelity": "translated",
+      "transform": "mcp-remap"
+    },
+    {
+      "source": "capabilities/*",
+      "target": "capabilities/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "runbooks/*",
+      "target": "runbooks/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "memory/*",
+      "target": "memory/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "workflows/*",
+      "target": "workflow/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    },
+    {
+      "source": "customFiles",
+      "target": "{name}",
+      "type": "glob-copy",
+      "fidelity": "preserved",
+      "transform": "markdown-passthrough"
+    }
+  ],
+  "importRules": [
+    {
+      "source": ".kiro/steering/identity.md",
+      "target": "AGENTS.md",
+      "type": "single-file",
+      "fidelity": "native",
+      "transform": "kiro-instructions-to-identity"
+    },
+    {
+      "source": ".kiro/steering/*.md",
+      "target": "instructions/{name}.md",
+      "type": "glob-copy",
+      "fidelity": "native",
+      "transform": "ensure-instruction-frontmatter",
+      "exclude": [
+        "identity.md"
+      ]
+    },
+    {
+      "source": ".kiro/hooks/*.json",
+      "target": "hooks/{name}.json",
+      "type": "glob-copy",
+      "fidelity": "translated",
+      "transform": "json-passthrough"
+    },
+    {
+      "source": ".kiro/settings/mcp.json",
+      "target": "mcp.json",
+      "type": "single-file",
+      "fidelity": "translated",
+      "transform": "mcp-reverse"
+    }
+  ]
+}

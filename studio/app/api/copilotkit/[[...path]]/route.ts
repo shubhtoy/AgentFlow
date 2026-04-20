@@ -1,18 +1,16 @@
 import {
   CopilotRuntime,
   createCopilotEndpoint,
-  InMemoryAgentRunner,
 } from '@copilotkit/runtime/v2'
-import { LangGraphAgent } from '@copilotkit/runtime/langgraph'
 import { handle } from 'hono/vercel'
 import nodePath from 'path'
-import { getMode, getWorkspaceRoot } from '@/lib/runtime'
+import { getWorkspaceRoot } from '@/lib/runtime'
 
 // ── MCP servers from .agentflow/mcp.json ──
 
 function getMcpServers() {
   try {
-    const { loadMcpConfig, resolveEnvTokens } = require('@agentflow/mcp/config-manager')
+    const { loadMcpConfig, resolveEnvTokens } = require('@agentflow/cli/mcp/config-manager')
     const rootDir = nodePath.dirname(getWorkspaceRoot())
     const { servers } = loadMcpConfig(rootDir)
     const entries: any[] = []
@@ -44,20 +42,7 @@ const PRECONFIGURED_MCPS = [
   { type: 'sse' as const, url: 'https://gitmcp.io/shubhtoy/agentflow/sse' },
 ]
 
-const LANGGRAPH_URL = process.env.LANGGRAPH_DEPLOYMENT_URL
-
-const agents: Record<string, any> = {}
-if (LANGGRAPH_URL) {
-  const agent = new LangGraphAgent({
-    deploymentUrl: LANGGRAPH_URL,
-    graphId: process.env.LANGGRAPH_GRAPH_ID || 'agent',
-  })
-  agents.default = agent
-}
-
 const runtime = new CopilotRuntime({
-  agents,
-  runner: new InMemoryAgentRunner(),
   mcpApps: { servers: [...PRECONFIGURED_MCPS, ...getMcpServers()] },
 })
 

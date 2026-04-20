@@ -15,7 +15,7 @@ const {
   VALID_SYNC_DIRECTIONS,
   VALID_REPO_TYPES,
   VALID_ROLES,
-} = require('../../src/git/config-manager');
+} = require('../../packages/cli/src/git/config-manager');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

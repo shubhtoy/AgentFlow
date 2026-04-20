@@ -4,7 +4,7 @@
  * We test the formatting/output logic and the searchRegistry integration.
  */
 
-const { searchRegistry } = require('../../src/mcp/registry-client');
+const { searchRegistry } = require('../../packages/core/src/mcp/registry-client');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -162,8 +162,8 @@ describe('mcp search — searchRegistry integration', () => {
 /*  Mocks for config-manager and registry-client                       */
 /* ------------------------------------------------------------------ */
 
-const mcpConfigManager = require('../../src/mcp/config-manager');
-const registryClient = require('../../src/mcp/registry-client');
+const mcpConfigManager = require('../../packages/cli/src/mcp/config-manager');
+const registryClient = require('../../packages/core/src/mcp/registry-client');
 
 /* ------------------------------------------------------------------ */
 /*  Tests: mcp add                                                     */
@@ -348,8 +348,8 @@ describe('collectEnv helper', () => {
 /*  Mocks for server-lifecycle and tool-scaffolder                     */
 /* ------------------------------------------------------------------ */
 
-const serverLifecycle = require('../../src/mcp/server-lifecycle');
-const toolScaffolder = require('../../src/mcp/tool-scaffolder');
+const serverLifecycle = require('../../packages/cli/src/mcp/server-lifecycle');
+const toolScaffolder = require('../../packages/cli/src/mcp/tool-scaffolder');
 const path = require('path');
 
 /* ------------------------------------------------------------------ */
@@ -610,7 +610,7 @@ describe('mcp list', () => {
 /*  Tests: unified search command                                      */
 /* ------------------------------------------------------------------ */
 
-const unifiedSearchModule = require('../../src/mcp/unified-search');
+const unifiedSearchModule = require('../../packages/cli/src/mcp/unified-search');
 
 describe('unified search command', () => {
   let unifiedSearchSpy;
