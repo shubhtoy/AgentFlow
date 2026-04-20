@@ -7,15 +7,36 @@ import { parseClientFiles } from '@/lib/parse-client-files'
 export async function POST(req: NextRequest) {
   const s = getServices()
   const body = await jsonBody(req)
-  const { preview, workflow, format, files: clientFiles } = body
+  const { preview, workflow, format, platform, files: clientFiles } = body
 
   try {
     const { parseRoot } = require('@agentflow/parser')
     const graph = clientFiles?.length ? parseClientFiles(clientFiles) : parseRoot(s.rootDir)
 
     let exportFiles: Record<string, string>
+    let warnings: string[] = []
+    let mappingReport: any = null
 
-    if (format === 'raw' || format === 'parsed') {
+    if (format === 'platform' && platform) {
+      const { TransportRegistry } = require('@agentflow/transport/transport-registry')
+      const { AdapterFactory } = require('@agentflow/transport/adapter-factory')
+      const { ExportPipeline } = require('@agentflow/transport/export-pipeline')
+      const platformConfigs = require('@agentflow/transport/platform-configs')
+
+      const registry = new TransportRegistry()
+      AdapterFactory.fromConfigs(platformConfigs).registerAll(registry)
+
+      if (!registry.supports(platform)) return json({ error: `Unknown platform: ${platform}` }, 400)
+
+      const pipeline = new ExportPipeline(registry)
+      const result = pipeline.export(platform, graph, { workflowId: workflow })
+      if (!result.ok) return json({ error: result.error || 'Export failed' }, 500)
+      exportFiles = result.data.files
+      warnings = result.data.warnings || []
+      mappingReport = result.data.mappingReport || null
+
+      if (preview) return json({ files: exportFiles, warnings, mappingReport })
+    } else if (format === 'raw' || format === 'parsed') {
       const { exportRaw, exportParsed } = require('@agentflow/structured-exporter')
       let wfId = workflow
       if (!wfId) {

@@ -9,10 +9,6 @@ const nextConfig: NextConfig = {
     'simple-git',
     '@modelcontextprotocol/sdk',
   ],
-  // Suppress type errors from dynamic requires in src/ files
-  typescript: {
-    ignoreBuildErrors: false,
-  },
   async rewrites() {
     return [
       {
@@ -27,20 +23,10 @@ const nextConfig: NextConfig = {
       path.resolve(__dirname, '..', 'node_modules'),
     ]
     config.module.exprContextCritical = false
-    // Client-side: stub Node.js built-ins
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        os: false,
-        child_process: false,
-        net: false,
-        tls: false,
-        dns: false,
-        crypto: false,
-        stream: false,
-        glob: false,
+        fs: false, child_process: false, net: false, tls: false, dns: false,
       }
     }
     return config

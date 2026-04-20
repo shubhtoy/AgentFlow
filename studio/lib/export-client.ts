@@ -1,5 +1,8 @@
 /**
  * Client-side platform export — no server needed.
+ *
+ * Uses the same ExportPipeline / PlatformAdapter / transforms as the CLI.
+ * Platform configs are bundled at build time (platform-configs.js).
  */
 
 import type { WorkflowGraph } from './types'
@@ -12,21 +15,21 @@ export async function exportPlatformClientSide(
   options: { workflowId?: string } = {}
 ): Promise<ExportResult> {
   try {
-    const { TransportRegistry } = await import(/* webpackIgnore: true */ '@agentflow/transport/transport-registry')
-    const { AdapterFactory } = await import(/* webpackIgnore: true */ '@agentflow/transport/adapter-factory')
-    const { ExportPipeline } = await import(/* webpackIgnore: true */ '@agentflow/transport/export-pipeline')
-    const platformConfigs = await import(/* webpackIgnore: true */ '@agentflow/transport/platform-configs')
+    const { TransportRegistry } = require('@agentflow/transport/transport-registry')
+    const { AdapterFactory } = require('@agentflow/transport/adapter-factory')
+    const { ExportPipeline } = require('@agentflow/transport/export-pipeline')
+    const platformConfigs = require('@agentflow/transport/platform-configs')
 
     const registry = new TransportRegistry()
     AdapterFactory.fromConfigs(platformConfigs).registerAll(registry)
 
     if (!registry.supports(platform)) {
-      return { ok: false as const, error: `Unknown platform: ${platform}` }
+      return { ok: false, error: `Unknown platform: ${platform}` }
     }
 
     const pipeline = new ExportPipeline(registry)
     return pipeline.export(platform, graph, options) as Promise<ExportResult>
   } catch (err: any) {
-    return { ok: false as const, error: err?.message || 'Export failed' }
+    return { ok: false, error: err?.message || 'Export failed' }
   }
 }

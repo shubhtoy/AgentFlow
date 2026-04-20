@@ -100,8 +100,8 @@ function defaultExport(graph, options = {}) {
   // 4. Resolve unresolved refs from library (self-contained export)
   if (options.includeLibrary !== false) {
     try {
-      const fs = require('fs');
-      const path = require('path');
+      const fs = eval("require")('fs');
+      const path = eval("require")('path');
       const libraryDir = options.libraryDir || path.resolve('library');
       if (fs.existsSync(libraryDir)) {
         const allContent = Object.values(files).join('\n');
