@@ -1,0 +1,3 @@
+{
+  "installCommand": "npm install --legacy-peer-deps && cd .. && npm install --legacy-peer-deps"
+}
