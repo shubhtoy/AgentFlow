@@ -1,0 +1,157 @@
+---
+title: Explorer
+description: File tree of your .agentflow/ workspace.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+
+The explorer panel shows the full directory tree of your `.agentflow/` workspace. Create, rename, delete files and folders directly from the tree. Drag-and-drop items to reorganize your workspace structure.
+
+## Interactive Preview
+
+Use the explorer panel below to browse a sample workspace tree. Try expanding directories, right-clicking for context menus, and dragging items between folders.
+
+<ComponentPreview>
+  <DocsPlayground panel="explorer" />
+</ComponentPreview>
+
+## How It Maps to Disk
+
+The explorer is a direct reflection of your `.agentflow/` directory. Every file and folder you see corresponds to a path on disk:
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name="AGENTS.md" />
+    <Folder name="workflows" defaultOpen>
+      <Folder name="build-feature" defaultOpen>
+        <File name="SKILL.md" />
+        <Folder name="gather-requirements">
+          <File name="SKILL.md" />
+        </Folder>
+        <Folder name="implement-task">
+          <File name="SKILL.md" />
+        </Folder>
+      </Folder>
+    </Folder>
+    <Folder name="capabilities">
+      <File name="web-search.md" />
+      <File name="code-review.md" />
+    </Folder>
+    <Folder name="instructions">
+      <File name="coding-standards.md" />
+    </Folder>
+    <Folder name="runbooks">
+      <File name="error-handling.md" />
+    </Folder>
+    <Folder name="memory" />
+  </Folder>
+</Files>
+
+Changes you make in the explorer (rename, move, delete) are written to disk immediately. Changes made on disk outside the studio (e.g., from a terminal or text editor) are picked up automatically when the explorer refreshes.
+
+## Opening and Closing
+
+Toggle the explorer with `Cmd+B`. The explorer shares the left sidebar with the Elements panel. Click the tab headers to switch between them, or use `Cmd+B` to collapse the entire sidebar.
+
+## Resource Type Icons
+
+Each file and folder displays an icon indicating its type:
+
+| Icon | Resource |
+|------|----------|
+| Agent badge | `AGENTS.md` -- workspace or workflow descriptor |
+| Skill badge | `SKILL.md` -- node definition |
+| Wrench | Capability file |
+| Document | Instruction file |
+| Flowchart | Runbook file |
+| Database | Memory file |
+| Lightning bolt | Hook file |
+| Folder (highlighted) | Reserved directories (`capabilities/`, `instructions/`, `runbooks/`, `memory/`) |
+
+Primary files like `AGENTS.md` and `SKILL.md` are visually highlighted so you can quickly identify the entry point of each workflow or node directory.
+
+## Creating Files and Folders
+
+<Steps>
+<Step>
+### Inline creation
+
+Right-click any folder in the tree and select **New File** or **New Folder**. An inline text input appears where you type the name and press `Enter` to confirm. Press `Esc` to cancel.
+</Step>
+<Step>
+### Keyboard shortcut
+
+Press `Cmd+N` while the explorer is focused to create a new file in the currently selected directory. If no directory is selected, the file is created at the workspace root.
+</Step>
+<Step>
+### From the command palette
+
+Press `Cmd+K` and type "Create Capability", "Create Instruction", or "Create Runbook" to scaffold a new resource file with the correct frontmatter template.
+</Step>
+</Steps>
+
+## Drag and Drop
+
+### Reorganizing the tree
+
+Click and hold any file or folder, then drag it to a new location in the tree. A blue insertion indicator shows where the item will land. Release to complete the move. Internal references are updated automatically if the workflow graph is open.
+
+### Dropping onto the canvas
+
+Drag a node directory (any folder containing a `SKILL.md`) from the explorer onto the canvas. The node appears at the drop position and is added to the active workflow graph. This is the fastest way to add existing nodes to a workflow.
+
+<Callout type="warn">
+Moving a node folder between workflows updates references in the source workflow but does not automatically add the node to the target workflow graph. Drop it onto the canvas to complete the connection.
+</Callout>
+
+## Context Menu
+
+Right-click any item in the explorer to open its context menu:
+
+| Action | Description |
+|--------|-------------|
+| **Rename** | Inline rename. Press `Enter` to confirm. |
+| **Delete** | Remove the file or folder. A confirmation dialog appears for non-empty folders. |
+| **Duplicate** | Create a copy with a `-copy` suffix. |
+| **Copy Path** | Copy the relative path to the clipboard. |
+| **Reveal in Finder** | Open the containing directory in your system file manager. |
+| **New File** | Create a new file inside the selected folder. |
+| **New Folder** | Create a new subfolder. |
+
+## Filtering and Search
+
+### Type filter
+
+Use the dropdown at the top of the explorer to show only specific resource types. Select "Capabilities" to hide everything except capability files, or "Workflows" to show only workflow directories. Multiple filters can be active simultaneously.
+
+### Text search
+
+Press `/` while the explorer is focused to activate the search input. Type any part of a file or folder name to filter the tree. Matching items remain visible along with their parent directories. Clear the search to restore the full tree.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle sidebar | `Cmd+B` |
+| New file | `Cmd+N` |
+| Rename selected | `Enter` |
+| Delete selected | `Backspace` |
+| Expand all | `Cmd+Shift+E` |
+| Collapse all | `Cmd+Shift+C` |
+| Focus search | `/` |
+| Navigate up/down | Arrow keys |
+| Expand/collapse folder | `Right` / `Left` arrow |
+
+## Tips
+
+- Primary files (`AGENTS.md`, `SKILL.md`) are marked so you can quickly identify the entry point of each workflow or node directory.
+- Moving a node folder between workflows automatically updates internal references if the workflow graph is open.
+- Use the type filter to show only capabilities or instructions when you need to audit a specific resource category.
+- The explorer auto-refreshes when files change on disk, so edits from your terminal or text editor appear without manual reload.
+
+<Cards>
+  <Card title="Canvas" href="/docs/studio/canvas" description="The workflow graph for dragging and connecting nodes" />
+  <Card title="Elements" href="/docs/studio/elements" description="Resources organized by category" />
+</Cards>

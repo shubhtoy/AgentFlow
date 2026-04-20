@@ -1,0 +1,29 @@
+---
+title: CLI
+description: All AgentFlow CLI commands with syntax and options.
+---
+
+| Command | Description | Key Options |
+| --- | --- | --- |
+| `parse [dir]` | Parse workspace to JSON | `-o/--output`, `--metadata-only` |
+| `validate [dir]` | Validate refs and schemas | `--strict` |
+| `export [dir]` | Multi-format export | `-f` (json/zip/dir/share/raw/parsed), `--platform` (langgraph/claude/github-actions/openai/bedrock/crew/custom), `-w` workflow |
+| `import` | Import from ZIP/JSON/URL/platform | `--from`, `--platform`, `--auto-detect`, `--source`, `--overwrite`, `--dry-run`, `-t` target |
+| `graph [dir]` | Print ASCII graph | |
+| `init [dir]` | Scaffold new workspace | |
+| `add <type> <name>` | Install from library | type: workflow/instruction/capability/runbook/memory |
+| `search <query>` | Unified search (local + MCP) | `--local-only`, `--mcp-only` |
+| `library <action>` | Library management (index, list, search) | `--type`, `--tags` |
+| `dev [dir]` | Start studio | `--agent`, `-p` port |
+| `tokens [dir]` | Token estimates | `-w`, `-n`, `--path-to`, `-f`, `--full`, `--no-shared`, `--no-refs`, `--json` |
+| `git init <url>` | Clone/attach repo | `--name`, `--role`, `--branch`, `--repo-type` |
+| `git scan [dir]` | Scan for .agentflow dirs | `--depth` |
+| `git sync [name]` | Sync local/remote | `--direction`, `--dry-run` |
+| `git status [name]` | Show repo status | |
+| `git resolve <path>` | Resolve conflict | `--strategy` (local_wins/remote_wins) |
+| `git config` | View/edit git config | |
+| `mcp search <query>` | Search MCP registry | `--limit` |
+| `mcp add <server>` | Add MCP server | `--required`, `--env` |
+| `mcp remove <server>` | Remove server | `--remove-tools` |
+| `mcp discover <server>` | Discover tools | `--timeout`, `--overwrite` |
+| `mcp list` | List configured servers | |

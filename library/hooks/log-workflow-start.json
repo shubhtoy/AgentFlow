@@ -1,0 +1,13 @@
+{
+  "name": "log-workflow-start",
+  "version": "1.0.0",
+  "description": "Log when a workflow begins execution",
+  "event": "workflowStarted",
+  "action": {
+    "type": "log",
+    "target": "workflow-audit",
+    "params": {}
+  },
+  "enabled": true,
+  "priority": 100
+}

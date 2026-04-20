@@ -1,0 +1,158 @@
+---
+title: Export Formats
+description: Raw, parsed, and platform export output.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs"
+import { File, Folder, Files } from "fumadocs-ui/components/files"
+import { Callout } from "fumadocs-ui/components/callout"
+
+AgentFlow supports multiple export formats, each with different levels of resolution and transformation.
+
+<Tabs items={["Raw", "Parsed", "Default", "Platform", "JSON", "Share", "ZIP"]}>
+<Tab value="Raw">
+
+## Raw
+
+Exports workspace files as-is with no transformation. References remain unresolved and template variables are not expanded.
+
+```bash
+agentflow export --format raw
+```
+
+**Output:** A direct copy of your `.agentflow/` directory contents.
+
+- No ref resolution
+- No template variable expansion
+- No library resolution
+- Files copied verbatim
+
+<Callout type="info">
+Useful for debugging or when you need the original source files without any processing.
+</Callout>
+
+</Tab>
+<Tab value="Parsed">
+
+## Parsed
+
+Resolves references to relative file path links and expands template variables. No inlining or library resolution.
+
+```bash
+agentflow export --format parsed
+```
+
+**Output:** Workspace files with resolved paths and expanded variables.
+
+- Refs resolved to relative file path links
+- Template variables expanded
+- Library refs remain as references (not inlined)
+- Maintains original file structure
+
+</Tab>
+<Tab value="Default">
+
+## Default (dir)
+
+Full resolution with template variable expansion, reference inlining, and library resolution.
+
+```bash
+agentflow export --format dir
+```
+
+**Output:** Fully resolved workspace directory.
+
+- Template variables expanded
+- References inlined into consuming files
+- Library skills and resources resolved and included
+- Complete, self-contained output
+
+</Tab>
+<Tab value="Platform">
+
+## Platform
+
+Full transformation to a target platform format. Converts the AgentFlow workspace into the native configuration structure of the specified platform.
+
+```bash
+agentflow export --platform <name>
+```
+
+**Output:** Platform-native directory structure (varies by platform).
+
+- Full resolution applied first
+- Nodes mapped to platform-specific file formats
+- MCP configurations translated
+- Hooks converted to platform hook format
+
+See [Platform Configs](/docs/reference/platform-configs) for details on each platform.
+
+</Tab>
+<Tab value="JSON">
+
+## JSON
+
+Exports an `ExportBundle` object containing the full graph, resources, metadata, entry points, and any errors.
+
+```bash
+agentflow export --format json
+```
+
+**Output:** A single JSON file with the following structure:
+
+```json
+{
+  "graph": { ... },
+  "resources": { ... },
+  "metadata": { ... },
+  "entry_points": [ ... ],
+  "errors": [ ... ]
+}
+```
+
+<Cards>
+<Card title="graph">Complete node and edge graph of the workflow.</Card>
+<Card title="resources">All resolved instructions, capabilities, and runbooks.</Card>
+<Card title="metadata">Workspace identity, version, and configuration.</Card>
+<Card title="entry_points">Top-level workflows that can be invoked.</Card>
+<Card title="errors">Validation errors or unresolved references.</Card>
+</Cards>
+
+</Tab>
+<Tab value="Share">
+
+## Share
+
+Compact JSON format optimized for sharing workflows between users or systems.
+
+```bash
+agentflow export --format share
+```
+
+**Output:** A minimal JSON payload containing only the essential workflow definition.
+
+- Stripped of local paths
+- Compact representation
+- Suitable for clipboard or URL sharing
+- Can be imported back into AgentFlow
+
+</Tab>
+<Tab value="ZIP">
+
+## ZIP
+
+Packages all exported files into a single ZIP archive.
+
+```bash
+agentflow export --format zip
+```
+
+**Output:** A `.zip` file containing the fully resolved workspace.
+
+- Uses default (dir) resolution
+- All files bundled into a single archive
+- Preserves directory structure
+- Portable and easy to distribute
+
+</Tab>
+</Tabs>

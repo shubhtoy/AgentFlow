@@ -1,0 +1,13 @@
+{
+  "name": "backup-on-delete",
+  "version": "1.0.0",
+  "description": "Log deleted files so they can be recovered if needed",
+  "event": "fileDeleted",
+  "action": {
+    "type": "log",
+    "target": "deletion-log",
+    "params": {}
+  },
+  "enabled": false,
+  "priority": 50
+}

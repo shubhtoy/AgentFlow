@@ -1,0 +1,166 @@
+---
+title: FAQ
+description: Frequently asked questions.
+---
+
+import { Accordion, Accordions } from "fumadocs-ui/components/accordion"
+import { Callout } from "fumadocs-ui/components/callout"
+
+<Accordions>
+<Accordion title="Can I use AgentFlow without the studio?">
+
+Yes. AgentFlow works entirely from the CLI. You can create, validate, and export workflows without ever opening the studio. The `.agentflow/` directory and markdown files are the source of truth.
+
+</Accordion>
+<Accordion title="Does it work offline?">
+
+Yes. The hosted version uses OPFS (Origin Private File System) to store your workspace locally in the browser. No network connection is required after the initial load.
+
+</Accordion>
+<Accordion title="How do I add a custom resource category?">
+
+You cannot. AgentFlow has five fixed resource categories: instructions, capabilities, runbooks, memory, and hooks. These are not configurable.
+
+</Accordion>
+<Accordion title="Can workflows have cycles?">
+
+Conditional loops are supported. You can create edges that loop back to earlier nodes as long as at least one edge in the loop has a condition that can exit. Unconditional cycles are rejected by the validator.
+
+</Accordion>
+<Accordion title="What LLM providers are supported?">
+
+The copilot feature supports Anthropic, OpenAI, and Google. Configure your preferred provider via environment variables in `.env.local`.
+
+</Accordion>
+<Accordion title="How do I export to multiple platforms?">
+
+Run the export command once for each target platform:
+
+```bash
+agentflow export --target langgraph
+agentflow export --target claude
+agentflow export --target github-actions
+```
+
+</Accordion>
+<Accordion title="Can I use AgentFlow with an existing project?">
+
+Yes. Add a `.agentflow/` directory to your project root and start defining workflows. AgentFlow does not require any changes to your existing code.
+
+</Accordion>
+<Accordion title="What is the AGENTS.md standard?">
+
+AGENTS.md is an open standard adopted by over 60,000 projects and governed by the Linux Foundation. It defines how AI agents discover and interact with a repository. AgentFlow uses `AGENTS.md` files as workflow and workspace descriptors.
+
+</Accordion>
+<Accordion title="How do I contribute a workflow to the library?">
+
+See the [contributing/library](/docs/contributing/library) guide for instructions on submitting reusable workflows and skills to the shared library.
+
+</Accordion>
+<Accordion title="Is AgentFlow free?">
+
+Yes. AgentFlow is released under the MIT license. You can use it for personal and commercial projects at no cost.
+
+</Accordion>
+<Accordion title="What Node.js version is required?">
+
+Node.js 20 or later is required. Check your version with `node --version`.
+
+</Accordion>
+<Accordion title="How do I update AgentFlow?">
+
+Pull the latest changes and reinstall dependencies:
+
+```bash
+git pull
+npm install
+```
+
+</Accordion>
+</Accordions>
+
+## More Questions
+
+<Accordions>
+<Accordion title="How does export actually work?">
+
+Export follows a four-stage pipeline:
+
+1. **Parse** - The workspace is parsed into a complete AST representing all workflows, nodes, edges, and resource references
+2. **Scope** - The exporter resolves all references and builds a self-contained context for each node, inlining referenced instructions and capabilities
+3. **Transform** - The platform adapter applies the target platform's JSON configuration to map AgentFlow node types to platform-specific constructs
+4. **Write** - The transformed output is serialized to disk in the target format (Python files for LangGraph, YAML for GitHub Actions, etc.)
+
+You can inspect intermediate stages by running with the `--verbose` flag:
+
+```bash
+agentflow export --target langgraph --verbose
+```
+
+</Accordion>
+<Accordion title="Can I use AgentFlow with TypeScript, Python, or other languages?">
+
+Yes. AgentFlow is language-agnostic. The `.agentflow/` directory defines workflow structure and agent behavior in markdown. The exported output adapts to the target platform's language. For example, exporting to LangGraph produces Python, while exporting to GitHub Actions produces YAML.
+
+Your application code can be written in any language. AgentFlow does not impose constraints on your runtime or dependencies.
+
+</Accordion>
+<Accordion title="What happens if two nodes reference the same resource?">
+
+Each node receives its own copy of the resource content in its context window. Resources are resolved at export time and inlined into each node independently. Modifying a resource file updates all nodes that reference it on the next export, but at runtime each node operates on its own snapshot.
+
+</Accordion>
+<Accordion title="How do I debug a workflow that produces bad output?">
+
+Start by inspecting what each node actually sees in its context:
+
+1. Run `agentflow export --target langgraph --verbose` to see the resolved context per node
+2. Check which instructions, capabilities, and runbooks are attached to the problematic node
+3. Verify that data flow inputs from upstream nodes contain the expected fields
+4. Look for context budget warnings - if a node exceeds its token limit, content may be truncated
+
+The studio also provides a "Context Inspector" panel that shows the fully resolved context for any selected node.
+
+</Accordion>
+<Accordion title="Can I nest workflows?">
+
+Yes. AgentFlow supports a `sub-workflow` node type that embeds one workflow inside another. The sub-workflow executes as a single unit from the parent's perspective. Inputs are passed in via the node's data flow configuration, and outputs are returned to the parent when the sub-workflow completes.
+
+Define a sub-workflow node by setting `type: sub-workflow` and `workflow: workflow-name` in the node frontmatter.
+
+</Accordion>
+<Accordion title="How do I share a workflow with my team?">
+
+Two approaches:
+
+1. **Git** - Commit the `.agentflow/` directory to your repository. Team members get the workflows when they pull. This is the recommended approach.
+2. **Export as ZIP** - Run `agentflow pack` to create a portable ZIP archive of your workspace. Share the ZIP file and recipients can unpack it into their own project.
+
+The library system also supports publishing workflows for broader reuse across teams.
+
+</Accordion>
+<Accordion title="What is the maximum number of nodes in a workflow?">
+
+There is no hard limit on node count. However, practical limits exist:
+
+- **Token budgets** - Each node consumes context tokens. Large workflows with many interconnected nodes may exceed LLM context windows at runtime.
+- **Validation performance** - Cycle detection and reference resolution scale with graph size. Workflows with hundreds of nodes may take longer to validate.
+- **Visual clarity** - The studio canvas handles large graphs but readability degrades beyond 30-40 nodes. Consider splitting into sub-workflows for complex processes.
+
+</Accordion>
+<Accordion title="How do I migrate from another tool?">
+
+AgentFlow provides import adapters for common platforms:
+
+```bash
+agentflow import --source langgraph --path ./my_graph.py
+agentflow import --source crewai --path ./crew.py
+```
+
+The import pipeline reads the source format, maps constructs to AgentFlow equivalents, and generates the corresponding `.agentflow/` directory structure. Review the generated files after import since some platform-specific features may not have direct equivalents.
+
+See the [platform import guide](/docs/guides/importing) for detailed instructions per platform.
+
+</Accordion>
+</Accordions>

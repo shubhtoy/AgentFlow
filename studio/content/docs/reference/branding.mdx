@@ -1,0 +1,88 @@
+---
+title: Branding
+description: agentflow.config.json reference for white-labeling.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table"
+import { Callout } from "fumadocs-ui/components/callout"
+
+## Configuration Fields
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Display name used in the UI and CLI output.",
+      default: '"AgentFlow"',
+    },
+    dir: {
+      type: "string",
+      description: "Workspace directory name where workflows and resources are stored.",
+      default: '".agentflow"',
+    },
+    cli: {
+      type: "string",
+      description: "CLI command name used to invoke the tool.",
+      default: '"agentflow"',
+    },
+    logo: {
+      type: "string",
+      description: "Path to a logo image displayed in the studio header.",
+      default: "undefined",
+    },
+    theme: {
+      type: "object",
+      description: "Theme overrides for the studio UI (colors, fonts).",
+      default: "undefined",
+    },
+  }}
+/>
+
+## JSON Format
+
+```json
+{
+  "name": "MyAgent",
+  "dir": ".myagent",
+  "cli": "myagent",
+  "logo": "./assets/logo.svg",
+  "theme": {
+    "primary": "#6366f1",
+    "font": "Inter"
+  }
+}
+```
+
+## Environment Variable Overrides
+
+| Variable | Overrides | Example |
+| --- | --- | --- |
+| `AGENTFLOW_BRAND_NAME` | `name` | `AGENTFLOW_BRAND_NAME=MyAgent` |
+| `AGENTFLOW_DIR` | `dir` | `AGENTFLOW_DIR=.myagent` |
+| `AGENTFLOW_CLI` | `cli` | `AGENTFLOW_CLI=myagent` |
+
+## Precedence
+
+Resolution order from highest to lowest priority:
+
+1. Environment variables
+2. `agentflow.config.json`
+3. Built-in defaults
+
+## Defaults
+
+| Field | Default |
+| --- | --- |
+| `name` | AgentFlow |
+| `dir` | .agentflow |
+| `cli` | agentflow |
+
+<Callout type="warn">
+If `agentflow.config.json` is invalid or unparseable, a warning is logged and built-in defaults are used. However, if an environment variable override contains an invalid value, the process exits with a fatal error.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="White-Label Guide" href="/docs/guides/white-label" />
+</Cards>

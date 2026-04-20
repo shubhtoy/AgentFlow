@@ -1,0 +1,20 @@
+{
+  "title": "Studio",
+  "icon": "LayoutDashboard",
+  "pages": [
+    "...index",
+    "canvas",
+    "editor",
+    "frontmatter",
+    "explorer",
+    "elements",
+    "validation",
+    "tokens",
+    "git",
+    "mcp",
+    "copilot",
+    "command-palette",
+    "export-dialog",
+    "settings"
+  ]
+}

@@ -1,0 +1,271 @@
+---
+title: Your First Agent
+description: Build the simplest possible agent — one node, one tool, one instruction — and understand every file involved.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Mermaid } from '@/components/docs/mdx-components';
+
+This guide builds the smallest useful agent — a single-node workflow that reads a file and summarizes it. You will create every file by hand so you understand what each one does before moving to more complex workflows.
+
+The finished agent has one workflow, one node, one capability, and one instruction:
+
+<Mermaid chart={`graph LR
+  A["AGENTS.md<br/>(identity)"] --> B["summarize<br/>(step node)"]
+  B --> C["{{capabilities/read-code}}"]
+  B --> D["{{instructions/writing-style}}"]
+`} />
+
+## What you will create
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name="AGENTS.md" />
+    <Folder name="instructions" defaultOpen>
+      <File name="writing-style.md" />
+    </Folder>
+    <Folder name="capabilities" defaultOpen>
+      <File name="read-code.md" />
+    </Folder>
+    <Folder name="summarize" defaultOpen>
+      <File name="AGENTS.md" />
+      <Folder name="summarize" defaultOpen>
+        <File name="SKILL.md" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+<Callout type="info">
+The outer `summarize/` directory is the workflow. The inner `summarize/` directory is the node. They can share a name when a workflow has only one step.
+</Callout>
+
+<Steps>
+
+<Step>
+## Create the workspace identity
+
+The root `AGENTS.md` defines who the agent is across all workflows. This is Layer 0 in the selective context model — it is always loaded into every node.
+
+Create `.agentflow/AGENTS.md`:
+
+```yaml
+---
+name: My Project
+description: A personal project workspace.
+identity:
+  name: Code Assistant
+  role: >
+    A helpful developer assistant that reads code and produces
+    clear, concise summaries.
+  personality: Direct, technical, concise
+  constraints:
+    - Never modify files unless explicitly asked
+    - Always cite file paths when referencing code
+---
+```
+
+The `identity` block controls the agent's persona. The `constraints` list sets hard boundaries the agent must respect in every workflow.
+</Step>
+
+<Step>
+## Create the instruction
+
+Instructions are guidance the agent follows — coding conventions, writing rules, strategy documents. They live in `.agentflow/instructions/`.
+
+Create `.agentflow/instructions/writing-style.md`:
+
+```yaml
+---
+name: Writing Style
+---
+
+## Summary Format
+
+When summarizing code, follow this structure:
+
+1. **Purpose** — one sentence describing what the file does.
+2. **Key exports** — list the public functions, classes, or constants.
+3. **Dependencies** — note any external imports.
+4. **Complexity** — rate as low, medium, or high with a brief justification.
+
+Keep summaries under 200 words. Use plain language. Avoid jargon unless the code itself uses domain-specific terms that need to be preserved.
+```
+
+This file is loaded into a node's context only when the node explicitly references it with `{{instructions/writing-style}}`.
+</Step>
+
+<Step>
+## Create the capability
+
+Capabilities define what the agent can do — tools it can call. They live in `.agentflow/capabilities/`.
+
+Create `.agentflow/capabilities/read-code.md`:
+
+```yaml
+---
+name: read-code
+type: builtin
+description: Read source files from the project directory.
+allowed-tools: Read
+---
+
+# Read Code
+
+Read files from the local filesystem. Use this to examine source code
+before producing summaries. Supports reading by line range or full file.
+```
+
+The `type: builtin` means this is a tool the agent runtime provides natively. The `allowed-tools` field lists the specific tool names the agent is permitted to call.
+</Step>
+
+<Step>
+## Create the workflow descriptor
+
+Every workflow needs its own `AGENTS.md`. This is the workflow's identity — Layer 1 in the context model.
+
+Create `.agentflow/summarize/AGENTS.md`:
+
+```yaml
+---
+type: agents
+name: summarize
+description: >
+  Read a source file and produce a structured summary
+  covering purpose, exports, dependencies, and complexity.
+---
+
+# Summarize
+
+A single-step workflow. Given a file path, the agent reads the file
+and produces a structured summary.
+```
+
+The `name` field must match the directory name. The `description` tells the agent (and other developers) what this workflow does.
+</Step>
+
+<Step>
+## Create the node
+
+Nodes are the steps in a workflow. Each node lives in its own directory and contains a `SKILL.md` file.
+
+Create `.agentflow/summarize/summarize/SKILL.md`:
+
+```yaml
+---
+name: summarize
+type: step
+entry: true
+outputs:
+  - name: summary
+    format: markdown
+    description: Structured summary of the input file
+---
+
+# Summarize a File
+
+Read the target file using {{capabilities/read-code}} and produce
+a structured summary following {{instructions/writing-style}}.
+
+## Process
+
+1. Read the file the user specified.
+2. Identify the purpose, key exports, dependencies, and complexity.
+3. Format the summary according to the writing style guide.
+4. Return the summary as your output.
+```
+
+Key fields:
+- `entry: true` marks this as the starting node (required since every workflow needs exactly one entry point).
+- `outputs` declares what this node produces so other nodes could reference it via `{{<< output.summarize}}`.
+- The `{{capabilities/read-code}}` and `{{instructions/writing-style}}` references tell the runtime to load those resources into this node's context.
+</Step>
+
+<Step>
+## Validate the workspace
+
+Run the validator to confirm everything is wired correctly:
+
+```bash
+agentflow validate
+```
+
+Expected output:
+
+```
+Validating workspace...
+  summarize: 0 errors, 0 warnings
+```
+
+If you see a `broken_ref` error, check that your filenames match the references exactly. The most common mistake is a typo in the `{{capabilities/...}}` or `{{instructions/...}}` path.
+</Step>
+
+<Step>
+## Understand the context assembly
+
+When the agent executes the `summarize` node, the runtime assembles context from multiple layers. Here is what gets loaded and in what order:
+
+<Mermaid chart={`graph TD
+  L0["Layer 0: Workspace Identity<br/>.agentflow/AGENTS.md"] --> L1
+  L1["Layer 1: Workflow Descriptor<br/>summarize/AGENTS.md"] --> L2
+  L2["Layer 2: Node Instructions<br/>summarize/SKILL.md body"] --> L3
+  L3["Layer 3: Referenced Resources<br/>capabilities/read-code<br/>instructions/writing-style"] --> L4
+  L4["Layer 4: Prior Outputs<br/>(none — this is the first node)"]
+  L4 --> PROMPT["Assembled Prompt"]
+`} />
+
+Only referenced resources are loaded. If you added ten more instruction files to `.agentflow/instructions/`, none of them would appear in this node's context unless the SKILL.md explicitly referenced them. This is the selective context model — nodes get exactly what they need, nothing more.
+</Step>
+
+<Step>
+## Test in the studio
+
+Open the studio and load your workspace. You should see:
+
+1. **Canvas** — a single node labeled "summarize" with no edges (since there is only one node).
+2. **Elements panel** — two resources listed: `read-code` (capability) and `writing-style` (instruction).
+3. **Tokens panel** — the token breakdown for the summarize node showing identity, contract, and references layers.
+4. **Validation panel** — green checkmarks, no errors.
+
+Click the node to open its SKILL.md in the editor. The reference badges (`read-code`, `writing-style`) should appear inline, confirming the references resolved correctly.
+</Step>
+
+</Steps>
+
+## How this scales
+
+This single-node agent is the foundation for everything else. To grow it:
+
+| Want to... | Do this |
+|------------|---------|
+| Add a second step | Create a new node directory with a SKILL.md, add an edge `{{-> nodes/new-step}}` |
+| Add an approval gate | Create a router node between two steps with condition runbooks |
+| Add external tools | Create an `mcp.json` and generate capabilities via `agentflow mcp discover` |
+| Share instructions across workflows | Move instruction files to the global `.agentflow/instructions/` directory |
+| Persist decisions | Create a `memory/decisions.md` file and reference it with `{{memory/decisions}}` |
+
+<Mermaid chart={`graph LR
+  subgraph "Start here"
+    A[Single node]
+  end
+  subgraph "Add steps"
+    B[Node 1] --> C[Node 2] --> D[Node 3]
+  end
+  subgraph "Add gates"
+    E[Step] --> F{Gate}
+    F -->|approved| G[Next]
+    F -->|rejected| E
+  end
+  A -.-> B
+  D -.-> E
+`} />
+
+<Cards>
+  <Card title="Build Your First Workflow" href="/docs/guides/first-workflow" description="A 5-node pipeline with an approval gate" />
+  <Card title="Adding Memory" href="/docs/guides/adding-memory" description="Persist decisions and preferences across runs" />
+  <Card title="Writing Nodes" href="/docs/authoring/writing-nodes" description="Deep dive into SKILL.md structure" />
+  <Card title="Selective Context" href="/docs/concepts/selective-context" description="How the 5-layer context model works" />
+</Cards>

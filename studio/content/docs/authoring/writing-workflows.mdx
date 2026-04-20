@@ -1,0 +1,319 @@
+---
+title: Writing Workflows
+description: Build a complete workflow from scratch — descriptor, nodes, edges, resources, and validation.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+This page walks through building a real workflow — a 4-node bug-fix pipeline with a review gate, data flow between nodes, and resource references. By the end you'll have a working workflow you can validate and export.
+
+## What You'll Build
+
+```
+reproduce → fix → review-gate → verify
+                     ↓ (rejected)
+                    fix (with feedback)
+```
+
+A linear flow with one approval gate. The reproduce step produces a bug report, the fix step reads it and applies a fix, the review gate asks the user to approve, and the verify step runs tests.
+
+## The Walkthrough
+
+<Steps>
+  <Step>
+    ### Create the directory structure
+
+    ```bash
+    mkdir -p .agentflow/fix-bug/{reproduce,fix,review-gate,verify}
+    ```
+
+    <Files>
+      <Folder name=".agentflow" defaultOpen>
+        <Folder name="fix-bug" defaultOpen>
+          <File name="AGENTS.md" />
+          <Folder name="reproduce">
+            <File name="SKILL.md" />
+          </Folder>
+          <Folder name="fix">
+            <File name="SKILL.md" />
+          </Folder>
+          <Folder name="review-gate">
+            <File name="SKILL.md" />
+          </Folder>
+          <Folder name="verify">
+            <File name="SKILL.md" />
+          </Folder>
+        </Folder>
+      </Folder>
+    </Files>
+
+    Or use the CLI: `agentflow add workflow fix-bug`
+  </Step>
+  <Step>
+    ### Write the workflow descriptor
+
+    Every workflow needs an `AGENTS.md` at its root. This is the workflow's identity — Layer 1 in the context model.
+
+    ```yaml
+    # .agentflow/fix-bug/AGENTS.md
+    ---
+    type: agents
+    name: fix-bug
+    description: >
+      Diagnose and fix a reported bug. Reproduces the issue,
+      applies a minimal fix, gets human approval, then verifies
+      with tests.
+    ---
+
+    # Fix Bug
+
+    Linear workflow with a review gate between fix and verification.
+
+    ## Nodes
+
+    - {{-> nodes/reproduce}} — Reproduce the issue
+    - {{-> nodes/fix}} — Apply the minimal fix
+    - {{-> nodes/review-gate}} — Human approval checkpoint
+    - {{-> nodes/verify}} — Run tests to confirm
+
+    ## Resources
+
+    - {{capabilities/read-code}} — Read source files
+    - {{capabilities/write-file}} — Create or modify files
+    - {{capabilities/run-tests}} — Execute test suite
+    - {{instructions/code-style}} — Coding conventions
+    ```
+
+    The `{{-> nodes/...}}` references in the descriptor are informational — they help the agent understand the workflow structure. The actual graph is built from edges in the SKILL.md files.
+  </Step>
+  <Step>
+    ### Write the entry node
+
+    The first node must have `entry: true`. This is where execution begins.
+
+    ```yaml
+    # .agentflow/fix-bug/reproduce/SKILL.md
+    ---
+    name: reproduce
+    type: step
+    entry: true
+    context:
+      max_tokens: 3000
+      inputs:
+        - ref: capabilities/read-code
+          scope: signature
+        - ref: memory/decisions
+          scope: summary
+    outputs:
+      - name: bug-report
+        format: markdown
+        description: Steps to reproduce with root cause analysis
+    ---
+
+    # Reproduce the Bug
+
+    Read the bug report and reproduce the issue locally.
+
+    ## Process
+
+    1. Read the bug report carefully
+    2. Use {{capabilities/read-code}} to examine the affected files
+    3. Identify the root cause
+    4. Document exact reproduction steps
+
+    ## Output
+
+    Produce a structured bug report with:
+    - Steps to reproduce
+    - Expected vs actual behavior
+    - Root cause analysis
+    - Affected files and line numbers
+
+    {{-> nodes/fix}}
+    ```
+
+    Notice the `context.inputs` — this node loads `read-code` as a signature (just the interface, not full docs) and `decisions` as a summary. This keeps the context focused. The `outputs` declaration lets downstream nodes reference `{{<< output.reproduce}}`.
+  </Step>
+  <Step>
+    ### Write the fix node with data flow
+
+    This node reads the output from reproduce and applies the fix:
+
+    ```yaml
+    # .agentflow/fix-bug/fix/SKILL.md
+    ---
+    name: fix
+    type: step
+    context:
+      max_tokens: 4000
+    ---
+
+    # Fix the Bug
+
+    Based on the bug report from {{<< output.reproduce}}, apply the
+    minimal fix following {{instructions/code-style}} conventions.
+
+    ## Process
+
+    1. Read the root cause analysis from the bug report
+    2. Identify the smallest change that fixes the issue
+    3. Apply the fix using {{capabilities/write-file}}
+    4. Run {{capabilities/get-diagnostics}} to check for errors
+    5. Do NOT run tests yet — that's the verify step's job
+
+    {{-> nodes/review-gate}}
+    ```
+
+    The `{{<< output.reproduce}}` reference loads the bug report into this node's context. The `{{instructions/code-style}}` reference loads your coding conventions. Each `{{capabilities/...}}` reference loads a tool definition.
+  </Step>
+  <Step>
+    ### Add the review gate
+
+    A router node that asks the user to approve the fix before running tests:
+
+    ```yaml
+    # .agentflow/fix-bug/review-gate/SKILL.md
+    ---
+    name: review-gate
+    type: router
+    ---
+
+    # Review Fix
+
+    Present the fix to the user via {{runbooks/fix-approved}}.
+
+    Show what changed and why, referencing the bug report
+    from {{<< output.reproduce}}.
+
+    ## Routing
+
+    - If approved → {{-> nodes/verify | runbooks/fix-approved}}
+    - If rejected → {{-> nodes/fix | runbooks/fix-rejected}}
+    ```
+
+    <Callout type="warn" title="Routers are lightweight">
+      Router nodes should not reference capabilities or instructions — they only evaluate conditions and route. The validator warns about `router_has_capabilities`.
+    </Callout>
+
+    You'll also need the runbook files. Create them in `.agentflow/runbooks/`:
+
+    ```yaml
+    # .agentflow/runbooks/fix-approved.md
+    ---
+    type: condition
+    name: fix-approved
+    check: The user explicitly approves the fix
+    ---
+
+    **True when:** The user says the fix looks good.
+    **False when:** The user requests changes or raises concerns.
+    ```
+  </Step>
+  <Step>
+    ### Write the verify node
+
+    The final step runs tests:
+
+    ```yaml
+    # .agentflow/fix-bug/verify/SKILL.md
+    ---
+    name: verify
+    type: step
+    ---
+
+    # Verify the Fix
+
+    Run the test suite and confirm the bug is resolved.
+
+    1. Run {{capabilities/run-tests}}
+    2. Verify the original bug no longer reproduces
+    3. Check for regressions
+    4. If tests fail → {{-> nodes/fix}} to iterate
+    ```
+
+    The conditional edge back to `fix` creates an error recovery loop — if tests fail, the workflow goes back to fix the issue.
+  </Step>
+  <Step>
+    ### Validate
+
+    ```bash
+    agentflow validate
+    ```
+
+    ```
+    ✓ fix-bug: 0 errors, 0 warnings
+    ```
+
+    The validator checks: entry point exists, all refs resolve, no cycles without conditional exits, runbooks exist for conditional edges, and token budgets aren't exceeded.
+
+    If you see errors, the most common fixes:
+    - `broken_ref` — check the filename spelling in your `{{...}}` references
+    - `no_entry_point` — add `entry: true` to your first node
+    - `missing_condition` — create the runbook file referenced in conditional edges
+  </Step>
+</Steps>
+
+## What You Built
+
+Your workflow has:
+- **4 nodes** — reproduce (entry), fix, review-gate (router), verify
+- **Data flow** — reproduce's output flows into fix and review-gate via `{{<< output.reproduce}}`
+- **Resource references** — capabilities (read-code, write-file, run-tests), instructions (code-style), runbooks (fix-approved)
+- **Conditional routing** — review-gate approves or rejects, verify can loop back to fix
+- **Context scoping** — each node declares what it needs via `context.inputs`
+
+## What Exports Look Like
+
+When you export this workflow, each platform gets a different format:
+
+<Tabs items={['Claude Code', 'Cursor', 'Kiro']}>
+  <Tab value="Claude Code">
+    ```
+    .claude/
+      AGENTS.md              ← workspace identity + workflow description
+      skills/
+        fix-bug/
+          SKILL.md           ← all nodes merged with refs resolved
+    ```
+
+    Claude Code natively understands AGENTS.md/SKILL.md. References are resolved to inline content.
+  </Tab>
+  <Tab value="Cursor">
+    ```
+    .cursor/
+      rules/
+        fix-bug.mdc          ← single rule file with all nodes
+    ```
+
+    Cursor merges everything into `.mdc` rule files. Identity, workflow, and node instructions become one file.
+  </Tab>
+  <Tab value="Kiro">
+    ```
+    .kiro/
+      specs/
+        fix-bug.md           ← workflow as a spec
+      steering/
+        rules.md             ← workspace constraints
+    ```
+
+    Kiro separates specs (what to build) from steering (how to behave).
+  </Tab>
+</Tabs>
+
+## Explore a Production Workflow
+
+The build-feature workflow below is a production-ready example with 9 nodes, 3 approval gates, a task loop, and error recovery. Click any node to see its SKILL.md — notice how it follows the same patterns you just learned, at a larger scale.
+
+<ComponentPreview title="build-feature — 9 nodes with gates, loops, and data flow" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['explorer', 'elements']} />
+</ComponentPreview>
+
+<Cards>
+  <Card title="Writing Nodes" href="/docs/authoring/writing-nodes" description="Deep dive into SKILL.md structure" />
+  <Card title="Patterns" href="/docs/authoring/patterns" description="Approval gates, loops, fan-out, error recovery" />
+  <Card title="Validation Rules" href="/docs/reference/validation-rules" description="All 23 rules the validator checks" />
+</Cards>

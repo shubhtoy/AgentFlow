@@ -1,0 +1,191 @@
+---
+title: Canvas
+description: The workflow graph -- drag, connect, and visualize nodes and edges.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The canvas is the main editing surface where you build your agent workflow as a directed graph. Nodes represent discrete steps in your workflow, and edges define the flow of execution between them.
+
+## Interactive Canvas
+
+The preview below shows a bare canvas. Try panning by dragging on empty space, scrolling to zoom, or right-clicking to open the context menu.
+
+<ComponentPreview>
+  <DocsPlayground />
+</ComponentPreview>
+
+## Node Types
+
+Each node shape communicates its role in the workflow:
+
+| Shape | Type | Purpose |
+|-------|------|---------|
+| Rectangle | **Step** | A single action or skill execution |
+| Diamond | **Router** | A conditional branch or gateway |
+| Rounded rectangle | **Sub-workflow** | A nested workflow reference |
+
+Double-click a sub-workflow node to step into it. The canvas transitions to show the nested graph. A breadcrumb trail appears at the top so you can navigate back to the parent workflow.
+
+## Navigation
+
+### Panning
+
+Hold `Space` and drag to pan the canvas. You can also drag on any empty area without holding Space. On a trackpad, use a two-finger drag.
+
+### Zooming
+
+Scroll to zoom in and out. The zoom centers on your cursor position. Use `Cmd+=` and `Cmd+-` for precise zoom steps, or `Cmd+0` to reset to 100%.
+
+### Minimap
+
+A small overview appears in the bottom-right corner of the canvas. It shows the full extent of your workflow graph with a highlighted viewport rectangle. Click anywhere on the minimap to jump to that region. Drag the viewport rectangle to pan quickly across large workflows.
+
+<Callout type="info">
+Toggle the minimap from the canvas toolbar or with `Cmd+M`. For small workflows that fit on screen, hiding the minimap frees up canvas space.
+</Callout>
+
+## Selecting Nodes
+
+### Single Selection
+
+Click a node to select it. The node receives a highlight border and its properties appear in the Editor and Frontmatter panels on the right.
+
+### Multi-Select
+
+There are two ways to select multiple nodes:
+
+- **Marquee select** -- Click and drag on empty canvas space to draw a selection rectangle. All nodes within the rectangle are selected when you release.
+- **Additive select** -- Hold `Shift` and click individual nodes to add them to the current selection. `Shift+click` a selected node to deselect it.
+
+With multiple nodes selected, you can move them as a group, delete them, or apply bulk actions from the context menu.
+
+### Select All
+
+Press `Cmd+A` to select every node in the current workflow. This is useful before applying auto-layout or bulk-deleting a section.
+
+## Creating Nodes
+
+<Steps>
+<Step>
+### From the context menu
+
+Right-click on empty canvas space. The context menu shows **Add Step**, **Add Router**, and **Add Sub-workflow**. The new node appears at the click position.
+</Step>
+<Step>
+### From the explorer
+
+Drag a node file (any `SKILL.md` directory) from the Explorer panel onto the canvas. The node is placed where you drop it and automatically linked to the workflow.
+</Step>
+<Step>
+### From the command palette
+
+Press `Cmd+K` and type "Create Node". Select the node type from the submenu. The node appears at the center of the current viewport.
+</Step>
+</Steps>
+
+## Creating Edges
+
+To connect two nodes, hover over the source node until the connection handles appear (small circles on each side). Click and drag from a handle toward the target node. A connection line follows your cursor and snaps to valid targets. Release over the target node to create the edge.
+
+<Callout type="warn">
+Edges must flow from a source handle to a target handle. You cannot connect a node to itself, and duplicate edges between the same pair of nodes are not allowed.
+</Callout>
+
+### Edge Labels
+
+Click an edge to select it. A text field appears on the edge where you can type a label. For router nodes, edge labels typically describe the condition (e.g., "success", "error", "needs-review"). Double-click an existing edge label to edit it.
+
+### Removing Edges
+
+Select an edge by clicking it, then press `Delete`. You can also right-click an edge and choose **Remove Edge** from the context menu.
+
+## Context Menu
+
+Right-click anywhere on the canvas to open the context menu. The available actions depend on what you clicked:
+
+<Tabs items={['Canvas background', 'Node', 'Edge']}>
+<Tab value="Canvas background">
+- **Add Step** -- Create a new step node at the click position
+- **Add Router** -- Create a new router node
+- **Add Sub-workflow** -- Create a new sub-workflow reference
+- **Paste** -- Paste previously copied nodes
+- **Auto-layout** -- Arrange all nodes using the layout algorithm
+- **Zoom to Fit** -- Adjust zoom to show all nodes
+- **Select All** -- Select every node
+</Tab>
+<Tab value="Node">
+- **Edit** -- Open the node in the Editor panel
+- **Duplicate** -- Create a copy of the node adjacent to the original
+- **Copy** -- Copy the node to the clipboard
+- **Delete** -- Remove the node and all its edges
+- **Step Into** -- (Sub-workflow only) Navigate into the nested workflow
+- **Disconnect** -- Remove all edges connected to this node
+</Tab>
+<Tab value="Edge">
+- **Edit Label** -- Focus the edge label for editing
+- **Reverse Direction** -- Swap source and target
+- **Remove Edge** -- Delete the edge
+</Tab>
+</Tabs>
+
+## Auto-Layout
+
+The auto-layout algorithm arranges nodes in a clean hierarchy. Access it from the context menu, the canvas toolbar, or the command palette (`Cmd+K` then "Reset Layout").
+
+<Tabs items={['Horizontal', 'Vertical']}>
+<Tab value="Horizontal">
+Nodes flow left to right. The start node appears on the far left and terminal nodes on the far right. This is the default layout direction.
+</Tab>
+<Tab value="Vertical">
+Nodes flow top to bottom. The start node appears at the top and terminal nodes at the bottom. Switch to vertical layout from the canvas toolbar dropdown.
+</Tab>
+</Tabs>
+
+Auto-layout preserves your edge connections but repositions every node. If you have manually arranged a section of the graph, consider selecting only the disorganized nodes and using **Layout Selection** from the context menu instead.
+
+## Undo and Redo
+
+Every canvas action is recorded in the undo stack. Press `Cmd+Z` to undo the last action and `Cmd+Shift+Z` to redo. The undo stack covers node creation, deletion, movement, edge changes, and property edits. The stack is cleared when you switch workflows.
+
+## Snap to Grid
+
+Nodes align to a configurable grid as you drag them. This keeps layouts clean without manual alignment. Toggle snap-to-grid from the canvas toolbar. When disabled, nodes move freely to any position.
+
+The default grid size is 20 pixels. Change it in the Settings panel under **Editor > Grid Size**.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Pan | `Space` + drag |
+| Zoom in | `Cmd+=` or scroll up |
+| Zoom out | `Cmd+-` or scroll down |
+| Reset zoom | `Cmd+0` |
+| Select all | `Cmd+A` |
+| Delete selected | `Delete` |
+| Duplicate selected | `Cmd+D` |
+| Copy | `Cmd+C` |
+| Paste | `Cmd+V` |
+| Undo | `Cmd+Z` |
+| Redo | `Cmd+Shift+Z` |
+| Toggle minimap | `Cmd+M` |
+| Zoom to fit | `Cmd+Shift+1` |
+| Context menu | Right-click |
+| Edit selected node | `Enter` or double-click |
+| Step into sub-workflow | Double-click sub-workflow node |
+
+## Tips
+
+- Hold `Shift` while clicking to add nodes to your current selection.
+- Double-click an edge label to rename the transition.
+- Use the minimap to jump to distant parts of a large workflow.
+- Right-click the canvas background to add a new node at that position.
+- When a workflow gets complex, use sub-workflow nodes to break it into manageable pieces. Each sub-workflow is its own directory and can be edited independently.
+
+<Cards>
+  <Card title="Editor" href="/docs/studio/editor" description="Edit node markdown with syntax highlighting and live preview" />
+  <Card title="Explorer" href="/docs/studio/explorer" description="Browse and manage your workspace file tree" />
+</Cards>

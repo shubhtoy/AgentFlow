@@ -1,0 +1,16 @@
+{
+  "title": "Authoring",
+  "icon": "PenTool",
+  "pages": [
+    "...index",
+    "cheatsheet",
+    "directory-layout",
+    "writing-workflows",
+    "writing-nodes",
+    "writing-resources",
+    "hooks",
+    "patterns",
+    "mcp",
+    "library"
+  ]
+}

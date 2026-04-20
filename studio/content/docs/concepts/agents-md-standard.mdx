@@ -1,0 +1,306 @@
+---
+title: AGENTS.md Standard
+description: The open standard for agent identity that AgentFlow builds on.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+AgentFlow is built on [AGENTS.md](https://agents.md) — an open format for guiding coding agents, used by over 60,000 open-source projects and stewarded by the Agentic AI Foundation under the Linux Foundation.
+
+One AGENTS.md file works across Claude Code, Cursor, Windsurf, VS Code Copilot, Kiro, Devin, Aider, Zed, Warp, and more. Write once, run everywhere.
+
+## The Two File Types
+
+<Tabs items={['AGENTS.md', 'SKILL.md']}>
+  <Tab value="AGENTS.md">
+    **Identity and routing** — who the agent is, what it knows, how it behaves.
+
+    One per workspace (root identity) + one per workflow (workflow identity). Always loaded when active.
+
+    ```yaml
+    ---
+    name: Build Feature
+    description: Spec-driven feature development with approval gates.
+    identity:
+      role: Senior software engineer
+      constraints:
+        - Always write tests before implementation
+        - Never modify files outside the project scope
+    ---
+    ```
+  </Tab>
+  <Tab value="SKILL.md">
+    **Node contract** — what this specific step does, its inputs, outputs, and behavior.
+
+    One per node. Loaded only when that node is executing.
+
+    ```yaml
+    ---
+    name: gather-requirements
+    type: step
+    entry: true
+    outputs:
+      - name: requirements-doc
+        format: markdown
+        description: Structured requirements document
+    ---
+
+    # Gather Requirements
+
+    Interview the user to understand what they want to build.
+    Reference {{instructions/requirements-elicitation}} for technique.
+    ```
+
+    <Callout type="info" title="Origin">
+      SKILL.md was introduced by Anthropic for Claude Code's agent skills system. See [Equipping Agents for the Real World with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) for the progressive disclosure pattern — frontmatter is always loaded, but the full skill body loads only when relevant.
+    </Callout>
+  </Tab>
+</Tabs>
+
+## AgentFlow Extensions
+
+The base AGENTS.md standard is intentionally minimal — just markdown with whatever content you want. AgentFlow adds structure on top to enable validation, export, and visual editing:
+
+<TypeTable type={{
+  'Typed frontmatter': {
+    description: 'name, type, entry, outputs, context fields in YAML',
+    type: 'AgentFlow extension',
+    default: 'Base standard has no required fields',
+  },
+  'SKILL.md nodes': {
+    description: 'Step-level definitions with typed outputs and context budgets',
+    type: 'AgentFlow extension',
+    default: 'Base standard only has AGENTS.md',
+  },
+  'Resource categories': {
+    description: 'instructions/, capabilities/, runbooks/, memory/, hooks/',
+    type: 'AgentFlow extension',
+    default: 'Base standard is freeform',
+  },
+  'Reference syntax': {
+    description: '{{category/name}}, {{-> target}}, {{<< output.X}}',
+    type: 'AgentFlow extension',
+    default: 'Base standard uses plain text',
+  },
+  'Validation': {
+    description: '23 rules checking structure, references, and context budgets',
+    type: 'AgentFlow extension',
+    default: 'Base standard has no validation',
+  },
+  'Multi-platform export': {
+    description: 'Claude, Cursor, Kiro, Windsurf, VS Code, OpenClaw, Agent Spec',
+    type: 'AgentFlow extension',
+    default: 'Base standard targets a single agent',
+  },
+}} />
+
+## Nested Files and Precedence
+
+Like the standard, AgentFlow supports nested AGENTS.md files. The closest file to the current context wins:
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name="AGENTS.md" />
+    <Folder name="build-feature" defaultOpen>
+      <File name="AGENTS.md" />
+      <Folder name="implement">
+        <File name="SKILL.md" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+```
+.agentflow/AGENTS.md              ← workspace identity (always loaded)
+.agentflow/build-feature/AGENTS.md ← workflow identity (loaded when active)
+.agentflow/build-feature/implement/SKILL.md ← node contract (loaded when executing)
+```
+
+Each level can override or extend the parent. This mirrors the monorepo pattern from the AGENTS.md spec.
+
+## Platform Portability
+
+Because AgentFlow builds on the standard, your workspace exports to any compatible platform:
+
+<Tabs items={['Claude Code', 'Cursor', 'Kiro', 'Windsurf', 'VS Code']}>
+  <Tab value="Claude Code">
+    ```
+    .claude/
+      AGENTS.md
+      skills/
+        implement/SKILL.md
+    ```
+
+    Claude Code natively understands AGENTS.md and SKILL.md — the export is close to the source format with references resolved.
+  </Tab>
+  <Tab value="Cursor">
+    ```
+    .cursor/
+      rules/
+        build-feature.mdc
+    ```
+
+    Cursor uses `.mdc` rule files. The export merges identity, workflow, and node instructions into a single rule file per workflow.
+  </Tab>
+  <Tab value="Kiro">
+    ```
+    .kiro/
+      specs/
+        build-feature.md
+      steering/
+        rules.md
+    ```
+
+    Kiro separates specs (what to build) from steering (how to behave).
+  </Tab>
+  <Tab value="Windsurf">
+    ```
+    .windsurf/
+      rules/
+        agent.md
+    ```
+  </Tab>
+  <Tab value="VS Code">
+    ```
+    .github/
+      copilot/
+        instructions.md
+    ```
+  </Tab>
+</Tabs>
+
+## Ecosystem
+
+<Accordions>
+  <Accordion title="Compatible agents and platforms">
+    AGENTS.md is used across the industry: OpenAI Codex, Google Jules, Apache Airflow, Temporal SDK, and 60,000+ open-source projects on GitHub.
+
+    Compatible with: Claude Code, Cursor, Windsurf, VS Code Copilot, Kiro, Devin, Aider, Zed, Warp, and more.
+  </Accordion>
+  <Accordion title="Open governance">
+    AGENTS.md is stewarded by the [Agentic AI Foundation](https://agents.md) under the Linux Foundation. It's not owned by any single company. AgentFlow is one implementation that extends the standard with typed resources, validation, and multi-platform export.
+  </Accordion>
+</Accordions>
+
+<ComponentPreview title="AGENTS.md and SKILL.md files in the workspace explorer" height="lg">
+  <DocsPlayground workflow="build-feature" panel="explorer" />
+</ComponentPreview>
+
+## The Ecosystem in Practice
+
+AGENTS.md is not just a file format — it is a universal interface between humans and AI coding agents. When you write an AGENTS.md file for AgentFlow, that same file communicates your intent to Claude Code, Cursor, Windsurf, VS Code Copilot, and any other tool that supports the standard.
+
+This works because the standard is intentionally minimal at its base layer. Every platform reads the same markdown and extracts what it needs. AgentFlow's extensions (typed frontmatter, references, resource categories) are additive — platforms that don't understand them simply ignore the YAML fields and treat the body as plain instructions.
+
+<Mermaid chart={`graph TD
+    A[AGENTS.md file in your repo] --> B[Claude Code]
+    A --> C[Cursor]
+    A --> D[Windsurf]
+    A --> E[VS Code Copilot]
+    A --> F[Kiro]
+    A --> G[Devin]
+    A --> H[AgentFlow Studio]
+    A --> I[Aider]
+    A --> J[Zed]
+    B --> K[Reads identity + constraints]
+    C --> L[Reads as rule file]
+    D --> M[Reads as agent config]
+    H --> N[Reads typed structure + refs + graph]
+`} />
+
+### How Each Platform Interprets the File
+
+**Claude Code** natively understands both AGENTS.md and SKILL.md. It reads the identity section for personality and constraints, and loads skills on demand using the progressive disclosure pattern. AgentFlow's typed frontmatter fields are recognized directly.
+
+**Cursor** treats AGENTS.md as a rules source. It extracts the markdown body and applies it as behavioral guidance. Cursor ignores YAML frontmatter it doesn't recognize but respects the prose instructions.
+
+**VS Code Copilot** looks for instruction files in `.github/copilot/`. AgentFlow's export resolves references and flattens the multi-file structure into a single instructions file that Copilot understands.
+
+**Generic platforms** that support AGENTS.md read the file as markdown documentation about how to behave in this repository. Even without typed parsing, the human-readable instructions provide value.
+
+### The Write-Once Benefit
+
+Because AGENTS.md is the source of truth, you maintain one set of agent instructions regardless of how many platforms your team uses. A developer using Claude Code and another using Cursor both get consistent behavior from the same file. When you update the instructions, every platform picks up the change on next read.
+
+This eliminates the "configuration drift" problem where each developer's AI tool behaves differently because they configured it independently.
+
+## AgentFlow's Extensions in Detail
+
+The base AGENTS.md standard provides a blank canvas — any markdown content works. AgentFlow adds five structural extensions that enable validation, visual editing, and multi-platform export. Each extension exists for a specific reason.
+
+### Typed Frontmatter (YAML)
+
+AgentFlow requires YAML frontmatter with specific fields:
+
+```yaml
+---
+name: gather-requirements
+type: step
+entry: true
+outputs:
+  - name: requirements-doc
+    format: markdown
+    description: Structured requirements document
+context:
+  max_tokens: 6000
+---
+```
+
+**Why YAML?** Three reasons. First, YAML is already the standard frontmatter format for markdown files (used by Jekyll, Hugo, Docusaurus, MDX). Developers expect it. Second, YAML is both human-readable and machine-parseable — the validator can check types and required fields without custom parsing. Third, YAML separates structured metadata from freeform instructions cleanly. The frontmatter is for machines; the body is for the LLM.
+
+**What it enables:** The typed fields let the validator check that outputs are declared before they're referenced, that entry nodes exist, that context budgets are numbers, and that node types are valid. Without typed frontmatter, validation would require natural language understanding of the markdown body.
+
+### SKILL.md (Progressive Disclosure)
+
+AgentFlow uses SKILL.md for node-level definitions, following the pattern Anthropic introduced for Claude Code's agent skills system.
+
+The progressive disclosure pattern works like this: the frontmatter (name, type, outputs) is always available to the routing layer — it's cheap to load and tells the system what this node does. The full markdown body loads only when the node actually executes. This means the system can make routing decisions (which node to run next) without loading every node's full instructions into context.
+
+This is analogous to how a function signature tells you what a function does without reading its implementation. The frontmatter is the signature; the body is the implementation.
+
+### Resource Categories (Why Five)
+
+AgentFlow defines five resource categories: instructions, capabilities, runbooks, memory, and hooks.
+
+**Why exactly five?** The categories map to distinct roles in the context window:
+
+- **instructions** — behavioral guidance the agent follows (how to write code, how to communicate)
+- **capabilities** — tool definitions the agent can invoke (what actions are available)
+- **runbooks** — conditional logic and decision criteria (when to route, when to approve)
+- **memory** — persistent state across runs (learned preferences, accumulated knowledge)
+- **hooks** — event triggers that fire on workflow events (on-complete, on-error)
+
+Fewer categories would force unrelated content into the same bucket — tool definitions mixed with behavioral instructions confuse the model about what is an action versus a rule. More categories would create artificial distinctions that don't map to how LLMs process context. Five categories cover the fundamental types of information an agent needs without over-segmenting.
+
+### Reference Syntax (Double-Braces)
+
+AgentFlow uses `{{category/name}}` syntax for references:
+
+```markdown
+Follow {{instructions/code-style}} conventions.
+Use {{capabilities/write-file}} to create files.
+Check {{<< output.create-design}} for the approved design.
+Route to {{-> nodes/implement}} when ready.
+```
+
+**Why double-braces?** Single braces conflict with JavaScript template literals, JSON, and many templating languages. Double-braces are visually distinct in markdown, unlikely to appear in normal prose, and already familiar from Mustache/Handlebars templating. They signal "this is a reference that the system resolves" without ambiguity.
+
+**How the parser handles them:** The parser uses a single regex pass over the SKILL.md body to extract all `{{...}}` expressions. Each match is classified by its prefix:
+
+- No prefix: resource mention (loads content into context)
+- `->` prefix: edge declaration (builds graph structure)
+- `<< output.` prefix: data flow (loads prior node output)
+- `$` prefix: template variable (resolved at export time)
+
+References are resolved in two passes: first checking workflow-scoped resources (files within the workflow directory), then falling back to global resources (files in the workspace-level category directories). This scoping lets workflows override global resources when needed.
+
+<Cards>
+  <Card title="Directory as Architecture" href="/docs/concepts/directory-as-architecture" description="Why folders replace frameworks" />
+  <Card title="Context Engineering" href="/docs/concepts/context-engineering" description="How refs implement the four context strategies" />
+  <Card title="Export" href="/docs/concepts/export" description="How AgentFlow exports to 7 platforms" />
+  <Card title="Identity" href="/docs/concepts/identity" description="Workspace vs workflow AGENTS.md" />
+</Cards>

@@ -1,0 +1,208 @@
+---
+title: Frontmatter Form
+description: Structured YAML editing with dropdowns, toggles, and validation.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+The frontmatter editor renders form controls dynamically based on the resource type schema. Instead of editing raw YAML, you get purpose-built UI controls that reduce errors and speed up configuration.
+
+## Interactive Preview
+
+The form below shows the frontmatter for the first node in the build-feature workflow. Try toggling between form view and the raw YAML to see how fields map.
+
+<ComponentPreview title="Frontmatter Form" height="lg">
+  <DocsPlayground panel="frontmatter" />
+</ComponentPreview>
+
+## How It Works
+
+Each field in your frontmatter is rendered as the appropriate form control. The schema for each resource type determines which fields appear, their types, default values, and validation rules.
+
+Toggle between form view and raw YAML using the view switcher in the toolbar. Changes in either view synchronize immediately -- edits in the form update the YAML and vice versa.
+
+## Form Controls by Field Type
+
+### Text Fields
+
+Plain string fields render as single-line text inputs with placeholder hints from the schema. Multi-line strings (fields named `description`, `template`, or `body`, or fields marked as multi-line in the schema) render as resizable text areas with monospace font.
+
+### Select Fields (Enums)
+
+Enum fields render as dropdown selects listing all valid values defined in the schema. For example, the `type` field on a node (`step`, `gateway`, `sub-workflow`) appears as a three-option dropdown. Selecting a value immediately updates the YAML and triggers validation.
+
+### Boolean Fields
+
+Boolean fields render as toggle switches. The toggle shows the field name on the left and the on/off state on the right. Clicking the toggle flips the value between `true` and `false`. Fields like `sign` in git configuration or `strict` in validation settings use this control.
+
+### Tag List Fields (Arrays of Strings)
+
+Array fields render as tag inputs. Each existing item appears as a removable tag. Type in the input field and press `Enter` to add a new item. Click the X on any tag to remove it. Arrays like `tags`, `instructions`, and `capabilities` use this control.
+
+### Key-Value Fields (Objects)
+
+Object fields render as collapsible nested forms. Click the field header to expand it and reveal sub-fields, each rendered with their own appropriate control type. For example, a `remote` object with `name` and `branch` string fields expands to show two text inputs.
+
+### Number Fields
+
+Number fields render as numeric inputs with increment/decrement buttons. The schema may define minimum and maximum values which constrain the input range.
+
+## Form Fields by Resource Type
+
+<Tabs items={['Workflow (AGENTS.md)', 'Node (SKILL.md)', 'Capability', 'Instruction', 'Runbook']}>
+<Tab value="Workflow (AGENTS.md)">
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | text | Workflow display name |
+| `description` | textarea | What this workflow does |
+| `model` | select | Default LLM model for nodes |
+| `temperature` | number | Sampling temperature (0.0 -- 2.0) |
+| `max_tokens` | number | Context budget ceiling |
+| `tools` | taglist | Array of capability references |
+| `instructions` | taglist | Array of instruction references |
+</Tab>
+<Tab value="Node (SKILL.md)">
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | text | Node display name |
+| `description` | textarea | What this node does |
+| `type` | select | `step`, `gateway`, or `sub-workflow` |
+| `conditions` | taglist | Edge condition expressions |
+| `capabilities` | taglist | Attached capability references |
+| `instructions` | taglist | Attached instruction references |
+</Tab>
+<Tab value="Capability">
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | text | Tool name |
+| `description` | textarea | What the tool does |
+| `type` | select | `mcp`, `function`, or `api` |
+| `endpoint` | text | Server URL or command |
+| `auth` | select | Authentication method |
+</Tab>
+<Tab value="Instruction">
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | text | Instruction identifier |
+| `description` | textarea | Summary of the guidance |
+| `scope` | select | `global`, `workflow`, or `node` |
+| `priority` | number | Ordering weight |
+</Tab>
+<Tab value="Runbook">
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | text | Runbook identifier |
+| `description` | textarea | What this runbook handles |
+| `trigger` | text | Activation condition |
+| `conditions` | taglist | Prerequisite checks |
+</Tab>
+</Tabs>
+
+## Custom Fields
+
+If your frontmatter contains fields not defined in the schema, the form renders them as plain text inputs under a "Custom Fields" section at the bottom. This allows you to add arbitrary metadata without modifying the schema.
+
+Custom fields are preserved across form/YAML view switches and are included in exports. They do not receive type-specific controls (no dropdowns or toggles) since the form has no schema information for them.
+
+## Validation Indicators
+
+The form view shows validation state inline next to each field:
+
+### Error Indicators
+
+A red border and red text appear on fields with invalid values. Hovering over the indicator shows the specific validation message:
+
+- "Required field" -- a mandatory field is empty
+- "Value must be one of: step, gateway, sub-workflow" -- an enum field has an invalid value
+- "Must be a positive integer" -- a number field is out of range
+
+### Warning Indicators
+
+A yellow border and yellow text appear on fields that have recommended values you have not set. These do not block saving but indicate potential issues. For example, a node without a `description` field triggers a warning because descriptions improve copilot accuracy.
+
+### Valid State
+
+Fields with valid values show no special indicator. When you correct an error, the red indicator disappears immediately as the validation engine re-evaluates in real time.
+
+### File-Level Validation
+
+Some validation rules apply to the file as a whole rather than individual fields. For example, "a gateway node must have at least two outgoing edges" cannot be attributed to a single field. These appear as a banner at the top of the form.
+
+## Form View vs YAML View
+
+<Tabs items={['When to use Form view', 'When to use YAML view']}>
+<Tab value="When to use Form view">
+- **Discovering available fields** -- The form shows every field defined in the schema, including optional fields you might not know about.
+- **Preventing syntax errors** -- Dropdowns and toggles cannot produce invalid YAML. The form eliminates indentation mistakes, missing colons, and quoting issues.
+- **Quick single-field edits** -- Changing one value is faster with a click or toggle than finding the line in YAML.
+- **Onboarding** -- New users can explore what configuration is available without reading schema documentation.
+</Tab>
+<Tab value="When to use YAML view">
+- **Bulk editing** -- When you need to change multiple fields at once, direct text editing is faster than clicking through form controls.
+- **Copy and paste** -- Duplicating configuration between files is straightforward in YAML view.
+- **Advanced syntax** -- Some fields support YAML features like anchors, multi-line blocks, or comments that the form view cannot represent.
+- **Reviewing the complete file** -- YAML view shows the exact content that will be written to disk, including field ordering and comments.
+</Tab>
+</Tabs>
+
+## Auto-Save Behavior
+
+The frontmatter form auto-saves on every field change after a short debounce. The save indicator in the toolbar shows the current state:
+
+| Indicator | Meaning |
+|-----------|---------|
+| No indicator | All changes saved |
+| Dot | Pending changes |
+| Spinner | Writing to disk |
+| Error icon | Save failed |
+
+In YAML view, auto-save triggers after you stop typing for the configured debounce interval (default 1 second). In form view, each control change (dropdown selection, toggle flip, tag addition) triggers a save immediately after the debounce.
+
+<Callout type="info">
+Form view and YAML view share the same auto-save mechanism. Switching views does not trigger an extra save -- only actual content changes do.
+</Callout>
+
+## Editing Workflow
+
+<Steps>
+<Step>
+### Open the form
+
+Select a node on the canvas. The frontmatter form appears in the Properties tab of the editor panel. Alternatively, click the Properties tab directly.
+</Step>
+<Step>
+### Edit fields
+
+Use the form controls to set values. Required fields are marked with an asterisk. Validation runs in real time as you edit.
+</Step>
+<Step>
+### Switch to YAML if needed
+
+Click the view switcher to toggle to raw YAML for bulk edits or advanced syntax. Your form edits are already reflected in the YAML.
+</Step>
+<Step>
+### Check validation
+
+Review any red or yellow indicators. Fix errors before exporting. Warnings are advisory but worth addressing.
+</Step>
+</Steps>
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle form/YAML view | `Cmd+Shift+Y` |
+| Save | `Cmd+S` |
+| Focus next field | `Tab` |
+| Focus previous field | `Shift+Tab` |
+| Toggle boolean | `Space` (when focused) |
+| Open dropdown | `Enter` or `Space` (when focused) |
+| Add tag | Type + `Enter` |
+| Remove last tag | `Backspace` (when tag input is empty) |
+
+<Cards>
+  <Card title="Editor" href="/docs/studio/editor" description="Markdown editor with reference badges and live preview" />
+  <Card title="Validation" href="/docs/studio/validation" description="Real-time error and warning checks" />
+</Cards>

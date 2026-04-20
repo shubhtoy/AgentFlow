@@ -1,0 +1,16 @@
+{
+  "title": "Contributing",
+  "icon": "GitPullRequest",
+  "pages": [
+    "...index",
+    "development-setup",
+    "architecture",
+    "features",
+    "library",
+    "platform-configs",
+    "parser-validator",
+    "studio-components",
+    "docs",
+    "release-process"
+  ]
+}

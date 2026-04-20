@@ -1,0 +1,47 @@
+---
+title: Release Process
+description: How releases ship.
+---
+
+## Versioning
+
+AgentFlow follows semver. Given `MAJOR.MINOR.PATCH`:
+
+- **MAJOR** — breaking changes to the workflow format or public API
+- **MINOR** — new features, backward-compatible
+- **PATCH** — bug fixes and documentation updates
+
+## Changelog Format
+
+Each release entry in `CHANGELOG.md` follows this structure:
+
+```md
+## [1.2.0] - 2026-04-20
+
+### Added
+- New feature description
+
+### Fixed
+- Bug fix description
+
+### Changed
+- Behavior change description
+```
+
+## Release Steps
+
+1. Update the version in `package.json`
+2. Add a new entry to `CHANGELOG.md`
+3. Run the full build and test suite
+4. Create a git tag matching the version (`v1.2.0`)
+5. Push the tag to trigger the publish workflow
+
+```bash
+npm version minor
+npm run build
+npm test
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+The CI pipeline handles publishing to the registry once the tag is pushed.

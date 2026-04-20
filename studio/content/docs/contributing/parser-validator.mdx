@@ -1,0 +1,108 @@
+---
+title: Parser and Validator
+description: Extend parsing and add validation rules.
+---
+
+The parser and validator form the core engine that reads `.agentflow/` workspaces into structured data and ensures correctness. This guide covers how to extend both.
+
+## Parser Pipeline
+
+The parser processes a workspace through a chain of functions, each handling one level of the hierarchy:
+
+```
+parseRoot -> parseWorkflow -> parseNode -> extractRefs -> resolveEdgeTarget
+```
+
+### parseRoot
+
+Entry point. Scans the `.agentflow/` directory, identifies the workspace descriptor (`AGENTS.md`), and discovers all workflow directories. Returns a root AST node containing workspace metadata and child workflows.
+
+### parseWorkflow
+
+Called for each workflow directory. Reads the workflow-level `AGENTS.md` descriptor, enumerates node subdirectories, and builds the workflow graph structure including declared edges.
+
+### parseNode
+
+Processes a single node directory. Parses the `SKILL.md` file, extracts frontmatter (type, inputs, outputs, conditions), and returns a node AST with all metadata attached.
+
+### extractRefs
+
+Scans parsed node content for references to resources — instructions, capabilities, runbooks, and other nodes. Returns a list of unresolved reference tokens.
+
+### resolveEdgeTarget
+
+Takes edge declarations (from frontmatter or inline links) and resolves them to concrete node IDs within the workflow graph. Handles relative paths, aliases, and gateway branching.
+
+## Adding a Validation Rule
+
+The validator lives in `src/validator.js`. The `validate()` function runs 13 check categories against a parsed workspace AST.
+
+### Check categories
+
+The categories include: schema conformance, edge connectivity, reference resolution, cycle detection, type compatibility, resource existence, naming conventions, frontmatter completeness, gateway balance, duplicate detection, orphan detection, capacity limits, and cross-workflow references.
+
+### Adding a new rule
+
+1. Define your check function:
+
+```js
+function checkMyRule(ast, context) {
+  const issues = []
+  // inspect ast nodes, push to issues if invalid
+  if (someCondition) {
+    issues.push({
+      level: "error", // or "warning"
+      node: offendingNode.id,
+      message: "Description of the problem",
+      rule: "my-rule-name"
+    })
+  }
+  return issues
+}
+```
+
+2. Register it in the `checks` array inside `validate()`:
+
+```js
+const checks = [
+  // ...existing checks
+  checkMyRule
+]
+```
+
+3. Each check receives the full AST and a context object containing the parse mode and config.
+
+## Strict vs Permissive Mode
+
+The validator supports two modes controlled by the `mode` option:
+
+- **Strict** — all 13 categories run. Warnings are promoted to errors. Used in CI and export pipelines where correctness is mandatory.
+- **Permissive** — only critical categories run (schema, connectivity, cycles). Warnings remain warnings. Used during editing to avoid blocking the author on incomplete work.
+
+Set the mode via config or CLI flag:
+
+```bash
+agentflow validate --mode strict
+agentflow validate --mode permissive
+```
+
+## classifyResource
+
+When the parser encounters a file, `classifyResource` determines what kind of resource it is. The classification follows a priority chain:
+
+1. **Frontmatter type** — if the file has a `type` field in frontmatter, that value is used directly.
+2. **Directory inference** — if no frontmatter type exists, the parent directory name determines the type (`instructions/` maps to instruction, `capabilities/` to capability, etc.).
+3. **Untyped** — if neither method resolves, the resource is classified as untyped and a warning is emitted in strict mode.
+
+## resolveSchemaKey
+
+Different platforms and authors use varying names for the same concept. `resolveSchemaKey` normalizes these aliases to canonical keys:
+
+```js
+resolveSchemaKey("tool")       // -> "capability"
+resolveSchemaKey("prompt")     // -> "instruction"
+resolveSchemaKey("condition")  // -> "runbook"
+resolveSchemaKey("capability") // -> "capability"
+```
+
+The alias map is defined in `src/schema/aliases.json`. To add a new alias, append an entry mapping your alias string to the canonical key. The resolver performs case-insensitive lookup and strips trailing whitespace before matching.

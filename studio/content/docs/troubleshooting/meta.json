@@ -1,0 +1,5 @@
+{
+  "title": "Troubleshooting",
+  "icon": "Bug",
+  "pages": ["...index", "common-errors", "faq"]
+}

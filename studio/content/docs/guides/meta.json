@@ -1,0 +1,23 @@
+{
+  "title": "Guides",
+  "icon": "BookOpen",
+  "pages": [
+    "...index",
+    "workflow-engineering-playbook",
+    "first-workflow",
+    "your-first-agent",
+    "adding-memory",
+    "building-review-loops",
+    "using-mcp-servers",
+    "debugging-workflows",
+    "multi-workflow-workspaces",
+    "export-to-claude",
+    "export-to-cursor",
+    "export-to-kiro",
+    "import-from-platform",
+    "git-integration",
+    "ci-cd",
+    "custom-platform",
+    "white-label"
+  ]
+}

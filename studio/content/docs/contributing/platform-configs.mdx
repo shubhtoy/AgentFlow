@@ -1,0 +1,122 @@
+---
+title: Platform Configs
+description: Create new export targets.
+---
+
+AgentFlow's export system is entirely config-driven. To add a new platform, you create a JSON file — no subclasses or adapter code needed.
+
+## Overview
+
+The transport layer converts `.agentflow/` workspace files into platform-specific outputs (LangGraph, Claude, GitHub Actions, etc.). Each platform is defined by a single JSON config that declares how files map from source to target.
+
+## Adding a New Platform
+
+### 1. Create the config file
+
+Add a JSON file at `src/transport/platforms/your-name.json`:
+
+```json
+{
+  "name": "your-name",
+  "version": "1.0.0",
+  "description": "Export target for Your Platform",
+  "exportRules": [
+    {
+      "source": ".agentflow/AGENTS.md",
+      "target": "agent.yaml",
+      "type": "single-file",
+      "transform": "agentsToYaml",
+      "fidelity": "native"
+    },
+    {
+      "source": ".agentflow/**/SKILL.md",
+      "target": "nodes/",
+      "type": "glob-transform",
+      "transform": "skillToNode",
+      "fidelity": "translated"
+    }
+  ],
+  "importRules": [
+    {
+      "source": "agent.yaml",
+      "target": ".agentflow/AGENTS.md",
+      "type": "single-file",
+      "transform": "yamlToAgents"
+    }
+  ]
+}
+```
+
+### 2. Define transform functions
+
+If your rules reference named transforms, add them to a `transforms.js` file alongside your config or in `src/transport/transforms/your-name.js`:
+
+```js
+export function agentsToYaml(content, context) {
+  // content: raw markdown string
+  // context: { sourcePath, targetPath, config }
+  return convertedOutput
+}
+
+export function skillToNode(content, context) {
+  return convertedOutput
+}
+```
+
+### 3. Add import rules for reverse
+
+The `importRules` array mirrors `exportRules` but in the opposite direction. This enables `agentflow import --platform your-name` to pull external configs back into `.agentflow/` format.
+
+### 4. Test the export
+
+```bash
+agentflow export --platform your-name
+```
+
+This reads your config, applies each rule in order, and writes the output to the configured target paths.
+
+## Rule Types
+
+Each rule in `exportRules` or `importRules` has a `type` field:
+
+<Cards>
+<Card title="single-file">
+Maps one source file to one target file. Use for root-level configs like AGENTS.md.
+</Card>
+<Card title="glob-copy">
+Copies all files matching the glob pattern to the target directory without transformation.
+</Card>
+<Card title="glob-transform">
+Matches files via glob and runs each through the named transform function before writing to target.
+</Card>
+<Card title="merge-into">
+Collects multiple source files and merges their output into a single target file. Useful for assembling a monolithic config from distributed nodes.
+</Card>
+<Card title="skip">
+Explicitly excludes matched files from export. Use to suppress internal-only files like memory or hooks.
+</Card>
+</Cards>
+
+## Fidelity Levels
+
+The `fidelity` field documents how accurately a rule preserves the original semantics:
+
+| Level | Meaning |
+|-------|---------|
+| `native` | The target platform supports this concept directly. No information loss. |
+| `on-demand` | Supported but requires runtime resolution or lazy loading on the target. |
+| `translated` | Converted to an equivalent construct. Minor semantic differences possible. |
+| `preserved` | Stored as metadata or comments. Not executable on the target but round-trips back. |
+
+Fidelity is informational — it does not change export behavior but helps users understand what to expect.
+
+## How AdapterFactory Auto-Loads Configs
+
+The `AdapterFactory` in `src/transport/factory.js` scans `src/transport/platforms/` at startup. Every `.json` file found is registered as an available platform:
+
+1. The factory reads all JSON files from the platforms directory.
+2. Each config is validated against the platform schema (name, version, exportRules required).
+3. Transform function references are resolved from the corresponding transforms module.
+4. The platform becomes available via `--platform` flag without any manual registration.
+
+This means adding a new JSON file is sufficient to make a platform available — no code changes to the factory or CLI are required.

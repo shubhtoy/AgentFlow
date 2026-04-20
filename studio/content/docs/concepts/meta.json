@@ -1,0 +1,20 @@
+{
+  "title": "Concepts",
+  "icon": "Lightbulb",
+  "pages": [
+    "...index",
+    "directory-as-architecture",
+    "selective-context",
+    "agents-md-standard",
+    "context-engineering",
+    "workspaces",
+    "workflows",
+    "nodes",
+    "edges",
+    "resources",
+    "references",
+    "identity",
+    "validation",
+    "export"
+  ]
+}

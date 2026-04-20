@@ -1,0 +1,158 @@
+---
+title: Settings
+description: API keys, theme, model selection, auto-save, and MCP configuration.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+The settings dialog centralizes all studio configuration: API keys for AI providers, appearance preferences, editor behavior, model selection, and workspace defaults.
+
+## Opening Settings
+
+Press `Cmd+,` to open the settings dialog, or use the command palette (`Cmd+K` then "Open Settings").
+
+<ComponentPreview title="Settings" height="xl">
+  <DocsPlayground panel="settings" />
+</ComponentPreview>
+
+## API Keys
+
+Configure provider keys for AI-powered features (copilot, export, and content generation).
+
+<Tabs items={['Anthropic', 'OpenAI', 'Google']}>
+<Tab value="Anthropic">
+Set your key in the `ANTHROPIC_API_KEY` field. Required for Claude-based copilot interactions and Claude Code export. Available models: Claude Sonnet, Claude Haiku.
+</Tab>
+<Tab value="OpenAI">
+Set your key in the `OPENAI_API_KEY` field. Enables GPT models in the copilot. Available models: GPT-4o, GPT-4o-mini.
+</Tab>
+<Tab value="Google">
+Set your key in the `GOOGLE_AI_API_KEY` field. Enables Gemini models in the copilot. Available models: Gemini Pro, Gemini Flash.
+</Tab>
+</Tabs>
+
+### Key Storage
+
+Where your keys are stored depends on your environment:
+
+| Environment | Storage location | Details |
+|-------------|-----------------|---------|
+| **Hosted studio** | Browser session storage | Keys are stored locally in your browser and never sent to a backend server. They are cleared when you close the browser tab. |
+| **Local development** | `studio/.env.local` | Keys are read from the `.env.local` file in your studio directory. Edit the file directly or use the settings dialog. |
+
+<Callout type="warn">
+Never commit API keys to version control. The `.env.local` file should be listed in your `.gitignore`. The settings dialog warns you if it detects that `.env.local` is not gitignored.
+</Callout>
+
+## Appearance
+
+### Theme
+
+Toggle between light and dark theme. The setting persists across sessions in local storage. The theme applies to the entire studio interface including the canvas, panels, and dialogs.
+
+| Option | Description |
+|--------|-------------|
+| Light | White backgrounds, dark text. Best for well-lit environments. |
+| Dark | Dark backgrounds, light text. Reduces eye strain in low-light environments. |
+| System | Follows your operating system preference. Updates automatically when you switch system theme. |
+
+## Editor Preferences
+
+Customize the markdown editing experience:
+
+| Setting | Options | Default | Description |
+|---------|---------|---------|-------------|
+| **Font size** | 10--24 px | 14 px | Editor and preview font size |
+| **Tab size** | 2 or 4 spaces | 2 | Indentation width for YAML and markdown |
+| **Word wrap** | On / Off | On | Soft wrapping for long lines |
+| **Grid size** | 10--40 px | 20 px | Canvas snap-to-grid spacing |
+| **Minimap** | On / Off | On | Show the canvas minimap by default |
+| **Line numbers** | On / Off | On | Show line numbers in the editor |
+
+Changes apply immediately to all open editors. No restart required.
+
+## Model Configuration
+
+Select the default model used by the copilot. The dropdown shows only models for which you have configured a valid API key.
+
+<Steps>
+<Step>
+### Select a provider
+
+Choose Anthropic, OpenAI, or Google from the provider dropdown.
+</Step>
+<Step>
+### Select a model
+
+The model dropdown updates to show available models for the selected provider. Choose your preferred model.
+</Step>
+<Step>
+### Set as default
+
+The selected model becomes the default for all new copilot conversations. You can still switch models per-conversation using the model picker in the copilot panel header.
+</Step>
+</Steps>
+
+### Model Comparison
+
+| Model | Provider | Speed | Tool-calling | Context window |
+|-------|----------|-------|-------------|----------------|
+| Claude Sonnet | Anthropic | Medium | Excellent | 200K tokens |
+| Claude Haiku | Anthropic | Fast | Good | 200K tokens |
+| GPT-4o | OpenAI | Medium | Good | 128K tokens |
+| GPT-4o-mini | OpenAI | Fast | Good | 128K tokens |
+| Gemini Pro | Google | Medium | Good | 1M tokens |
+| Gemini Flash | Google | Fast | Good | 1M tokens |
+
+## Auto-Save
+
+Control how the studio saves your work:
+
+| Setting | Options | Default | Description |
+|---------|---------|---------|-------------|
+| **Enabled** | On / Off | On | Whether files auto-save after editing |
+| **Debounce interval** | 0.5--10 seconds | 1 second | Delay after you stop typing before the save triggers |
+
+When auto-save is disabled, you must press `Cmd+S` to save manually. The editor tab shows a dot indicator for unsaved changes.
+
+<Callout type="info">
+Auto-save writes to disk, not to git. You still need to stage and commit changes in the Git panel to persist them in version control.
+</Callout>
+
+## Workspace Preferences
+
+Settings that apply to the workspace as a whole:
+
+| Setting | Description |
+|---------|-------------|
+| **Default max_tokens** | The token budget ceiling inherited by nodes that do not set their own `max_tokens` |
+| **Validation strict mode** | Whether warnings block export (same toggle as in the Validation panel) |
+| **Default layout direction** | Horizontal or vertical auto-layout for new workflows |
+| **Export format** | The last-used export format, pre-selected when the export dialog opens |
+
+## MCP Quick Link
+
+The settings dialog includes a link to the MCP configuration panel. Click **Configure MCP Servers** to open the MCP panel where you can add, remove, and manage Model Context Protocol servers.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Open settings | `Cmd+,` |
+| Close settings | `Esc` |
+| Navigate tabs | `Cmd+[` / `Cmd+]` |
+| Save and close | `Cmd+Enter` |
+
+## Tips
+
+- Configure at least one API key before using the copilot. The copilot panel shows a setup prompt if no keys are configured.
+- Use the System theme option to avoid manually switching between light and dark mode.
+- Set a conservative default `max_tokens` at the workspace level, then override it on specific nodes that need more budget. This prevents accidental token overflows.
+- The debounce interval for auto-save can be increased if you find that frequent saves cause performance issues on large files.
+
+<Cards>
+  <Card title="Copilot" href="/docs/studio/copilot" description="AI chat with workflow awareness" />
+  <Card title="MCP" href="/docs/studio/mcp" description="Server management and registry browser" />
+</Cards>

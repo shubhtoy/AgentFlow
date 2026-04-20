@@ -1,0 +1,168 @@
+---
+title: Tokens
+description: Context budget tracking per node.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The Tokens panel shows token consumption for each node in your workflow, helping you stay within context budget limits and optimize prompt size.
+
+## Interactive Preview
+
+Open the panel below to inspect token usage. Each node displays a breakdown by layer. Nodes approaching or exceeding their `max_tokens` budget are highlighted so you can identify which references consume the most tokens.
+
+<ComponentPreview>
+  <DocsPlayground panel="tokens" />
+</ComponentPreview>
+
+## Understanding the Breakdown
+
+The token panel breaks consumption into five distinct layers. Each layer represents a different part of the prompt that gets assembled when a node executes.
+
+<Tabs items={['Identity', 'Routing', 'Contract', 'References', 'Working']}>
+<Tab value="Identity">
+The system prompt, agent persona, and any workspace-level `AGENTS.md` content. This is typically fixed across all nodes in a workflow and forms the base cost that every node pays. You can reduce this by keeping your `AGENTS.md` concise.
+</Tab>
+<Tab value="Routing">
+Edge conditions, gateway logic, and graph navigation instructions that tell the agent where it is in the workflow and what transitions are available. Complex workflows with many conditional branches consume more routing tokens.
+</Tab>
+<Tab value="Contract">
+The node's own `SKILL.md` content: its title, description, instructions, and any inline conditions or output schemas. This is the content you directly control when editing a node.
+</Tab>
+<Tab value="References">
+Attached resources -- capabilities, instructions, runbooks, memory, and hooks. Each attached resource adds its full content to the prompt. This layer is often the largest contributor to token usage and the primary target for optimization.
+</Tab>
+<Tab value="Working">
+Dynamic content injected at runtime: conversation history, tool call results, user inputs, and memory retrievals. This layer fluctuates between executions and cannot be precisely predicted at design time, but the panel shows estimated maximums based on your configuration.
+</Tab>
+</Tabs>
+
+## Budget Status Indicators
+
+The panel uses three severity levels for budget status:
+
+| Status | Indicator | Meaning |
+|--------|-----------|---------|
+| Normal | No highlight | Token usage is below 70% of the budget |
+| Approaching | Yellow highlight | Usage is between 70% and 100% of the budget |
+| Exceeded | Red highlight | Usage exceeds the configured `max_tokens` value |
+
+<Callout type="warn">
+When a node exceeds its budget, the runtime assembler removes references starting from the lowest priority until the prompt fits within the context window. Low-priority resources may silently disappear from the assembled prompt at execution time.
+</Callout>
+
+## Scope Analysis
+
+Each reference attached to a node can use one of three scope settings that control how much of the resource content is included in the prompt:
+
+| Scope | Included content | Typical savings |
+|-------|-----------------|-----------------|
+| `full` | The entire resource file including frontmatter, description, and body | None (default) |
+| `summary` | Frontmatter fields and the first paragraph of the body | 40--60% reduction |
+| `signature` | For capabilities: tool name, parameters, and return type only | 60--80% reduction |
+
+Change the scope of a reference from the References tab in the editor panel. Click the scope badge next to any attached resource to cycle through the options.
+
+## Reducing Token Usage
+
+When a node approaches or exceeds its budget, apply these strategies in order of impact:
+
+<Steps>
+<Step>
+### Remove unnecessary references
+
+Each attached resource contributes its entire content (at `full` scope). Open the References tab and review every attachment. Remove resources that the node does not actively need. Ask: "Does this node call this tool?" and "Does this node need this instruction?"
+</Step>
+<Step>
+### Switch to signature or summary scope
+
+For capability references, set `scope: signature` to include only the tool name, parameters, and return type -- omitting the full description and examples. For instruction references, use `scope: summary` to include only the first paragraph.
+</Step>
+<Step>
+### Set explicit budgets
+
+Add `max_tokens` to your node frontmatter to enforce a hard ceiling. Without an explicit budget, nodes inherit the workspace default which may be more generous than necessary. A tighter budget forces you to be intentional about what each node includes.
+</Step>
+<Step>
+### Consolidate instructions
+
+Multiple small instruction files attached to one node each carry overhead from their own frontmatter and formatting. Merge related instructions into a single file when they always appear together on the same nodes.
+</Step>
+<Step>
+### Split large nodes
+
+If a node does too many things, its reference list grows large. Split it into two or more focused nodes, each with only the references it needs. This often reduces total token usage because each sub-node avoids carrying references meant for the other.
+</Step>
+</Steps>
+
+## Per-Node Breakdown
+
+Click any node row in the tokens panel to expand its detailed breakdown. The expanded view shows:
+
+- **Layer-by-layer bar chart** -- Visual representation of how each layer contributes to the total.
+- **Reference list with costs** -- Each attached resource with its individual token count and scope setting.
+- **Budget utilization percentage** -- How much of the `max_tokens` ceiling is consumed.
+- **Optimization suggestions** -- If the node is over budget, the panel suggests specific references to remove or scope changes to make.
+
+### Reading the Bar Chart
+
+The bar chart stacks the five layers left to right. The identity and routing layers are typically small and fixed. The contract layer varies by how much content you write in the node's `SKILL.md`. The references layer is usually the largest and most variable. The working layer shows an estimated range.
+
+A vertical line marks the `max_tokens` budget. If the stacked bars extend past this line, the node is over budget.
+
+## Workspace-Level View
+
+The tokens panel header shows the total token usage across all nodes in the active workflow. Click the header to toggle between per-node view and workspace summary view.
+
+The workspace summary shows:
+
+- **Total tokens** -- Sum of all node budgets in the workflow.
+- **Largest node** -- The node consuming the most tokens, with a direct link.
+- **Shared resources** -- Resources attached to multiple nodes, showing how many times their cost is duplicated.
+- **Optimization potential** -- Estimated savings if all references used `summary` scope instead of `full`.
+
+<Callout type="info">
+The token panel recalculates on every edit, so you can immediately see the impact of adding or removing a reference, changing scope settings, or editing node content.
+</Callout>
+
+## Priority and Truncation
+
+When a node exceeds its budget, the assembler removes references in priority order (lowest priority removed first). If no priority ordering is defined, references are removed in reverse attachment order (last attached, first removed).
+
+To maintain predictable behavior, assign explicit priority values to your references when working near budget limits:
+
+```yaml
+references:
+  - name: web-search
+    scope: signature
+    priority: 1    # highest priority, removed last
+  - name: coding-standards
+    scope: summary
+    priority: 2
+  - name: style-guide
+    scope: full
+    priority: 3    # lowest priority, removed first
+```
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle tokens panel | `T` |
+| Expand/collapse node detail | `Enter` on selected row |
+| Navigate node list | Arrow keys |
+| Jump to node on canvas | `Cmd+Enter` on selected row |
+
+## Tips
+
+- Check the tokens panel after attaching a new resource to see its immediate impact on the budget.
+- Use `scope: signature` for capabilities that the node calls but does not need to explain to the user.
+- The "Shared resources" view in the workspace summary helps identify resources that could be moved to a global instruction to avoid duplication.
+- When splitting a node, check that the total token usage of the two new nodes is less than the original. Splitting adds routing overhead, so very small splits may not save tokens.
+
+<Cards>
+  <Card title="Elements" href="/docs/studio/elements" description="Resources organized by category" />
+  <Card title="Validation" href="/docs/studio/validation" description="Real-time error and warning checks" />
+</Cards>

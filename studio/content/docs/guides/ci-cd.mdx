@@ -1,0 +1,187 @@
+---
+title: CI/CD Integration
+description: Validate AgentFlow workflows in CI/CD pipelines to catch errors before deployment.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+## Overview
+
+AgentFlow provides CLI commands to validate workflows, parse output as JSON, and check token budgets. Integrate these into your CI/CD pipeline to catch issues early.
+
+<Mermaid chart={`graph LR
+  A["git push"] --> B["CI Pipeline"]
+  B --> C["agentflow validate"]
+  C -->|pass| D["agentflow export"]
+  C -->|fail| E["Report errors"]
+  D --> F["Deploy / Publish"]
+`} />
+
+## Pipeline Configuration
+
+<Tabs items={["GitHub Actions", "GitLab CI", "Generic"]}>
+<Tab value="GitHub Actions">
+```yaml
+name: Validate AgentFlow Workflows
+
+on:
+  push:
+    paths:
+      - '.agentflow/**'
+  pull_request:
+    paths:
+      - '.agentflow/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Validate workflows
+        run: npx agentflow validate .agentflow --strict
+
+      - name: Check token budgets
+        run: npx agentflow tokens .agentflow
+```
+</Tab>
+<Tab value="GitLab CI">
+```yaml
+validate-workflows:
+  image: node:20
+  stage: test
+  rules:
+    - changes:
+        - .agentflow/**
+  script:
+    - npm ci
+    - npx agentflow validate .agentflow --strict
+    - npx agentflow tokens .agentflow
+```
+</Tab>
+<Tab value="Generic">
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+npm ci
+npx agentflow validate .agentflow --strict
+npx agentflow tokens .agentflow
+```
+
+The `validate` command exits with code 0 on success and 1 on errors, making it compatible with any CI system.
+</Tab>
+</Tabs>
+
+## Pre-commit Hook
+
+Use a Git pre-commit hook to validate workflows before they reach your remote repository.
+
+```bash
+#!/usr/bin/env bash
+# .git/hooks/pre-commit
+
+staged=$(git diff --cached --name-only -- '.agentflow/')
+
+if [ -n "$staged" ]; then
+  npx agentflow validate .agentflow --strict
+fi
+```
+
+Make the hook executable:
+
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+<Callout type="info">
+Consider using a tool like husky or lefthook to manage Git hooks across your team.
+</Callout>
+
+## npm Scripts
+
+Add validation commands to your `package.json` for convenience:
+
+```json
+{
+  "scripts": {
+    "validate": "agentflow validate .agentflow",
+    "validate:strict": "agentflow validate .agentflow --strict",
+    "validate:json": "agentflow parse .agentflow --format json",
+    "tokens": "agentflow tokens .agentflow"
+  }
+}
+```
+
+Then run in CI or locally:
+
+```bash
+npm run validate:strict
+```
+
+## Strict Mode
+
+By default, `agentflow validate` only fails on errors. Warnings (such as unused nodes or missing descriptions) do not cause a non-zero exit code.
+
+Pass `--strict` to treat warnings as errors:
+
+```bash
+agentflow validate .agentflow --strict
+```
+
+<Callout type="warn">
+Enable `--strict` in CI to enforce consistent quality across all workflow contributions.
+</Callout>
+
+For machine-readable output (useful for custom reporting), use:
+
+```bash
+agentflow parse .agentflow --format json
+```
+
+## Token Budget Checking
+
+The `agentflow tokens` command estimates the token usage of your workflows. Use it in CI to prevent workflows from exceeding model context limits.
+
+```bash
+agentflow tokens .agentflow
+```
+
+<Steps>
+<Step>
+Run `agentflow tokens` as part of your pipeline after validation passes.
+</Step>
+<Step>
+Review the output for any workflows that approach or exceed your target budget.
+</Step>
+<Step>
+Fail the build if token counts exceed acceptable thresholds by combining with a script check.
+</Step>
+</Steps>
+
+Example threshold check in CI:
+
+```bash
+output=$(npx agentflow tokens .agentflow)
+echo "$output"
+if echo "$output" | grep -q "OVER_BUDGET"; then
+  echo "Token budget exceeded"
+  exit 1
+fi
+```
+
+## Related
+
+<Cards>
+<Card title="Validation Rules" href="/docs/reference/validation-rules" description="Full reference of all validation rules and their severity levels." />
+<Card title="Troubleshooting" href="/docs/guides/troubleshooting" description="Common validation errors and how to resolve them." />
+</Cards>

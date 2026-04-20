@@ -1,0 +1,133 @@
+---
+title: Ref Syntax
+description: All 5 reference types and template variables.
+---
+
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Resource Mention
+
+References a resource by name to include it in context.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'@resource-type/resource-name'",
+      description: "Mentions a resource to pull it into the node's context.",
+    },
+    resolution: {
+      type: "string",
+      description: "Looks up the resource in the .agentflow/ directory by type folder and filename.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "Resource not found, ambiguous match, circular reference.",
+    },
+  }}
+/>
+
+## Unconditional Edge
+
+Connects two nodes with an always-taken path.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'-> node-name'",
+      description: "Defines a direct edge to the target node.",
+    },
+    resolution: {
+      type: "string",
+      description: "Resolves the target node by folder name within the same workflow.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "Target node not found, self-referencing edge, duplicate edge.",
+    },
+  }}
+/>
+
+## Conditional Edge
+
+Connects two nodes with a condition-gated path.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'-> node-name (when condition)'",
+      description: "Defines an edge taken only when the condition is met.",
+    },
+    resolution: {
+      type: "string",
+      description: "Resolves the target node and evaluates the condition via a runbook or inline expression.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "Target node not found, invalid condition expression, unreachable branch.",
+    },
+  }}
+/>
+
+## Data Flow
+
+Passes output from one node as input to another.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'node-name.output-name'",
+      description: "References a specific output from a preceding node.",
+    },
+    resolution: {
+      type: "string",
+      description: "Resolves the source node and matches the named output from its outputs array.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "Source node not found, output name not defined, type mismatch.",
+    },
+  }}
+/>
+
+## Template Variable
+
+Injects dynamic values into instruction or node content.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'{variable_name}'",
+      description: "Replaced at runtime with the resolved value.",
+    },
+    resolution: {
+      type: "string",
+      description: "Looks up the variable from node outputs, memory, or workflow inputs in that order.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "Variable not defined, unresolvable at current scope.",
+    },
+  }}
+/>
+
+## Environment Variables
+
+Injects environment values at runtime.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'${env:VARIABLE_NAME}'",
+      description: "Replaced with the value of the named environment variable.",
+    },
+    resolution: {
+      type: "string",
+      description: "Reads from process environment or studio/.env.local at runtime.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "Environment variable not set, empty value when required.",
+    },
+  }}
+/>

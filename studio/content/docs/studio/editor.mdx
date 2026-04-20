@@ -1,0 +1,195 @@
+---
+title: Editor
+description: Markdown editor with reference badges, syntax highlighting, and live preview.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The editor is a Monaco-based markdown editor purpose-built for authoring agent workflow nodes. It provides syntax highlighting, inline reference badges, and a live preview so you can see rendered output as you type.
+
+## Interactive Preview
+
+The editor and frontmatter form below show the first node of the build-feature workflow. The editor displays the markdown with reference badges, while the form shows the structured YAML fields.
+
+<PreviewGrid>
+  <ComponentPreview title="Markdown Editor" height="lg">
+    <DocsPlayground panel="editor" />
+  </ComponentPreview>
+  <ComponentPreview title="Frontmatter Form" height="lg">
+    <DocsPlayground panel="frontmatter" />
+  </ComponentPreview>
+</PreviewGrid>
+
+## Opening the Editor
+
+Select any node on the canvas to open its content in the editor panel. You can also double-click a file in the Explorer to open it. The editor appears on the right side of the canvas by default.
+
+The editor has three tabs along the top:
+
+| Tab | Purpose |
+|-----|---------|
+| **Content** | The markdown body of the node -- instructions, context, and references |
+| **Properties** | The frontmatter form (same as the Frontmatter panel) |
+| **References** | A list of all resources attached to this node with token cost per reference |
+
+## Reference Badges
+
+When you reference a resource, edge, or data-flow variable in your markdown, the editor renders an inline chip (badge) for quick identification. Badges are clickable and navigate to the referenced item.
+
+```markdown
+## Instructions
+
+Use the [[capability:web-search]] tool to find results.
+Route to [[edge:success]] when the query returns data.
+Pass [[data:user-query]] as the input parameter.
+```
+
+In the editor, each `[[...]]` token renders as a colored badge:
+
+| Prefix | Color | Navigates to |
+|--------|-------|-------------|
+| `capability:` | Blue | The capability file definition |
+| `edge:` | Green | The edge on the canvas |
+| `data:` | Purple | The data-flow variable source |
+| `instruction:` | Orange | The instruction file |
+| `runbook:` | Teal | The runbook file |
+
+Click any badge to jump to that resource definition. Hover over a badge to see a tooltip with the resource description and token cost.
+
+### Ref Autocomplete
+
+Type `[[` to trigger the autocomplete dropdown. The dropdown lists all available resources in your workspace, filtered as you type. Use arrow keys to navigate and `Enter` to insert the reference. The autocomplete is context-aware -- it prioritizes resources that are compatible with the current node type.
+
+<Callout type="info">
+The autocomplete also works for edge references. Type `[[edge:` to see all outgoing edges from the current node.
+</Callout>
+
+## Syntax Highlighting
+
+The editor highlights different content regions with distinct styling:
+
+<Tabs items={['Frontmatter', 'Markdown body', 'Code blocks']}>
+<Tab value="Frontmatter">
+YAML frontmatter blocks (between `---` delimiters) are highlighted with key-value coloring. Keys appear in one color, string values in another, and booleans/numbers in a third. This makes it easy to scan configuration at a glance.
+
+```yaml
+---
+title: Fetch Results
+description: Query the search API and return top results
+type: step
+---
+```
+</Tab>
+<Tab value="Markdown body">
+Standard markdown syntax is highlighted: headings, bold, italic, links, and lists each receive appropriate styling. Reference badges (`[[...]]`) are rendered inline as colored chips rather than raw text.
+</Tab>
+<Tab value="Code blocks">
+Fenced code blocks receive language-specific syntax highlighting. The editor supports all common languages (JavaScript, Python, YAML, JSON, Bash, etc.) via the Monaco tokenizer.
+
+````markdown
+```python
+def search(query: str) -> list:
+    return api.search(query, limit=10)
+```
+````
+</Tab>
+</Tabs>
+
+## Live Preview
+
+Toggle the preview pane with `Cmd+Shift+V` to see rendered markdown side-by-side with your source. The preview updates on every keystroke with no manual refresh required.
+
+The preview renders:
+
+- Markdown formatting (headings, lists, tables, code blocks)
+- Reference badges as clickable chips (same as in the editor)
+- Frontmatter as a formatted property table at the top
+- Inline images referenced by URL
+
+<Callout type="warn">
+The preview pane shares horizontal space with the editor. On narrow screens, consider closing the preview and using the rendered view in the canvas node card instead.
+</Callout>
+
+## Auto-Save
+
+Changes are saved automatically after a short debounce period (configurable in Settings). A status indicator in the editor toolbar shows the current save state:
+
+| Indicator | Meaning |
+|-----------|---------|
+| No indicator | File is saved and up to date |
+| Dot on tab | Unsaved changes pending |
+| Saving spinner | Write in progress |
+| Error icon | Save failed (check file permissions) |
+
+Press `Cmd+S` to force an immediate save without waiting for the debounce timer.
+
+## Editing Workflow
+
+<Steps>
+<Step>
+### Select a node
+
+Click a node on the canvas or double-click a file in the Explorer. The editor opens with the Content tab active.
+</Step>
+<Step>
+### Edit the markdown body
+
+Write instructions, add references with `[[...]]` syntax, and structure content with headings. The editor validates references on every save.
+</Step>
+<Step>
+### Switch to Properties
+
+Click the Properties tab to edit frontmatter fields using form controls instead of raw YAML. Changes sync bidirectionally -- edits in the form update the YAML and vice versa.
+</Step>
+<Step>
+### Check References
+
+Click the References tab to see all attached resources, their token costs, and their scope settings. Remove a reference by clicking the X button next to it.
+</Step>
+<Step>
+### Review in preview
+
+Toggle `Cmd+Shift+V` to verify the rendered output looks correct. Check that reference badges resolve and formatting renders as expected.
+</Step>
+</Steps>
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Save | `Cmd+S` |
+| Toggle preview | `Cmd+Shift+V` |
+| Trigger autocomplete | `[[` (type two brackets) |
+| Go to definition | `Cmd+click` on a badge |
+| Find and replace | `Cmd+F` / `Cmd+H` |
+| Toggle line comment | `Cmd+/` |
+| Move line up/down | `Alt+Up` / `Alt+Down` |
+| Duplicate line | `Shift+Alt+Down` |
+| Format document | `Shift+Alt+F` |
+| Open command palette | `Cmd+Shift+P` (editor-scoped) |
+
+## Validation on Save
+
+The editor validates references every time the file is saved. Broken references (pointing to files that do not exist) are underlined in red with a hover tooltip explaining the issue. The validation panel also updates to reflect any new errors.
+
+Common validation issues in the editor:
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| Red underline on `[[capability:xyz]]` | Capability file `xyz.md` does not exist | Create the capability or fix the name |
+| Yellow underline on `[[edge:fallback]]` | Edge exists but has no condition defined | Add a condition to the edge or remove the reference |
+| "Duplicate reference" warning | Same resource referenced twice in one node | Remove the duplicate |
+
+## Tips
+
+- Click any reference badge to jump to that resource definition.
+- Use the command palette (`Cmd+Shift+P`) inside the editor for Monaco-specific actions like "Sort Lines" or "Transform to Uppercase."
+- The editor supports multiple cursors: hold `Alt` and click to place additional cursors, then type to edit all positions simultaneously.
+- Drag the divider between editor and preview to adjust the split ratio.
+
+<Cards>
+  <Card title="Canvas" href="/docs/studio/canvas" description="The visual workflow graph for dragging and connecting nodes" />
+  <Card title="Frontmatter" href="/docs/studio/frontmatter" description="Structured YAML editing with form controls" />
+</Cards>

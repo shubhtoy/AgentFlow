@@ -1,0 +1,248 @@
+---
+title: Writing Nodes
+description: SKILL.md structure, frontmatter fields, and real patterns for each node type.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+Every node is a directory with a `SKILL.md` file. The file has two parts: YAML frontmatter (structured config) and a markdown body (the agent's task description). Here's how to write effective nodes for each type.
+
+## A Real Step Node
+
+This is `gather-requirements` from the build-feature workflow — a production-quality step node:
+
+```yaml
+---
+name: gather-requirements
+type: step
+entry: true
+primary: true
+agent: requirements-analyst
+model: claude-sonnet
+context:
+  max_tokens: 3000
+  inputs:
+    - ref: instructions/requirements-elicitation
+      scope: full
+    - ref: capabilities/read-code
+      scope: signature
+    - ref: memory/user
+      scope: full
+    - ref: memory/decisions
+      scope: full
+  exclude:
+    - instructions/technical-design
+    - instructions/implementation-discipline
+outputs:
+  - name: requirements-doc
+    format: markdown
+    description: Structured requirements with WHEN/THEN acceptance criteria
+---
+
+# Gather Requirements
+
+You are starting the spec-driven workflow. Your job is to transform
+the user's feature request into a precise, testable requirements document.
+
+## Resources
+
+- Apply {{instructions/requirements-elicitation}} to structure the requirements
+- Use {{capabilities/read-code}} to examine the source files
+- Use {{capabilities/write-file}} to create the document
+- {{memory/user}}
+- {{memory/decisions}}
+
+**Do not resolve** {{instructions/technical-design}} or
+{{instructions/implementation-discipline}} — they belong to later nodes.
+
+{{-> nodes/review-requirements-gate}}
+```
+
+### What makes this effective
+
+- **`agent: requirements-analyst`** — overrides the workspace persona for this specific task
+- **`context.inputs` with scopes** — loads elicitation instructions in `full` but read-code as just a `signature` (saves tokens)
+- **`context.exclude`** — explicitly blocks instructions meant for later phases
+- **`outputs`** — declares what this node produces so downstream nodes can reference it
+- **Explicit "do not resolve"** — tells the agent which resources to ignore even if they exist in the workspace
+
+## Frontmatter Reference
+
+<TypeTable type={{
+  name: { description: 'Node identifier — should match directory name', type: 'string', required: true },
+  type: { description: 'Determines behavior: step does work, router routes, sub-workflow delegates', type: '"step" | "router" | "sub-workflow"', required: true },
+  entry: { description: 'Marks the workflow starting point — exactly one per workflow', type: 'boolean', default: 'false' },
+  primary: { description: 'Marks the primary file in a multi-file node directory', type: 'boolean', default: 'false' },
+  agent: { description: 'Override workspace persona (e.g. "requirements-analyst", "senior-architect")', type: 'string' },
+  model: { description: 'Preferred LLM (e.g. "claude-sonnet", "gpt-4o")', type: 'string' },
+}} />
+
+### Output declarations
+
+```yaml
+outputs:
+  - name: requirements-doc
+    format: markdown
+    description: Structured requirements with acceptance criteria
+```
+
+Other nodes reference these via `{{<< output.gather-requirements}}`. The `format` field is informational — it tells downstream nodes what to expect.
+
+### Context budget
+
+```yaml
+context:
+  max_tokens: 3000
+  inputs:
+    - ref: instructions/requirements-elicitation
+      scope: full       # entire file content
+    - ref: capabilities/read-code
+      scope: signature  # just the interface/API surface
+    - ref: memory/decisions
+      scope: summary    # condensed version
+  exclude:
+    - instructions/technical-design
+```
+
+<TypeTable type={{
+  'scope: full': { description: 'Loads the entire resource content', type: 'Default behavior' },
+  'scope: signature': { description: 'Loads only the interface — name, description, parameters', type: 'Use for tools you mention but do not need full docs for' },
+  'scope: summary': { description: 'Loads a condensed version', type: 'Good for memory files and long outputs from previous nodes' },
+}} />
+
+## Writing Each Node Type
+
+<Tabs items={['Step nodes', 'Router nodes', 'Sub-workflow nodes']}>
+  <Tab value="Step nodes">
+    Steps do work and produce output. The body should:
+
+    1. **State the objective** — what this node produces
+    2. **List the process** — numbered steps the agent follows
+    3. **Reference resources** — tools, instructions, prior outputs
+    4. **Declare the next node** — `{{-> nodes/target}}`
+
+    ```markdown
+    # Implement the Feature
+
+    Based on the approved design in {{<< output.create-design}},
+    implement the feature following {{instructions/code-style}}.
+
+    ## Process
+
+    1. Read the design document
+    2. Implement the changes using {{capabilities/write-file}}
+    3. Run {{capabilities/get-diagnostics}} after every edit
+    4. Run {{capabilities/run-tests}} after every logical change
+    5. Fix any failures before proceeding
+
+    ## Quality Checks
+
+    - All tests pass
+    - No diagnostics errors
+    - Code follows existing patterns
+
+    {{-> nodes/verify-feature}}
+    ```
+  </Tab>
+  <Tab value="Router nodes">
+    Routers evaluate conditions and route. They should be lightweight — no tools, no instructions:
+
+    ```yaml
+    ---
+    name: review-design-gate
+    type: router
+    context:
+      inputs:
+        - ref: memory/user
+          scope: summary
+    ---
+
+    # Review Design Gate
+
+    Present the design from {{<< output.create-design}} to the user
+    via {{runbooks/review-design}}.
+
+    ## Routing
+
+    - If approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
+    - If rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+    ```
+
+    <Callout type="warn" title="Validator warnings">
+      The validator emits `router_has_capabilities` and `router_has_instructions` if a router references tools or instructions. Routers should only evaluate conditions.
+    </Callout>
+  </Tab>
+  <Tab value="Sub-workflow nodes">
+    Sub-workflows delegate to another workflow in the workspace:
+
+    ```yaml
+    ---
+    name: deploy
+    type: sub-workflow
+    workflow: ci-cd
+    ---
+
+    # Deploy
+
+    Run the CI/CD workflow to deploy the implementation.
+    ```
+
+    The `workflow` field references another workflow directory by name. When the agent reaches this node, it executes the entire referenced workflow, then returns.
+  </Tab>
+</Tabs>
+
+## Multi-File Nodes
+
+A node directory can contain multiple `.md` files. One is primary (the task), the rest are supporting context:
+
+```
+gather-requirements/
+  SKILL.md                    ← primary: task definition
+  requirements-template.md    ← supporting: template to follow
+```
+
+All files in the directory are loaded into the node's context. Use this when a node needs reference material that's too specific to be a global resource — like a template or example output.
+
+<Accordions>
+  <Accordion title="When to use multi-file nodes vs global resources">
+    **Use a multi-file node** when the material is specific to one node — a template, an example, domain-specific reference data.
+
+    **Use a global resource** when multiple nodes across workflows might need it — coding conventions, tool definitions, common conditions.
+
+    Rule of thumb: if only one node uses it, put it in the node directory. If two or more nodes use it, make it a resource.
+  </Accordion>
+</Accordions>
+
+## Common Mistakes
+
+<Accordions>
+  <Accordion title="Loading too much context">
+    Every resource reference adds tokens. A node that references 10 instructions and 8 capabilities will have a bloated context where the model loses focus. Use `scope: signature` for tools you mention but do not need full docs for. Use `context.exclude` to block resources from other phases.
+  </Accordion>
+  <Accordion title="Routers that do work">
+    Routers should only evaluate conditions and route. If your router is reading files, making decisions, or producing output, it should be a step node followed by a router.
+  </Accordion>
+  <Accordion title="Missing output declarations">
+    If a downstream node uses a data flow reference to your node but your node does not declare `outputs` in its frontmatter, the validator emits `output_declaration`. Always declare what your node produces.
+  </Accordion>
+  <Accordion title="Vague task descriptions">
+    "Implement the feature" is too vague. Be specific: state what input to read, which tools to use, what conventions to follow, and what to produce. Reference resources explicitly so the agent has the right context.
+  </Accordion>
+</Accordions>
+
+## Explore Real Nodes
+
+Click any node on the canvas to see its SKILL.md structure. The Elements panel shows which resources each node references. The Tokens panel shows how each reference contributes to the context budget.
+
+<ComponentPreview title="Node structure in build-feature" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['elements', 'tokens']} />
+</ComponentPreview>
+
+<Cards>
+  <Card title="Writing Resources" href="/docs/authoring/writing-resources" description="Create the resources your nodes reference" />
+  <Card title="Frontmatter Schema" href="/docs/reference/frontmatter-schema" description="Complete field reference" />
+  <Card title="Selective Context" href="/docs/concepts/selective-context" description="How context assembly works" />
+</Cards>

@@ -1,0 +1,180 @@
+---
+title: Export
+description: Multi-format export with preview and download.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+
+The export dialog converts your AgentFlow workspace into platform-specific formats. Preview the output, select your target platform, and download the result as a ZIP archive or individual files.
+
+## Opening the Export Dialog
+
+Press `Cmd+Shift+E` to open the export dialog, or use the command palette (`Cmd+K` then "Export"). The dialog can also be triggered from the canvas toolbar export button.
+
+<ComponentPreview title="Export dialog" height="xl">
+  <DocsPlayground panel="export" />
+</ComponentPreview>
+
+## Export Formats
+
+The dialog offers three export modes:
+
+<Tabs items={['Raw', 'Parsed', 'Platform']}>
+<Tab value="Raw">
+Export files exactly as they exist in your workspace, with no transformations applied. The output mirrors your `.agentflow/` directory structure. Use this when you want a clean backup or when sharing the workspace with another AgentFlow user.
+
+The raw export includes all files: workflows, nodes, capabilities, instructions, runbooks, memory, hooks, and configuration files.
+</Tab>
+<Tab value="Parsed">
+Export with all references resolved. Instruction refs, capability refs, and runbook refs are inlined into the output. Each node's `SKILL.md` becomes a self-contained file with all referenced content embedded.
+
+Use parsed export when you want to inspect the fully assembled prompt that each node would receive at runtime. This is useful for debugging token usage or sharing node content with someone who does not have the full workspace.
+</Tab>
+<Tab value="Platform">
+Export targeting a specific agent platform with the appropriate structure and configuration. The exporter transforms your AgentFlow workspace into the native format of the selected platform.
+
+Select your target platform from the dropdown (see Platform Targets below).
+</Tab>
+</Tabs>
+
+## Platform Targets
+
+When using Platform export, select your target:
+
+| Platform | Output format | Description |
+|----------|--------------|-------------|
+| **Claude Code** | `.claude/` directory | Structured for Claude's agent format with CLAUDE.md and task files |
+| **Cursor** | `.cursor/` directory | Compatible with Cursor rules and workflow definitions |
+| **Kiro** | `.kiro/` directory | Exports as Kiro-native specs, tasks, and steering files |
+| **Windsurf** | `.windsurf/` directory | Formatted for Windsurf agent consumption |
+| **VS Code Copilot** | `.github/copilot-instructions.md` | GitHub Copilot instructions format |
+| **OpenClaw** | `.openclaw/` directory | OpenClaw-compatible agent definition |
+| **Agent Spec** | `agent-spec.yaml` | Generic agent specification format |
+
+Each platform exporter handles the mapping from AgentFlow concepts (workflows, nodes, capabilities, instructions) to the platform's native equivalents. The preview pane shows exactly what will be generated.
+
+## Workflow vs Workspace Scope
+
+The scope selector at the top of the dialog controls what gets exported:
+
+<Tabs items={['Workspace (default)', 'Active workflow only']}>
+<Tab value="Workspace (default)">
+Exports the entire `.agentflow/` workspace including all workflows, shared resources, and configuration. This is the default and produces a complete, self-contained export.
+</Tab>
+<Tab value="Active workflow only">
+Exports only the currently active workflow and the resources it references. Shared resources that are not referenced by the active workflow are excluded. Use this when you want to extract a single workflow from a larger workspace.
+</Tab>
+</Tabs>
+
+<Callout type="info">
+When exporting a single workflow, the exporter traces all references and includes only the capabilities, instructions, runbooks, and memory files that the workflow's nodes actually use. Unreferenced resources are excluded.
+</Callout>
+
+## File Tree Preview
+
+The center of the export dialog shows a file tree preview of the export output. Browse the tree to see exactly what will be generated:
+
+<Files>
+  <Folder name=".claude" defaultOpen>
+    <File name="CLAUDE.md" />
+    <Folder name="tasks" defaultOpen>
+      <File name="gather-requirements.md" />
+      <File name="implement-task.md" />
+      <File name="review-code.md" />
+    </Folder>
+    <Folder name="tools">
+      <File name="web-search.md" />
+    </Folder>
+  </Folder>
+</Files>
+
+Click any file in the preview tree to see its full content in the right pane. This lets you verify that references resolved correctly, platform-specific formatting is applied, and no content is missing.
+
+## Validation Before Export
+
+Validation runs automatically when the export dialog opens. If your workspace contains errors (missing references, invalid node connections, or malformed YAML), the export is blocked until you resolve them.
+
+| Validation state | Export behavior |
+|-----------------|----------------|
+| No errors, no warnings | Export proceeds immediately |
+| Warnings only | Export proceeds with a warning banner |
+| Errors present | Export button is disabled; error list shown |
+
+Click any error in the list to close the export dialog and navigate to the source of the issue. Fix the error, then reopen the export dialog.
+
+<Callout type="warn">
+In strict mode (enabled in the Validation panel), warnings are treated as errors and also block export. Disable strict mode or fix the warnings to proceed.
+</Callout>
+
+## Export Walkthrough
+
+<Steps>
+<Step>
+### Open the dialog
+
+Press `Cmd+Shift+E`. The dialog opens with the last-used format and platform pre-selected.
+</Step>
+<Step>
+### Select format
+
+Choose Raw, Parsed, or Platform from the format tabs. If Platform, select the target platform from the dropdown.
+</Step>
+<Step>
+### Set scope
+
+Choose Workspace or Active Workflow from the scope selector. The file tree preview updates to reflect the selection.
+</Step>
+<Step>
+### Review the preview
+
+Browse the file tree and click individual files to inspect their content. Verify that the output matches your expectations.
+</Step>
+<Step>
+### Download
+
+Click **Download ZIP** to get all files in a single archive, or click individual files in the preview to download them separately. The ZIP file is named `{workspace-name}-{format}-{timestamp}.zip`.
+</Step>
+</Steps>
+
+## Exporting from the Command Line
+
+The export engine is also available as a CLI command:
+
+```bash
+# Export entire workspace to Claude format
+npx agentflow export --format platform --platform claude --output ./dist
+
+# Export active workflow only, parsed format
+npx agentflow export --format parsed --workflow build-feature --output ./dist
+
+# Export raw format as ZIP
+npx agentflow export --format raw --zip --output ./export.zip
+```
+
+The CLI runs the same validation checks as the dialog. Pass `--strict` to treat warnings as errors, or `--skip-validation` to bypass checks entirely (not recommended).
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Open export dialog | `Cmd+Shift+E` |
+| Switch format tab | `Cmd+1` / `Cmd+2` / `Cmd+3` |
+| Download ZIP | `Cmd+Enter` |
+| Close dialog | `Esc` |
+| Navigate file tree | Arrow keys |
+| Preview selected file | `Enter` |
+
+## Tips
+
+- Use the Parsed format to debug token issues. The parsed output shows exactly what content each node would receive, with all references inlined.
+- The file tree preview updates in real time as you change format and scope settings. Use it to compare outputs across platforms.
+- When exporting for a platform you have not used before, review the generated files carefully. Each platform has different conventions for how agent instructions are structured.
+- The CLI export command integrates well with CI pipelines for automated export on every commit.
+
+<Cards>
+  <Card title="Settings" href="/docs/studio/settings" description="Configure export preferences and defaults" />
+  <Card title="Validation" href="/docs/studio/validation" description="Fix errors before exporting" />
+</Cards>

@@ -1,0 +1,288 @@
+---
+title: Using MCP Servers
+description: Connect external tools via Model Context Protocol — configure servers, generate capabilities, and reference them from nodes.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Mermaid } from '@/components/docs/mdx-components';
+
+MCP (Model Context Protocol) lets your workflows call external tools — GitHub, databases, browsers, Slack, and anything else with an MCP server. AgentFlow manages the connection lifecycle: you configure the server, discover its tools, and reference the generated capabilities from your nodes.
+
+## Architecture
+
+<Mermaid chart={`graph LR
+  subgraph "Your Workflow"
+    N["Node SKILL.md"] -->|"{{capabilities/create-issue}}"| C["Capability .md"]
+  end
+  subgraph "AgentFlow Runtime"
+    C -->|"mcp: github"| M["McpToolManager"]
+    M --> T{"Transport"}
+  end
+  subgraph "External"
+    T -->|stdio| S["Local MCP Server"]
+    T -->|HTTP/SSE| R["Remote MCP Server"]
+  end
+`} />
+
+The capability file bridges your workflow and the MCP server. Nodes reference capabilities by name; the runtime reads the `mcp` field to determine which server to call.
+
+## What you will create
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name="mcp.json" />
+    <Folder name="capabilities" defaultOpen>
+      <File name="create-issue.md" />
+      <File name="search-code.md" />
+    </Folder>
+    <Folder name="code-review" defaultOpen>
+      <File name="AGENTS.md" />
+      <Folder name="analyze">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="report">
+        <File name="SKILL.md" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+<Steps>
+
+<Step>
+## Create the MCP configuration
+
+Create `.agentflow/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
+      },
+      "required": true
+    }
+  }
+}
+```
+
+- `command` and `args` define how to start the server (stdio transport).
+- `${env:GITHUB_TOKEN}` is a placeholder resolved only at connection time — never stored in the file.
+- `required: true` means the workflow fails if this server cannot start.
+
+<Callout type="info">
+The `${env:VAR}` syntax keeps secrets out of config files. Set the value in your shell: `export GITHUB_TOKEN=ghp_your_token_here`.
+</Callout>
+</Step>
+
+<Step>
+## Handle environment variables
+
+<Tabs items={['Shell environment', 'dotenv file', 'CI/CD secrets']}>
+  <Tab value="Shell environment">
+    ```bash
+    export GITHUB_TOKEN=ghp_your_token_here
+    agentflow run code-review
+    ```
+  </Tab>
+  <Tab value="dotenv file">
+    Create a `.env` file at your project root (add to `.gitignore`):
+    ```bash
+    GITHUB_TOKEN=ghp_your_token_here
+    ```
+    AgentFlow loads `.env` automatically before resolving `${env:...}` tokens.
+  </Tab>
+  <Tab value="CI/CD secrets">
+    ```yaml
+    # .github/workflows/agent.yml
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    ```
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Discover tools
+
+Connect to the server and generate capability files:
+
+```bash
+agentflow mcp discover github
+```
+
+```
+Connected to github (stdio)
+Found 12 tools
+Generated 12 capability files in .agentflow/capabilities/
+```
+
+Each tool becomes a markdown file, e.g. `.agentflow/capabilities/create-issue.md`:
+
+```yaml
+---
+name: create-issue
+type: mcp
+mcp: github
+description: Create a new GitHub issue in a repository.
+parameters:
+  owner: { type: string, required: true }
+  repo: { type: string, required: true }
+  title: { type: string, required: true }
+  body: { type: string }
+generated: true
+---
+
+# Create Issue
+
+Create a new GitHub issue. Requires owner, repo, and title.
+```
+
+The `generated: true` flag prevents `discover` from overwriting your edits. Use `--overwrite` to force regeneration.
+</Step>
+
+<Step>
+## Create a workflow using MCP tools
+
+Create `.agentflow/code-review/AGENTS.md`:
+
+```yaml
+---
+type: agents
+name: code-review
+description: >
+  Analyze a GitHub repository for code quality issues
+  and create an issue summarizing findings.
+---
+```
+
+Create `.agentflow/code-review/analyze/SKILL.md`:
+
+```yaml
+---
+name: analyze
+type: step
+entry: true
+outputs:
+  - name: findings
+    format: markdown
+    description: Code quality findings with file references
+---
+
+# Analyze Repository
+
+Search the repository for code quality issues using
+{{capabilities/search-code}}.
+
+## What to look for
+
+1. Functions longer than 50 lines.
+2. Files with no test coverage.
+3. Deprecated API usage.
+4. Missing error handling in async functions.
+
+{{-> nodes/report}}
+```
+
+Create `.agentflow/code-review/report/SKILL.md`:
+
+```yaml
+---
+name: report
+type: step
+---
+
+# Create Report Issue
+
+Using the findings from {{<< output.analyze}}, create a GitHub
+issue with {{capabilities/create-issue}}.
+```
+</Step>
+
+<Step>
+## Add a remote MCP server
+
+Remote servers use `url` instead of `command`/`args`:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "${env:GITHUB_TOKEN}" },
+      "required": true
+    },
+    "linear": {
+      "url": "https://mcp.linear.app/mcp",
+      "required": false
+    }
+  }
+}
+```
+
+The runtime auto-detects the transport:
+
+<Mermaid chart={`graph TD
+  A{"Server config has..."} --> B{"command + args?"}
+  B -->|Yes| C["stdio transport<br/>Spawn local process"]
+  B -->|No| D{"url?"}
+  D -->|Yes| E["HTTP/SSE transport<br/>Connect to remote endpoint"]
+`} />
+</Step>
+
+<Step>
+## Test in the studio MCP panel
+
+1. Open the studio and navigate to the MCP panel.
+2. Each server shows its status: connected (green) or disconnected (red).
+3. Click **Test** to verify the connection and measure latency.
+4. Click **Discover** to regenerate capability files.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Server disconnected | Command not found | Verify `npx` is installed: `which npx` |
+| Authentication failed | Missing env var | Set the token: `export GITHUB_TOKEN=ghp_...` |
+| Connection refused | Remote server down | Check URL: `curl -I https://...` |
+| Tools not appearing | Stale cache | Run `agentflow mcp discover server-name --overwrite` |
+</Step>
+
+<Step>
+## Validate MCP references
+
+```bash
+agentflow validate
+```
+
+If a capability has `mcp: github` but `mcp.json` has no `github` entry, the validator emits `missing_mcp_server`. If a capability exists but no node references it, you get `orphaned_mcp_tool`.
+</Step>
+
+</Steps>
+
+## Platform export
+
+MCP configuration exports to each platform's expected location:
+
+| Platform | Output | Notes |
+|----------|--------|-------|
+| Claude Code | `.mcp.json` | Root-level file |
+| Cursor | `.cursor/mcp.json` | Inside `.cursor/` directory |
+| Kiro | `.kiro/settings/mcp.json` | Inside `.kiro/settings/` |
+| VS Code Copilot | `.mcp.json` | Root-level file |
+
+Capability files are inlined into exported node content — the target platform does not need the separate `.md` files.
+
+<Cards>
+  <Card title="MCP Authoring" href="/docs/authoring/mcp" description="Full MCP reference with transport details" />
+  <Card title="Writing Resources" href="/docs/authoring/writing-resources" description="Capability types including MCP" />
+  <Card title="Studio MCP Panel" href="/docs/studio/mcp" description="Visual server management" />
+  <Card title="Debugging Workflows" href="/docs/guides/debugging-workflows" description="Fix MCP-related validation errors" />
+</Cards>

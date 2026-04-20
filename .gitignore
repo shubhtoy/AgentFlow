@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+dist/
+_archive/
+.langgraph_api/
+.agents/
+.DS_Store
+*.log
+.copilot-keys.json

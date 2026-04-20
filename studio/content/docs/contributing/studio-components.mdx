@@ -1,0 +1,88 @@
+---
+title: Studio Components
+description: Add new panels and UI features.
+---
+
+## Component Conventions
+
+The studio uses a modular component architecture built on React and ReactFlow. All components follow strict conventions to maintain consistency across the codebase.
+
+**Naming rules:**
+
+- PascalCase for all component names
+- One component per file
+- File name matches the exported component name
+
+## Zustand Store
+
+State management uses a single Zustand store split into six slices:
+
+- **workflow** — nodes, edges, and workflow metadata
+- **ui** — panel visibility, selection state, theme
+- **validation** — error and warning diagnostics
+- **execution** — runtime state and step progress
+- **library** — skills, templates, and installed resources
+- **agent** — copilot chat history and suggestions
+
+Each slice is defined in its own file under `src/store/slices/` and composed in the root store.
+
+## Adding a New Panel
+
+1. Create your component in `src/components/panels/`
+2. Register it in `panelRegistry.ts` with a unique key and default dimensions
+3. Add the panel to the layout in the appropriate workspace region
+
+```tsx
+// src/components/panels/MyPanel.tsx
+export function MyPanel() {
+  return (
+    <div className="p-4">
+      <h3>My Panel</h3>
+    </div>
+  )
+}
+```
+
+```ts
+// panelRegistry.ts
+import { MyPanel } from "./panels/MyPanel"
+
+registry.register("my-panel", {
+  component: MyPanel,
+  defaultWidth: 320,
+  defaultHeight: 400,
+})
+```
+
+## Floating Panels
+
+Floating panels use the `FloatingPanel` wrapper and the `useFloatingPanel` hook for positioning and drag behavior.
+
+```tsx
+import { FloatingPanel } from "@/components/FloatingPanel"
+import { useFloatingPanel } from "@/hooks/useFloatingPanel"
+
+export function MyFloatingPanel() {
+  const { position, onDrag } = useFloatingPanel("my-panel")
+
+  return (
+    <FloatingPanel position={position} onDrag={onDrag}>
+      <p>Panel content here</p>
+    </FloatingPanel>
+  )
+}
+```
+
+The hook manages persistence of panel position across sessions and handles collision detection with other floating panels.
+
+## Docs Wrapper
+
+To wrap a component for use in documentation, use the `wrap()` utility from `mdx-components.tsx`:
+
+```tsx
+import { wrap } from "@/mdx-components"
+
+export const MyComponentPreview = wrap(MyComponent)
+```
+
+This adds standard padding, a border frame, and an expand button for full-screen viewing.

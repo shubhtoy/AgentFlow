@@ -1,0 +1,121 @@
+---
+title: White Label
+description: Rebrand AgentFlow for your organization with a custom name, directory, and CLI command.
+---
+
+import { Callout } from "fumadocs-ui/components/callout"
+import { Step, Steps } from "fumadocs-ui/components/steps"
+import { TypeTable } from "fumadocs-ui/components/type-table"
+
+## Getting Started
+
+<Steps>
+<Step>
+
+### Create the config file
+
+Add an `agentflow.config.json` file to your project root (the parent directory of your workspace folder):
+
+```json
+{
+  "name": "MyPlatform",
+  "dir": ".myplatform",
+  "cli": "myplatform",
+  "logo": "/assets/logo.svg",
+  "theme": {
+    "primary": "#6366f1"
+  }
+}
+```
+
+</Step>
+<Step>
+
+### Set your brand name, directory, and CLI command
+
+Configure the `name`, `dir`, and `cli` fields to match your organization branding. The `logo` and `theme` fields are optional.
+
+</Step>
+<Step>
+
+### Verify the configuration
+
+Run your CLI command to confirm the branding is applied:
+
+```bash
+myplatform --version
+```
+
+The output should reflect your custom brand name.
+
+</Step>
+</Steps>
+
+## Configuration Reference
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Brand name displayed in the UI and CLI. 1-64 characters.",
+      default: "'AgentFlow'",
+    },
+    dir: {
+      type: "string",
+      description: "Workspace directory name. 1-64 characters. Must match /^[a-zA-Z0-9._-]+$/.",
+      default: "'.agentflow'",
+    },
+    cli: {
+      type: "string",
+      description: "CLI command name. 1-32 characters. Must match /^[a-z0-9-]+$/.",
+      default: "'agentflow'",
+    },
+    logo: {
+      type: "string",
+      description: "Path to a custom logo asset. Optional.",
+      default: "undefined",
+    },
+    theme: {
+      type: "object",
+      description: "Theme overrides for the UI. Optional.",
+      default: "undefined",
+    },
+  }}
+/>
+
+## Environment Variable Overrides
+
+You can override config file values using environment variables. These take the highest precedence.
+
+| Variable | Overrides | Example |
+| --- | --- | --- |
+| `AGENTFLOW_BRAND_NAME` | `name` | `AGENTFLOW_BRAND_NAME=MyPlatform` |
+| `AGENTFLOW_DIR` | `dir` | `AGENTFLOW_DIR=.myplatform` |
+| `AGENTFLOW_CLI` | `cli` | `AGENTFLOW_CLI=myplatform` |
+
+The resolution order is: environment variables, then config file, then defaults.
+
+## What Changes
+
+When you apply a white-label configuration, the following are affected:
+
+- **Directory name** — The workspace directory uses your custom `dir` value instead of `.agentflow`.
+- **CLI command** — The binary is invoked with your custom `cli` name.
+- **UI branding** — The studio displays your custom `name` and `logo` throughout the interface.
+
+## Validation
+
+<Callout type="warn">
+Invalid values in `agentflow.config.json` produce a warning and fall back to defaults. The application continues to function normally.
+
+Invalid environment variables cause a fatal error and the process will exit. Ensure env var values conform to the same constraints as their config file counterparts.
+</Callout>
+
+The branding configuration is loaded by `loadBrandConfig()` in `src/branding.js`, which reads from the parent of the root directory.
+
+## Related
+
+<Cards>
+  <Card title="Configuration Reference" href="/docs/reference/configuration" description="Full reference for agentflow.config.json fields and defaults." />
+  <Card title="Branding Assets" href="/docs/guides/branding" description="Guidelines for logos, themes, and visual identity." />
+</Cards>

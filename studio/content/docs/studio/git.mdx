@@ -1,0 +1,209 @@
+---
+title: Git
+description: Stage, commit, push, pull, and resolve conflicts from the studio.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+
+The git panel provides visual git management without leaving the studio. Track modified and untracked files, stage changes, write commits, and sync with your remote in a single interface.
+
+## Interactive Preview
+
+The panel displays your current branch, a file tree of changed files grouped by status, and a commit history log.
+
+<ComponentPreview title="Git panel" panels={['explorer', 'validation']}>
+  <DocsPlayground />
+</ComponentPreview>
+
+## File Status Tracking
+
+The git panel groups changed files by their status:
+
+| Status | Icon | Meaning |
+|--------|------|---------|
+| Modified | Yellow dot | File exists in the last commit and has been changed |
+| Untracked | Green plus | New file not yet tracked by git |
+| Staged | Blue check | File is staged and ready to commit |
+| Deleted | Red minus | File has been removed from the working tree |
+| Conflicted | Orange warning | File has merge conflicts that need resolution |
+
+Click any file in the list to open a diff view showing exactly what changed. The diff highlights added lines in green and removed lines in red.
+
+## Staging Changes
+
+<Steps>
+<Step>
+### Stage individual files
+
+Click the **+** button next to any file in the changed files list to stage it. The file moves from the "Changes" section to the "Staged" section.
+</Step>
+<Step>
+### Stage all changes
+
+Click **Stage All** at the top of the changes list to stage every modified and untracked file at once.
+</Step>
+<Step>
+### Unstage files
+
+Click the **-** button next to any staged file to move it back to the unstaged changes list. Click **Unstage All** to unstage everything.
+</Step>
+</Steps>
+
+<Callout type="info">
+Staging in the git panel works exactly like `git add` on the command line. Only staged files are included in the next commit.
+</Callout>
+
+## Committing
+
+With files staged, type a commit message in the text input at the top of the panel and click **Commit** (or press `Cmd+Enter`). The commit is created locally. The staged files clear and the new commit appears at the top of the history log.
+
+The commit message input supports multi-line messages. The first line becomes the commit subject and subsequent lines become the body. Press `Shift+Enter` to add a new line without committing.
+
+<Callout type="warn">
+The git panel does not auto-stage files before committing. If the staged section is empty, the commit button is disabled. Stage your changes first.
+</Callout>
+
+## Sync Workflow
+
+The one-click **Sync** button executes a multi-step process to keep your local workspace aligned with the remote repository:
+
+<Steps>
+<Step>
+### Pull remote changes
+
+The panel fetches and integrates remote commits. If no conflicts exist, this completes as a fast-forward merge (or rebase, depending on your configuration).
+</Step>
+<Step>
+### Resolve conflicts (if any)
+
+If the pull encounters conflicts, the sync pauses and displays the conflict resolution interface. You must resolve all conflicts before proceeding.
+</Step>
+<Step>
+### Push local commits
+
+After the pull succeeds (with or without conflict resolution), the panel pushes all local commits to the remote branch.
+</Step>
+</Steps>
+
+## Conflict Resolution
+
+When a sync detects conflicting changes, the git panel presents three resolution strategies for each conflicted file:
+
+<Tabs items={['Accept Local', 'Accept Remote', 'Manual Merge']}>
+<Tab value="Accept Local">
+Keep your local version of the file and discard the remote changes. Use this when you are confident your local edits are correct and the remote changes are outdated or irrelevant.
+</Tab>
+<Tab value="Accept Remote">
+Discard your local changes and accept the remote version. Use this when someone else has made a more complete or correct edit that supersedes your work.
+</Tab>
+<Tab value="Manual Merge">
+Opens a side-by-side diff view where you can selectively accept hunks from either version. The left pane shows your local content and the right pane shows the remote content. Click individual hunks to accept them, or edit the result directly in the merged output pane at the bottom.
+</Tab>
+</Tabs>
+
+After resolving all conflicts in a file, mark it as resolved. Once every conflicted file is resolved, the sync resumes automatically and pushes your commits.
+
+## Commit History
+
+The bottom section of the git panel shows a scrollable list of previous commits. Each entry displays:
+
+- **Commit message** -- The subject line (first line of the message)
+- **Author** -- Who made the commit
+- **Timestamp** -- When the commit was created
+- **Hash** -- The abbreviated commit SHA (click to copy the full hash)
+
+Click any commit to expand it and see the list of files changed, with diff stats (lines added/removed).
+
+## Branch Management
+
+The panel header shows your current branch name. Click the branch name to see a dropdown of local branches. Select a different branch to switch to it.
+
+<Callout type="warn">
+Switching branches with uncommitted changes will prompt you to either commit, stash, or discard your changes before the switch proceeds.
+</Callout>
+
+## Configuration
+
+The git panel reads its configuration from `.agentflow/gitconfig.yaml`:
+
+```yaml
+remote:
+  name: origin
+  branch: main
+
+sync:
+  auto_pull: true          # Pull before every push
+  pull_strategy: rebase    # rebase | merge | ff-only
+  push_on_commit: false    # Auto-push after each commit
+
+commit:
+  sign: false              # GPG sign commits
+  template: |
+    feat: {summary}
+
+    {body}
+
+display:
+  max_history: 50          # Commits shown in history log
+  show_diff_stats: true    # Show file change counts
+```
+
+### Pull Strategy Options
+
+| Strategy | Behavior |
+|----------|----------|
+| `rebase` | Replays your local commits on top of the remote branch. Produces a linear history. |
+| `merge` | Creates a merge commit combining both histories. Preserves branch topology. |
+| `ff-only` | Only succeeds if a fast-forward is possible. Fails if histories have diverged. |
+
+If no `gitconfig.yaml` exists, the panel uses sensible defaults: merge strategy, auto-pull enabled, push-on-commit disabled.
+
+## .gitignore Patterns
+
+The `.agentflow/` directory may contain generated files that should not be committed. A typical `.gitignore` for an AgentFlow workspace:
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name=".gitignore" />
+  </Folder>
+</Files>
+
+```text
+# Build artifacts
+.agentflow/.build/
+.agentflow/.cache/
+
+# Local environment
+.env.local
+
+# Editor state
+.agentflow/.studio-state/
+```
+
+The git panel respects `.gitignore` rules -- ignored files do not appear in the changed files list.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle git panel | `Cmd+Shift+G` |
+| Stage selected file | `Cmd+Enter` (in changes list) |
+| Commit staged changes | `Cmd+Enter` (in message input) |
+| Sync (pull + push) | `Cmd+Shift+S` |
+| Open diff for selected file | `Enter` |
+| Discard changes to file | `Cmd+Backspace` |
+
+## Tips
+
+- Use the commit message template in `gitconfig.yaml` to enforce a consistent format across your team.
+- The `push_on_commit` option is useful for solo projects where you want every commit immediately backed up to the remote.
+- Check the branch name in the panel header before pushing to make sure you are on the correct branch.
+- The diff view in the git panel uses the same Monaco editor as the main editor, so all keyboard shortcuts (find, replace, etc.) work there too.
+
+<Cards>
+  <Card title="Validation" href="/docs/studio/validation" description="Validate your workflow structure and references" />
+  <Card title="MCP" href="/docs/studio/mcp" description="Manage MCP servers and browse the registry" />
+</Cards>

@@ -1,0 +1,270 @@
+---
+title: Nodes
+description: Steps, routers, and sub-workflows — the three node types in AgentFlow.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+A node is a single step in a workflow. Each node lives in its own directory and contains a `SKILL.md` file that defines what the agent does at that step.
+
+AgentFlow has three node types: **steps**, **routers**, and **sub-workflows**.
+
+## Three Types
+
+<Tabs items={['Step', 'Router', 'Sub-workflow']}>
+  <Tab value="Step">
+    A step does work — it produces output. This is the most common node type.
+
+    ```yaml
+    # gather-requirements/SKILL.md
+    ---
+    name: gather-requirements
+    type: step
+    entry: true
+    outputs:
+      - name: requirements-doc
+        format: markdown
+        description: Structured requirements document
+    ---
+
+    # Gather Requirements
+
+    Interview the user to understand what they want to build.
+    Reference {{instructions/requirements-elicitation}} for technique.
+
+    {{-> nodes/review-requirements-gate}}
+    ```
+
+    Steps can reference resources, declare outputs, and have edges to other nodes.
+  </Tab>
+  <Tab value="Router">
+    A router makes decisions — it evaluates conditions and routes to different nodes. Routers don't produce output; they direct flow.
+
+    ```yaml
+    # review-design-gate/SKILL.md
+    ---
+    name: review-design-gate
+    type: router
+    ---
+
+    # Review Design Gate
+
+    Present the design from {{<< output.create-design}} to the user
+    via {{runbooks/review-design}}.
+
+    ## Routing
+
+    - If approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
+    - If rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+    ```
+  </Tab>
+  <Tab value="Sub-workflow">
+    A sub-workflow delegates to another workflow. When the agent reaches this node, it steps into the referenced workflow, executes it to completion, then returns to the parent workflow and continues along the outgoing edge.
+
+    The `workflow` field in frontmatter names the target workflow. In the SKILL.md body, use the `{{workflows/name}}` reference pattern to link to the target workflow's `AGENTS.md`:
+
+    ```yaml
+    # deploy/SKILL.md
+    ---
+    name: deploy
+    type: sub-workflow
+    workflow: ci-cd
+    ---
+
+    # Deploy
+
+    ## When to enter
+
+    All implementation tasks are complete and tests pass.
+
+    ## Context passed in
+
+    - Build artifacts from {{<< output.implement}}
+    - Deployment configuration from {{instructions/deploy-config}}
+
+    ## Expected outcome
+
+    Application is deployed to the target environment and health checks pass.
+
+    ## Workflow definition
+
+    {{workflows/ci-cd}}
+    ```
+
+    For nested sub-workflows, create the target workflow directory inside the parent workflow with its own `AGENTS.md`. The nested workflow is a fully independent workflow with its own nodes and resources.
+  </Tab>
+</Tabs>
+
+## SKILL.md Frontmatter
+
+Every node's SKILL.md has two parts: frontmatter (YAML) and body (markdown). The body is what the agent reads as its task description.
+
+<TypeTable type={{
+  name: {
+    description: 'Node identifier — must match directory name',
+    type: 'string',
+    required: true,
+  },
+  type: {
+    description: 'Node type',
+    type: '"step" | "router" | "sub-workflow"',
+    required: true,
+  },
+  entry: {
+    description: 'Whether this is the workflow entry point',
+    type: 'boolean',
+    default: 'false',
+  },
+  description: {
+    description: 'Brief description of what this node does',
+    type: 'string',
+  },
+  outputs: {
+    description: 'Declared outputs (name, format, description)',
+    type: 'OutputDeclaration[]',
+  },
+  workflow: {
+    description: 'Referenced workflow (sub-workflow type only)',
+    type: 'string',
+  },
+  agent: {
+    description: 'Override agent persona for this node',
+    type: 'string',
+  },
+  model: {
+    description: 'Preferred model (e.g. claude-sonnet-4-20250514)',
+    type: 'string',
+  },
+  'context.max_tokens': {
+    description: 'Token budget ceiling for this node',
+    type: 'number',
+  },
+  'context.inputs': {
+    description: 'Explicit external inputs with scope control',
+    type: 'ContextInput[]',
+  },
+  'context.exclude': {
+    description: 'Glob patterns to exclude from context',
+    type: 'string[]',
+  },
+}} />
+
+<Callout type="info" title="Full schema reference">
+  See [Frontmatter Schema](/docs/reference/frontmatter-schema) for the complete field reference with types, defaults, and validation rules.
+</Callout>
+
+## Outputs and Data Flow
+
+Steps can declare outputs that other nodes reference via `{{<< output.node-name}}`:
+
+```yaml
+outputs:
+  - name: requirements-doc
+    format: markdown
+    description: Structured requirements with acceptance criteria
+  - name: user-stories
+    format: markdown
+    description: User stories derived from requirements
+```
+
+Outputs are the data flow mechanism — they're how information passes between nodes without loading everything into a single context.
+
+## Explore Nodes in the Studio
+
+Click any node on the canvas to see its type, frontmatter fields, and connections. The Elements panel shows all resources referenced by nodes. Switch to the Tokens panel to see how each node's context budget is consumed.
+
+<ComponentPreview title="build-feature nodes" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['elements', 'tokens']} />
+</ComponentPreview>
+
+
+## Node Execution Model
+
+When the runtime reaches a node, it follows a fixed sequence to assemble context, invoke the LLM, and determine the next step.
+
+<Mermaid chart={`
+graph TD
+    A[Load context layers] --> B[Assemble references]
+    B --> C[Send prompt to LLM]
+    C --> D[Receive output]
+    D --> E[Store in output/]
+    E --> F[Evaluate outgoing edges]
+    F --> G{"Conditional edges?"}
+    G -->|Yes| H[Run condition checks]
+    G -->|No| I[Follow unconditional edge]
+    H --> J[Route to matching target]
+    I --> J
+    J --> K[Next node]
+`} />
+
+### Load context layers
+
+The runtime assembles the node's context from five layers (see [Selective Context](/docs/concepts/selective-context)):
+
+1. Workspace identity (root AGENTS.md)
+2. Workflow descriptor (workflow AGENTS.md)
+3. Node instructions (SKILL.md body)
+4. Referenced resources (instructions, capabilities, runbooks)
+5. Prior node outputs (data flow refs)
+
+### Assemble references
+
+All `{{instructions/...}}`, `{{capabilities/...}}`, and `{{<< output.x}}` references in the SKILL.md body are resolved. File contents are loaded and inserted into the prompt at their reference positions.
+
+### Send prompt to LLM
+
+The assembled context is sent to the configured model. The node's `model` and `context.max_tokens` frontmatter fields control which model is used and the token budget ceiling.
+
+### Store output
+
+The LLM response is stored in the node's output slot. Other nodes can access it via `{{<< output.node-name}}` data flow references.
+
+### Evaluate edges and route
+
+The runtime checks all outgoing edges. For unconditional edges, it proceeds immediately. For conditional edges, it evaluates each condition (via the referenced runbook) and follows the first matching path.
+
+## Choosing the Right Node Type
+
+Use this decision process to determine which node type fits your use case:
+
+<Mermaid chart={`
+graph TD
+    Q1{"Does it produce output?"}
+    Q1 -->|Yes| Q2{"Does it also route?"}
+    Q1 -->|No| Q3{"Does it delegate to another workflow?"}
+    Q2 -->|No| STEP[Use: step]
+    Q2 -->|Yes| STEP2[Use: step with conditional edges]
+    Q3 -->|Yes| SUB[Use: sub-workflow]
+    Q3 -->|No| ROUTER[Use: router]
+`} />
+
+### Step
+
+The default choice. Use a step when the node needs to do work and produce output — write code, generate a document, analyze data, gather information from the user.
+
+Steps can have conditional outgoing edges, making them capable of light routing decisions alongside their primary work. However, if the node's sole purpose is to decide where to go next, use a router instead.
+
+### Router
+
+Use a router when the node's only job is to evaluate a condition and direct flow. Routers do not produce output — they present information to the user (or evaluate state) and route based on the result.
+
+Common router patterns:
+- Approval gates (present work, ask for approval, route based on response)
+- Completion checks (are all tasks done? route to finish or loop back)
+- Triage decisions (classify input, route to the appropriate handler)
+
+### Sub-workflow
+
+Use a sub-workflow when the node should execute an entire separate workflow and return. This is useful for:
+- Reusable processes (a deploy workflow called from multiple parent workflows)
+- Complex sub-tasks that have their own multi-step logic
+- Keeping the parent workflow readable by abstracting detail
+
+<Cards>
+  <Card title="Edges" href="/docs/concepts/edges" description="How nodes connect — unconditional and conditional flow" />
+  <Card title="Writing Nodes" href="/docs/authoring/writing-nodes" description="How to write SKILL.md files" />
+  <Card title="Frontmatter Schema" href="/docs/reference/frontmatter-schema" description="Complete field reference" />
+</Cards>

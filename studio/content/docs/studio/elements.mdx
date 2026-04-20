@@ -1,0 +1,165 @@
+---
+title: Elements
+description: Resources organized by category -- capabilities, instructions, runbooks, memory, hooks.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The Elements panel shows all resources in your workspace grouped by their category. Use it to browse, filter, and attach resources to workflow nodes.
+
+## Interactive Preview
+
+Open the panel below to explore the elements view. Click any resource to select it and see which nodes reference it. Use the category filter to narrow results. Drag a resource onto a node in the canvas to attach it.
+
+<ComponentPreview>
+  <DocsPlayground panel="elements" />
+</ComponentPreview>
+
+## Category Organization
+
+Resources are grouped into five categories, each corresponding to a directory in your `.agentflow/` workspace:
+
+<Tabs items={['Capabilities', 'Instructions', 'Runbooks', 'Memory', 'Hooks']}>
+<Tab value="Capabilities">
+Tool definitions that describe what external actions an agent can perform. Each capability file defines a tool name, parameters, return type, and optionally an MCP server binding. Capabilities appear with a wrench icon.
+
+Example uses: web search, file read/write, API calls, database queries.
+</Tab>
+<Tab value="Instructions">
+Reusable text blocks that provide guidance to the agent. Instructions can be scoped globally (applied to all nodes), per-workflow, or per-node. They appear with a document icon and show their scope as a badge.
+
+Example uses: coding standards, tone guidelines, error handling policies.
+</Tab>
+<Tab value="Runbooks">
+Conditional logic and interaction patterns. Runbooks define when and how an agent should respond to specific situations. They include trigger conditions and step-by-step procedures. Runbooks appear with a flowchart icon.
+
+Example uses: escalation procedures, retry strategies, user clarification flows.
+</Tab>
+<Tab value="Memory">
+Persistent context files that carry information across workflow executions. Memory resources store facts, preferences, or state that nodes can read and write. They appear with a database icon.
+
+Example uses: user preferences, session history, accumulated knowledge.
+</Tab>
+<Tab value="Hooks">
+Event-triggered actions that fire at specific lifecycle points (before/after node execution, on error, on completion). Hooks appear with a lightning bolt icon and show their trigger event as a badge.
+
+Example uses: logging, metrics collection, notification dispatch.
+</Tab>
+</Tabs>
+
+## Filtering and Search
+
+### Category Filter
+
+Click any category header to show only resources of that type. Click again to deselect and show all categories. Multiple categories can be active simultaneously -- click "Capabilities" and "Instructions" to see both while hiding the rest.
+
+### Text Search
+
+Press `/` while the elements panel is focused to activate the search input. Type any part of a resource name or description to filter results. The search uses substring matching and is case-insensitive. Clear the search field to restore the full list.
+
+### Attachment Status
+
+Toggle the "Attached only" filter to show only resources that are currently referenced by at least one node in the active workflow. This helps identify which resources are in use and which are available but unused.
+
+### Sort Order
+
+Resources within each category are sorted alphabetically by default. Click the sort toggle to switch between alphabetical order and "most referenced" order, which places frequently-used resources at the top.
+
+## Attaching Resources to Nodes
+
+<Steps>
+<Step>
+### Drag and drop
+
+Click and hold any resource in the elements panel, then drag it onto a node in the canvas. A blue highlight appears on valid drop targets. Release to create the attachment. The node's token count updates immediately.
+</Step>
+<Step>
+### Context menu
+
+Right-click a resource in the elements panel and select **Attach to...**. A submenu lists all nodes in the active workflow. Click a node name to create the attachment.
+</Step>
+<Step>
+### Node References tab
+
+Select a node on the canvas, then open the **References** tab in the editor panel. Click **Add reference** to open a picker showing all available resources filtered by compatibility with the node type.
+</Step>
+</Steps>
+
+<Callout type="info">
+When you attach a resource, the validation engine runs immediately to check for conflicts (duplicate capabilities, incompatible scopes, or budget overflows). Any issues appear in the validation panel within seconds.
+</Callout>
+
+## Creating New Resources
+
+### From the elements panel
+
+Click the **+** button at the top of any category section. A dialog appears with the resource template pre-filled. Enter a name and description, then click **Create**. The new file is written to the appropriate directory and appears in the panel immediately.
+
+### From the command palette
+
+Press `Cmd+K` and type "Create Capability", "Create Instruction", or "Create Runbook". The command palette opens a creation dialog with the correct template for the selected resource type.
+
+### From the explorer
+
+Right-click the appropriate directory (`capabilities/`, `instructions/`, etc.) in the Explorer panel and select **New File**. Name the file and add the required frontmatter manually.
+
+## Library Browser
+
+The elements panel includes a **Library** tab that shows pre-built resources from the AgentFlow community library. Browse by category, preview resource content, and import with one click.
+
+<Steps>
+<Step>
+### Browse the library
+
+Click the **Library** tab at the top of the elements panel. Resources are organized by the same categories as your workspace (capabilities, instructions, runbooks).
+</Step>
+<Step>
+### Preview a resource
+
+Click any library item to see its full content, including frontmatter, description, and usage examples. The preview shows token cost so you can evaluate the budget impact before importing.
+</Step>
+<Step>
+### Import to workspace
+
+Click **Import** to copy the resource into your workspace. The file is created in the appropriate directory and appears in the elements panel. You can then attach it to nodes like any other resource.
+</Step>
+</Steps>
+
+## Skill Marketplace Discovery
+
+For capabilities that require MCP servers, the elements panel links to the MCP registry. When you create a new capability of type `mcp`, the panel suggests matching servers from the registry based on the tool name and description.
+
+Click **Browse MCP Servers** at the bottom of the Capabilities section to open the MCP panel's registry tab with a pre-filled search query.
+
+## Visual Indicators
+
+| Indicator | Meaning |
+|-----------|---------|
+| Solid icon | Resource is attached to at least one node |
+| Faded icon | Resource exists but is not referenced by any node |
+| Badge count | Number of nodes that reference this resource |
+| Warning triangle | Resource has validation issues (broken references, missing fields) |
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle elements panel | `E` |
+| Focus search | `/` |
+| Navigate list | Arrow keys |
+| Select resource | `Enter` |
+| Attach to selected node | `Cmd+Enter` |
+
+## Tips
+
+- Use the "Attached only" filter during cleanup to find resources that are no longer referenced by any node.
+- Sort by "most referenced" to see which resources are central to your workflow.
+- The badge count on each resource helps you assess the impact of editing or removing it.
+- Drag multiple resources onto a node in sequence -- each attachment is added without replacing the previous ones.
+
+<Cards>
+  <Card title="Validation" href="/docs/studio/validation" description="Real-time error and warning checks as you edit" />
+  <Card title="Tokens" href="/docs/studio/tokens" description="Context budget tracking per node" />
+</Cards>

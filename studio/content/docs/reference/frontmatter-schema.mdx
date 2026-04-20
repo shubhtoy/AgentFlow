@@ -1,0 +1,298 @@
+---
+title: Frontmatter Schema
+description: Every frontmatter field for all 6 resource types.
+---
+
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+<Tabs items={['Agents', 'Node', 'Capability', 'Instruction', 'Runbook', 'Memory']}>
+
+<Tab value="Agents">
+
+Fields for `AGENTS.md` workspace and workflow descriptors.
+
+<TypeTable
+  type={{
+    type: {
+      type: "'agents'",
+      description: "Literal value identifying this as an agents descriptor.",
+      required: true,
+    },
+    name: {
+      type: "string",
+      description: "Display name of the agent or workspace.",
+      required: true,
+    },
+    description: {
+      type: "string",
+      description: "Short summary of the agent's purpose.",
+    },
+    identity: {
+      type: "object",
+      description: "Agent identity configuration with name, role, personality, and constraints fields.",
+    },
+  }}
+/>
+
+The `identity` object accepts:
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "The agent's display name.",
+    },
+    role: {
+      type: "string",
+      description: "The agent's role description.",
+    },
+    personality: {
+      type: "string",
+      description: "Personality traits and tone.",
+    },
+    constraints: {
+      type: "string[]",
+      description: "Hard constraints the agent must follow.",
+    },
+  }}
+/>
+
+</Tab>
+
+<Tab value="Node">
+
+Fields for `SKILL.md` node definitions.
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Node display name.",
+      required: true,
+    },
+    type: {
+      type: "'step' | 'router' | 'sub-workflow'",
+      description: "The node type.",
+      required: true,
+    },
+    entry: {
+      type: "boolean",
+      description: "Whether this node is the workflow entry point.",
+    },
+    primary: {
+      type: "boolean",
+      description: "Whether this is the primary node in the workflow.",
+    },
+    description: {
+      type: "string",
+      description: "Short description of what the node does.",
+    },
+    workflow: {
+      type: "string",
+      description: "Path to the sub-workflow. Required when type is 'sub-workflow'.",
+    },
+    agent: {
+      type: "string",
+      description: "Agent identity to use for this node.",
+    },
+    model: {
+      type: "string",
+      description: "LLM model identifier.",
+    },
+    context: {
+      type: "object",
+      description: "Context configuration with max_tokens, inputs, and exclude fields.",
+    },
+    outputs: {
+      type: "array",
+      description: "Output definitions. Each item has name, format, and description.",
+    },
+  }}
+/>
+
+The `context` object accepts:
+
+<TypeTable
+  type={{
+    max_tokens: {
+      type: "number",
+      description: "Maximum token budget for this node's context.",
+    },
+    inputs: {
+      type: "string[]",
+      description: "Explicit input references to include.",
+    },
+    exclude: {
+      type: "string[]",
+      description: "References to exclude from context.",
+    },
+  }}
+/>
+
+Each item in `outputs` accepts:
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Output identifier.",
+    },
+    format: {
+      type: "string",
+      description: "Output format (e.g. markdown, json).",
+    },
+    description: {
+      type: "string",
+      description: "What this output contains.",
+    },
+  }}
+/>
+
+</Tab>
+
+<Tab value="Capability">
+
+Fields for capability resource definitions.
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Capability name.",
+      required: true,
+    },
+    type: {
+      type: "'builtin' | 'script' | 'mcp' | 'package'",
+      description: "How the capability is implemented.",
+    },
+    description: {
+      type: "string",
+      description: "What this capability does.",
+    },
+    command: {
+      type: "string",
+      description: "Shell command to execute. Required when type is 'script'.",
+    },
+    mcp: {
+      type: "object",
+      description: "MCP server configuration. Required when type is 'mcp'.",
+    },
+    package: {
+      type: "string",
+      description: "Package identifier. Required when type is 'package'.",
+    },
+    parameters: {
+      type: "object",
+      description: "Input parameter definitions.",
+    },
+    outputs: {
+      type: "array",
+      description: "Output definitions.",
+    },
+    builtin_mapping: {
+      type: "string",
+      description: "Maps to a built-in tool implementation.",
+    },
+  }}
+/>
+
+</Tab>
+
+<Tab value="Instruction">
+
+Fields for instruction resource definitions.
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Instruction name.",
+      required: true,
+    },
+    description: {
+      type: "string",
+      description: "What this instruction provides.",
+    },
+    scope: {
+      type: "'global' | 'workflow' | 'node'",
+      description: "Where this instruction applies.",
+    },
+    inclusion: {
+      type: "'auto' | 'manual'",
+      description: "Whether the instruction is included automatically or must be referenced.",
+    },
+    max_tokens: {
+      type: "number",
+      description: "Token budget for this instruction's content.",
+    },
+    tags: {
+      type: "string[]",
+      description: "Tags for categorization and filtering.",
+    },
+    domain: {
+      type: "string",
+      description: "Domain this instruction belongs to.",
+    },
+  }}
+/>
+
+</Tab>
+
+<Tab value="Runbook">
+
+Fields for runbook resource definitions.
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Runbook name.",
+      required: true,
+    },
+    type: {
+      type: "'condition' | 'approval' | 'confirm' | 'escalation' | 'freeform' | 'choice'",
+      description: "The interaction type this runbook defines.",
+    },
+    description: {
+      type: "string",
+      description: "What this runbook handles.",
+    },
+    check: {
+      type: "string",
+      description: "Condition expression to evaluate. Required when type is 'condition'.",
+    },
+    timeout: {
+      type: "number",
+      description: "Timeout in seconds before escalation or failure.",
+    },
+  }}
+/>
+
+</Tab>
+
+<Tab value="Memory">
+
+Fields for memory resource definitions.
+
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      description: "Memory entry name.",
+      required: true,
+    },
+    description: {
+      type: "string",
+      description: "What this memory stores.",
+    },
+    editable: {
+      type: "boolean",
+      description: "Whether the agent can modify this memory at runtime.",
+    },
+  }}
+/>
+
+</Tab>
+
+</Tabs>

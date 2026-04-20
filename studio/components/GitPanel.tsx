@@ -1,0 +1,266 @@
+'use client'
+
+import { useState, useCallback, useEffect, useRef } from 'react'
+import {
+  GitBranch, RefreshCw, Search, Unplug, Plus, AlertTriangle,
+  CheckCircle2, XCircle, Circle, AlertCircle, Key, ShieldCheck,
+  ShieldAlert, ChevronDown, ChevronRight, Github, FolderGit2,
+  Globe, Lock, Copy, Loader2,
+} from 'lucide-react'
+import { useAppStore } from '@/store'
+import { gitApi } from '@/lib/api'
+import type { GitRepoStatus, GitAuthInfo, GitAuthMethod, RepoMapping } from '@/lib/api'
+import { FeatureHint } from './onboarding/FeatureHint'
+import { RepoConfigDialog } from './RepoConfigDialog'
+import type { RepoConfigFormData } from './RepoConfigDialog'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Separator } from './ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip'
+
+interface RepoWithStatus extends RepoMapping { status: GitRepoStatus | null; loading: boolean; syncing: boolean }
+
+function statusLabel(s: GitRepoStatus | null) {
+  if (!s) return 'Loading…'; if (!s.isRepo) return 'Not cloned'; if (!s.isClean) return 'Changes'; return 'Clean'
+}
+
+function statusColorClass(s: GitRepoStatus | null) {
+  if (!s) return 'text-muted-foreground'; if (!s.isRepo) return 'text-destructive'; if (!s.isClean) return 'text-yellow-500'; return 'text-green-500'
+}
+
+function SectionHeader({ title, count, open, onToggle }: { title: string; count?: number; open: boolean; onToggle: () => void }) {
+  return (
+    <div onClick={onToggle} className="px-3 py-1.5 flex items-center gap-1 cursor-pointer select-none hover:bg-accent">
+      {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</span>
+      {count !== undefined && count > 0 && <Badge variant="secondary" className="h-4 text-[9px] ml-auto">{count}</Badge>}
+    </div>
+  )
+}
+
+function AuthSection({ authInfo, loading, onRefresh }: { authInfo: GitAuthInfo | null; loading: boolean; onRefresh: () => void }) {
+  const [open, setOpen] = useState(true)
+  const [settingUp, setSettingUp] = useState(false)
+  const [setupMsg, setSetupMsg] = useState<string | null>(null)
+  const [userCode, setUserCode] = useState<string | null>(null)
+  const [verifyUrl, setVerifyUrl] = useState<string | null>(null)
+  const [polling, setPolling] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const hasMethods = (authInfo?.methods.length ?? 0) > 0
+  const ghCliLoggedIn = authInfo?.methods.some(m => m.type === 'gh-cli') ?? false
+
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+
+  const startGitHubLogin = async () => {
+    setSettingUp(true); setSetupMsg(null); setUserCode(null)
+    try {
+      const result = await gitApi.authSetup({ action: 'github-device-start' })
+      if (result.user_code && result.verification_uri) {
+        setUserCode(result.user_code); setVerifyUrl(result.verification_uri)
+        window.open(result.verification_uri, '_blank', 'noopener')
+        setPolling(true)
+        const interval = (result.interval || 5) * 1000
+        const pollFn = async () => {
+          try {
+            const poll = await gitApi.authSetup({ action: 'github-device-poll' })
+            if (poll.status === 'authorized') { if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null; setPolling(false); setUserCode(null); setSetupMsg('Authenticated with GitHub'); onRefresh() }
+          } catch { if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null; setPolling(false); setSetupMsg('Authorization failed or expired') }
+        }
+        pollRef.current = setInterval(pollFn, interval)
+      } else { setSetupMsg(result.message || 'Failed to start login') }
+    } catch (e) { setSetupMsg(e instanceof Error ? e.message : 'Failed') }
+    finally { setSettingUp(false) }
+  }
+
+  const cancelLogin = () => { if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null; setPolling(false); setUserCode(null); setVerifyUrl(null) }
+
+  return (
+    <>
+      <SectionHeader title="Authentication" count={authInfo?.methods.length} open={open} onToggle={() => setOpen(o => !o)} />
+      {open && (
+        <div className="px-3 pb-2">
+          {loading ? (
+            <div className="flex items-center gap-2 py-1"><Loader2 size={12} className="animate-spin" /><span className="text-[11px] text-muted-foreground">Detecting…</span></div>
+          ) : hasMethods ? (
+            <div className="flex flex-col gap-1.5">
+              {authInfo!.methods.map((m, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <CheckCircle2 size={12} className="text-green-500" />
+                  <span className="text-[11px] flex-1">{m.label}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5"><ShieldAlert size={14} className="text-yellow-500" /><span className="text-[11px] text-yellow-600 font-medium">No credentials found</span></div>
+              <p className="text-[10px] text-muted-foreground">Public repos work without auth. For private repos, sign in below.</p>
+            </div>
+          )}
+          {userCode && (
+            <div className="mt-2 p-2.5 rounded-md border border-primary/15 bg-primary/5">
+              <p className="text-[10px] text-muted-foreground mb-1.5">Enter this code on GitHub:</p>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="font-mono text-lg font-bold tracking-widest text-primary">{userCode}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(userCode); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 2000) }}>
+                  <Copy size={13} />
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                {polling && <Loader2 size={12} className="animate-spin" />}
+                <span className="text-[10px] text-muted-foreground flex-1">{polling ? 'Waiting for authorization…' : 'Opening browser…'}</span>
+                {verifyUrl && <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => window.open(verifyUrl, '_blank', 'noopener')}>Open GitHub</Button>}
+                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={cancelLogin}>Cancel</Button>
+              </div>
+            </div>
+          )}
+          {!userCode && (
+            <div className="flex gap-1 mt-2 flex-wrap">
+              {!ghCliLoggedIn && (
+                <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={startGitHubLogin} disabled={settingUp || polling}>
+                  {settingUp ? <Loader2 size={10} className="mr-1 animate-spin" /> : <Github size={12} className="mr-1" />} Login with GitHub
+                </Button>
+              )}
+            </div>
+          )}
+          {setupMsg && !userCode && <div className="mt-1.5 px-2 py-1 rounded text-[10px] text-muted-foreground bg-muted/50">{setupMsg}</div>}
+        </div>
+      )}
+    </>
+  )
+}
+
+function RepoCard({ repo, onSync, onScan, onDisconnect }: { repo: RepoWithStatus; onSync: () => void; onScan: () => void; onDisconnect: () => void }) {
+  const s = repo.status; const isRepo = s?.isRepo ?? false; const clrClass = statusColorClass(s)
+  return (
+    <div className="mx-2 mb-1 p-2.5 rounded-md border border-border/50 hover:bg-accent/30 transition-colors">
+      <div className="flex items-center gap-1.5 mb-1">
+        {repo.loading ? <Loader2 size={14} className={`animate-spin ${clrClass}`} /> : <span className={clrClass}>{isRepo ? <FolderGit2 size={14} /> : <XCircle size={14} />}</span>}
+        <span className="text-xs font-semibold flex-1 truncate">{repo.name}</span>
+        {s?.branch && <Badge variant="outline" className="h-[18px] text-[9px]"><GitBranch size={9} className="mr-0.5" />{s.branch}</Badge>}
+        <Badge variant="outline" className="h-[18px] text-[9px] capitalize">{repo.role}</Badge>
+      </div>
+      {!repo.loading && (
+        <div className="flex flex-col gap-0.5 ml-5 mb-1">
+          <div className="flex items-center gap-1"><Circle size={6} className={clrClass} /><span className={`text-[10px] font-medium ${clrClass}`}>{statusLabel(s)}</span></div>
+          {(s?.remoteUrl || repo.url) && <p className="text-[9px] text-muted-foreground font-mono truncate">{s?.remoteUrl || repo.url}</p>}
+          {isRepo && s && (
+            <div className="flex gap-1 flex-wrap mt-0.5">
+              {s.ahead > 0 && <Badge variant="outline" className="h-4 text-[9px]">↑ {s.ahead}</Badge>}
+              {s.behind > 0 && <Badge variant="outline" className="h-4 text-[9px]">↓ {s.behind}</Badge>}
+              {s.modifiedFiles.length > 0 && <Badge variant="outline" className="h-4 text-[9px]">{s.modifiedFiles.length} modified</Badge>}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex gap-0.5 ml-4">
+        {isRepo ? (
+          <>
+            <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6" onClick={onSync} disabled={repo.syncing}>{repo.syncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}</Button></TooltipTrigger><TooltipContent>Sync</TooltipContent></Tooltip></TooltipProvider>
+            <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6" onClick={onScan} disabled={repo.loading}><Search size={12} /></Button></TooltipTrigger><TooltipContent>Scan</TooltipContent></Tooltip></TooltipProvider>
+          </>
+        ) : (
+          <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={onSync} disabled={repo.syncing}>
+            {repo.syncing ? <Loader2 size={10} className="mr-1 animate-spin" /> : <FolderGit2 size={11} className="mr-1" />} Init Repo
+          </Button>
+        )}
+        <div className="flex-1" />
+        <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={onDisconnect}><Unplug size={11} /></Button></TooltipTrigger><TooltipContent>Disconnect</TooltipContent></Tooltip></TooltipProvider>
+      </div>
+    </div>
+  )
+}
+
+function GitPanelContent() {
+  const triggerSync = useAppStore(s => s.triggerSync)
+  const triggerScan = useAppStore(s => s.triggerScan)
+  const fetchGitStatus = useAppStore(s => s.fetchGitStatus)
+  const connectRepo = useAppStore(s => s.connectRepo)
+  const [repoStates, setRepoStates] = useState<RepoWithStatus[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [configOpen, setConfigOpen] = useState(false)
+  const [authInfo, setAuthInfo] = useState<GitAuthInfo | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [reposOpen, setReposOpen] = useState(true)
+  const loadedRef = useRef(false)
+
+  const refreshAuth = useCallback(() => {
+    setAuthLoading(true)
+    gitApi.getAuthInfo()
+      .then(info => setAuthInfo(info))
+      .catch(() => setAuthInfo({ methods: [], recommended: 'none', sshExample: '', httpsExample: '' }))
+      .finally(() => setAuthLoading(false))
+  }, [])
+
+  const loadRepos = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      const config = await gitApi.getConfig(); const repos = config.repos || []
+      const mapped: RepoWithStatus[] = repos.map((r: RepoMapping) => ({ ...r, status: null, loading: true, syncing: false }))
+      setRepoStates(mapped)
+      await Promise.all(mapped.map(async (_, idx) => {
+        try { const status = await gitApi.getStatus(); setRepoStates(prev => prev.map((r, i) => i === idx ? { ...r, status, loading: false } : r)) }
+        catch { setRepoStates(prev => prev.map((r, i) => i === idx ? { ...r, loading: false } : r)) }
+      }))
+    } catch (err) {
+      // Git backend may not be available — show graceful message
+      const msg = err instanceof Error ? err.message : 'Failed to load repos'
+      setError(msg.includes('fetch') || msg.includes('404') ? 'Git service not available — start backend with git support' : msg)
+    }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadRepos(); refreshAuth() } }, [loadRepos, refreshAuth])
+
+  const handleSync = useCallback(async (repoName: string) => {
+    setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: true } : r))
+    try { await triggerSync({ repoName }); const status = await gitApi.getStatus(); setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, status, syncing: false } : r)) }
+    catch { setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: false } : r)) }
+  }, [triggerSync])
+
+  const handleScan = useCallback(async (repo: RepoWithStatus) => {
+    setRepoStates(prev => prev.map(r => r.name === repo.name ? { ...r, loading: true } : r))
+    try { await triggerScan({ dir: repo.localPath }); setRepoStates(prev => prev.map(r => r.name === repo.name ? { ...r, loading: false } : r)) }
+    catch { setRepoStates(prev => prev.map(r => r.name === repo.name ? { ...r, loading: false } : r)) }
+  }, [triggerScan])
+
+  const handleDisconnect = useCallback(async (repoName: string) => {
+    try { await gitApi.updateConfig({ removeRepo: repoName }); setRepoStates(prev => prev.filter(r => r.name !== repoName)); await fetchGitStatus() } catch {}
+  }, [fetchGitStatus])
+
+  // Listen for external refresh trigger (from FloatingPanel header button)
+  useEffect(() => {
+    const onRefresh = () => { loadedRef.current = false; loadRepos(); refreshAuth() }
+    window.addEventListener('agentflow:git-refresh', onRefresh)
+    return () => window.removeEventListener('agentflow:git-refresh', onRefresh)
+  }, [loadRepos, refreshAuth])
+
+  return (
+    <div className="flex flex-col overflow-hidden h-full">
+      <div className="relative flex-1 overflow-y-auto">
+        <FeatureHint id="git" text="Clone repos, commit changes, and sync branches — all from within the studio." show side="bottom" />
+        <AuthSection authInfo={authInfo} loading={authLoading} onRefresh={refreshAuth} />
+        <Separator />
+        <SectionHeader title="Repositories" count={repoStates.length} open={reposOpen} onToggle={() => setReposOpen(o => !o)} />
+        {reposOpen && (
+          <>
+            {loading && repoStates.length === 0 ? <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin" /></div>
+            : error ? <div className="px-3 py-4 text-center"><AlertTriangle size={18} className="mx-auto text-yellow-500" /><p className="text-[11px] text-muted-foreground mt-1">{error}</p><Button size="sm" onClick={loadRepos} className="mt-1 text-[10px]">Retry</Button></div>
+            : repoStates.length === 0 ? <div className="px-3 py-4 text-center"><FolderGit2 size={20} className="mx-auto text-muted-foreground" /><p className="text-[11px] text-muted-foreground mt-1.5">No repos connected yet</p></div>
+            : <div className="pb-1">{repoStates.map(repo => <RepoCard key={repo.name} repo={repo} onSync={() => handleSync(repo.name)} onScan={() => handleScan(repo)} onDisconnect={() => handleDisconnect(repo.name)} />)}</div>}
+          </>
+        )}
+      </div>
+      <Separator />
+      <div className="p-2"><Button variant="outline" size="sm" className="w-full" onClick={() => setConfigOpen(true)}><Plus size={13} className="mr-1" /> Connect Repo</Button></div>
+      <RepoConfigDialog open={configOpen} onClose={() => setConfigOpen(false)} onSave={async (data: RepoConfigFormData) => { setConfigOpen(false); await connectRepo({ url: data.mapping.url, name: data.mapping.name, role: data.mapping.role, branch: data.mapping.branch, repoType: data.mapping.repoType }); loadedRef.current = false; loadRepos() }} />
+    </div>
+  )
+}
+
+export { GitPanelContent as GitPanel, GitPanelContent }
+
+export function GitActionButton() {
+  return null // Popover version removed — use GitPanelContent in panel instead
+}

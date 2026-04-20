@@ -1,0 +1,14 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "getting-started",
+    "concepts",
+    "authoring",
+    "guides",
+    "studio",
+    "reference",
+    "troubleshooting",
+    "contributing"
+  ]
+}

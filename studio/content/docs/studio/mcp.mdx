@@ -1,0 +1,212 @@
+---
+title: MCP
+description: Manage MCP servers, browse the registry, test connections.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The MCP panel lets you manage Model Context Protocol servers directly from the studio. Connect external tools, browse the official registry, and test connections without switching contexts.
+
+## Interactive Preview
+
+The panel has two tabs. The **Servers** tab lists your configured servers with connection status, toggle controls, a test button, and tool discovery. The **Registry** tab lets you search the official MCP registry and add servers with one click.
+
+<ComponentPreview title="MCP panel" height="lg">
+  <DocsPlayground panel="mcp" />
+</ComponentPreview>
+
+## Adding a Server
+
+<Tabs items={['From the registry', 'Custom server']}>
+<Tab value="From the registry">
+<Steps>
+<Step>
+### Open the Registry tab
+
+Click the **Registry** tab at the top of the MCP panel. The registry loads the full list of community-maintained servers.
+</Step>
+<Step>
+### Search for a server
+
+Type keywords in the search field to filter by name, description, or category. Results update as you type with fuzzy matching. Each result shows the server name, description, tool count, and transport type (stdio or HTTP/SSE).
+</Step>
+<Step>
+### Add to workspace
+
+Click the **+** button on any registry result. The panel pre-fills the connection configuration based on the registry metadata. For stdio servers, it generates the appropriate command. For HTTP servers, it pre-fills the URL template.
+</Step>
+<Step>
+### Test the connection
+
+The server appears in your Servers tab and immediately begins a connection test. A green indicator means the server is ready. A red indicator means the connection failed -- see Troubleshooting below.
+</Step>
+</Steps>
+</Tab>
+<Tab value="Custom server">
+<Steps>
+<Step>
+### Open the add dialog
+
+Click the **+ Add Server** button at the top of the Servers tab. A configuration dialog appears.
+</Step>
+<Step>
+### Choose transport type
+
+Select **stdio** for servers that run as a local process, or **HTTP/SSE** for servers accessible over the network.
+</Step>
+<Step>
+### Configure the connection
+
+For stdio: enter the command to start the server (e.g., `npx @modelcontextprotocol/server-filesystem`).
+
+For HTTP/SSE: enter the server URL (e.g., `http://localhost:3001/sse`).
+</Step>
+<Step>
+### Add environment variables
+
+If the server requires API keys or tokens, add them in the environment variables section. Each variable is stored in your `.env.local` file and injected when the server starts.
+</Step>
+<Step>
+### Test and save
+
+Click **Test Connection** to verify connectivity. If the test passes, click **Save** to add the server to your workspace configuration.
+</Step>
+</Steps>
+</Tab>
+</Tabs>
+
+## Server Status Indicators
+
+Each server in the Servers tab shows a status indicator:
+
+| Color | State | Meaning |
+|-------|-------|---------|
+| Gray | Unconfigured | Server is added but not yet tested |
+| Yellow | Testing | Connection test in progress |
+| Green | Connected | Server is reachable and responding |
+| Red | Failed | Connection failed -- click for error details |
+
+## Enabling and Disabling Servers
+
+Each server has a toggle switch. Disabling a server keeps its configuration but stops it from being used in workflows. Capabilities that reference a disabled server show a warning in the validation panel.
+
+This is useful when you want to temporarily disconnect from a server without removing its configuration -- for example, when working offline or when a server is under maintenance.
+
+## Testing Connections
+
+Click the **Test** button on any server to run a connectivity check. The test performs:
+
+1. **Transport handshake** -- Verifies the server is reachable via its configured transport (stdio process starts, or HTTP endpoint responds).
+2. **Protocol initialization** -- Sends the MCP initialization message and waits for the server's capability declaration.
+3. **Tool listing** -- Requests the list of available tools to confirm the server is fully operational.
+
+The test result shows response latency and any errors encountered. A successful test displays the number of tools discovered.
+
+## Tool Discovery
+
+After a successful connection, click **View Tools** on any server to see the full list of tools it exposes. Each tool entry shows:
+
+- **Tool name** -- The identifier used in capability references
+- **Description** -- What the tool does
+- **Parameters** -- Input schema with types and descriptions
+- **Return type** -- Output schema
+
+### Generating Capability Files
+
+Click **Generate Capability** next to any discovered tool to create a capability file in your workspace. The generated file includes the tool name, description, parameter schema, and MCP server binding -- ready to attach to nodes.
+
+<Callout type="info">
+Generated capability files are placed in your `capabilities/` directory with a name derived from the tool name. If a file with that name already exists, the panel prompts you to overwrite or rename.
+</Callout>
+
+## Environment Variables
+
+MCP servers often require API keys, tokens, or configuration values passed as environment variables. The MCP panel manages these through the server configuration dialog.
+
+### Setting Variables
+
+Open the server configuration (click the gear icon on any server) and scroll to the **Environment Variables** section. Add key-value pairs for each required variable. Values are stored in your `.env.local` file.
+
+### Variable Precedence
+
+Environment variables are resolved in this order:
+
+1. Server-specific variables defined in the MCP panel configuration
+2. Variables in `.env.local` at the workspace root
+3. System environment variables from your shell
+
+Server-specific variables take precedence, so you can override system-level values for a specific server without affecting others.
+
+<Callout type="warn">
+Environment variable values are stored in `.env.local`, which should be listed in your `.gitignore`. Never commit API keys or tokens to version control.
+</Callout>
+
+## Configuration File
+
+The MCP panel reads and writes server configuration to `.agentflow/mcp.json`:
+
+```json
+{
+  "servers": {
+    "filesystem": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/workspace"],
+      "enabled": true
+    },
+    "github": {
+      "transport": "http",
+      "url": "http://localhost:3001/sse",
+      "enabled": true,
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+You can edit this file directly from a text editor or terminal. Changes are picked up when the MCP panel refreshes.
+
+## Troubleshooting Connections
+
+<Tabs items={['Binary not found', 'Timeout', 'Auth failure', 'Port conflict', 'Version mismatch']}>
+<Tab value="Binary not found">
+For stdio-based servers, the panel executes a local command to start the server process. If the binary is not installed or not in your PATH, the connection fails with a "command not found" error. Install the server package globally (`npm install -g <package>`) or provide the full path in the configuration.
+</Tab>
+<Tab value="Timeout">
+The MCP protocol requires an initialization handshake within 30 seconds. If the server takes longer to start (common with servers that load large datasets), increase the `timeout` value in the server configuration dialog.
+</Tab>
+<Tab value="Auth failure">
+Some servers require API keys or tokens passed as environment variables. Check the server documentation for required credentials and add them to the environment variables section in the server configuration.
+</Tab>
+<Tab value="Port conflict">
+HTTP/SSE servers bind to a local port. If another process occupies that port, the server cannot start. Either stop the conflicting process or change the port in the server configuration.
+</Tab>
+<Tab value="Version mismatch">
+The MCP protocol has versioning. If your studio expects a newer protocol version than the server supports, the handshake fails with a version negotiation error. Update the server package to the latest version.
+</Tab>
+</Tabs>
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle MCP panel | `Cmd+Shift+M` |
+| Test selected server | `Cmd+T` (when panel is focused) |
+| Toggle server enabled/disabled | `Space` (when server is selected) |
+| Open server configuration | `Enter` (when server is selected) |
+
+## Tips
+
+- Test connections after adding a server and again after updating environment variables to confirm everything works.
+- Use the **Generate Capability** feature to avoid writing capability files by hand -- the generated files include the correct parameter schemas.
+- Disable servers you are not actively using to reduce startup time and avoid unnecessary validation warnings.
+- The registry search supports fuzzy matching, so typing "fs" finds "filesystem" servers.
+
+<Cards>
+  <Card title="Capabilities" href="/docs/resources/capabilities" description="Define tool capabilities for your workflows" />
+  <Card title="Git" href="/docs/studio/git" description="Stage, commit, and sync from the studio" />
+</Cards>

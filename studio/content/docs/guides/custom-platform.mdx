@@ -1,0 +1,137 @@
+---
+title: Custom Platform Config
+description: Create a new export target platform configuration for AgentFlow's transport system.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table"
+
+## Overview
+
+Platform configs are JSON files that define how AgentFlow workflows are exported to (and imported from) a target platform. The `PlatformAdapter` is entirely config-driven — no subclasses are needed. You define your platform's behavior through a JSON file in `src/transport/platforms/`.
+
+## Steps
+
+1. Create a new JSON file in `src/transport/platforms/`
+2. Define export rules that map AgentFlow sources to platform targets
+3. Register transform functions in `transforms.js` if needed
+4. Test your config with the adapter factory
+
+## Minimal Platform Config
+
+```json
+{
+  "name": "my-platform",
+  "displayName": "My Platform",
+  "version": "1.0.0",
+  "tier": "community",
+  "capabilities": ["workflows", "steps"],
+  "detectMarkers": ["my-platform.config.json"],
+  "exportRules": [
+    {
+      "source": "workflows/**/*.md",
+      "target": "pipelines/",
+      "type": "glob-transform",
+      "transform": "markdownToPipelineYaml",
+      "fidelity": "translated"
+    }
+  ],
+  "importRules": [
+    {
+      "platformPath": "pipelines/**/*.yaml",
+      "agentflowTarget": "workflows/",
+      "type": "glob-transform",
+      "fidelity": "translated",
+      "reverseTransform": "pipelineYamlToMarkdown"
+    }
+  ]
+}
+```
+
+## Export Rule Fields
+
+<TypeTable
+  type={{
+    source: { description: "Glob pattern or path matching AgentFlow source files", type: "string" },
+    target: { description: "Destination path or directory in the exported output", type: "string" },
+    type: { description: "How the rule processes files", type: '"single-file" | "glob-copy" | "glob-transform" | "merge-into" | "skip"' },
+    transform: { description: "Name of a pure function registered in transforms.js (optional for copy types)", type: "string | undefined" },
+    fidelity: { description: "How faithfully the source is represented in the target", type: '"native" | "on-demand" | "translated" | "preserved"' },
+  }}
+/>
+
+### Rule Types
+
+- **single-file** — one source file maps to one target file
+- **glob-copy** — matched files are copied without transformation
+- **glob-transform** — matched files are passed through a transform function
+- **merge-into** — multiple source files are merged into a single target
+- **skip** — matched files are excluded from export
+
+## Transform Functions
+
+Transforms are pure functions registered in `src/transport/transforms.js`. Each function receives the source content and metadata, and returns the transformed output.
+
+```js
+// src/transport/transforms.js
+export function markdownToPipelineYaml(content, meta) {
+  // Parse markdown, produce platform-specific output
+  return transformedContent
+}
+```
+
+Transforms must be deterministic and side-effect free. Register them by name — the platform config references them as strings that the adapter resolves at runtime.
+
+## Fidelity Levels
+
+Fidelity describes how accurately a concept maps between AgentFlow and the target platform.
+
+| Level | Meaning |
+|-------|---------|
+| **native** | The platform has a direct equivalent — no information loss |
+| **on-demand** | Supported but requires additional platform configuration |
+| **translated** | Converted to an approximation — some semantics may differ |
+| **preserved** | Stored as metadata or comments — not executable on the platform |
+
+Choose the most accurate fidelity level for each rule. This metadata helps users understand what will and will not work after export.
+
+## Import Rules
+
+Import rules define the reverse path — bringing platform-native files back into AgentFlow format.
+
+| Field | Description |
+|-------|-------------|
+| `platformPath` | Glob pattern matching files in the platform project |
+| `agentflowTarget` | Destination path within the AgentFlow workspace |
+| `type` | Processing type (same options as export rules) |
+| `fidelity` | Fidelity of the reverse mapping |
+| `reverseTransform` | Name of the transform function for import |
+
+Import rules are optional. If omitted, the platform is export-only.
+
+## Testing Your Config
+
+The `AdapterFactory` loads configs from disk or a pre-loaded array. Use the array form for testing:
+
+```js
+import { AdapterFactory } from "../src/transport/adapter-factory.js"
+import myConfig from "./my-platform.json" assert { type: "json" }
+
+const adapter = AdapterFactory.create(myConfig)
+const result = await adapter.export("./my-agentflow-project")
+
+console.log(result.files)   // exported file list
+console.log(result.errors)  // any export errors
+```
+
+Verify that:
+- All expected files appear in the output
+- Transforms produce valid platform-native syntax
+- Fidelity annotations match actual conversion quality
+- Round-trip (export then import) preserves critical workflow semantics
+
+## Related
+
+<Cards>
+  <Card title="Platform Config Reference" href="/docs/reference/platform-configs" />
+  <Card title="Contributing Platform Configs" href="/docs/contributing/platform-configs" />
+</Cards>

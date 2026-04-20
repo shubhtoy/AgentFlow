@@ -1,0 +1,18 @@
+{
+  "name": "test-on-change",
+  "version": "1.0.0",
+  "description": "Run related tests when source files change",
+  "event": "fileEdited",
+  "condition": {
+    "field": "path",
+    "operator": "matches",
+    "value": "\\.(ts|tsx|js|jsx|py)$"
+  },
+  "action": {
+    "type": "run-script",
+    "target": "npm test -- --related",
+    "params": {}
+  },
+  "enabled": false,
+  "priority": 200
+}

@@ -1,0 +1,167 @@
+---
+title: Validation
+description: Real-time error and warning checks as you edit.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The Validation panel runs checks automatically on every edit, surfacing errors and warnings so you can fix issues before exporting or running your workflow.
+
+## Interactive Preview
+
+Open the panel below to see validation in action. Errors appear in red and warnings in yellow. Click any result to jump directly to the source file. Toggle strict mode to treat warnings as errors.
+
+<ComponentPreview>
+  <DocsPlayground panel="validation" />
+</ComponentPreview>
+
+## Severity Levels
+
+Validation results are classified into three severity levels:
+
+| Severity | Color | Blocks Export | Description |
+|----------|-------|---------------|-------------|
+| Error | Red | Yes | Structural problems that prevent the workflow from functioning. Missing required fields, broken references, unreachable nodes, invalid edge conditions. |
+| Warning | Yellow | No (unless strict mode) | Potential issues that may cause unexpected behavior. Unused resources, nodes with no outgoing edges, high token usage, deprecated field names. |
+| Info | Blue | No | Suggestions for improvement. Style recommendations, available optimizations, documentation hints. |
+
+<Callout type="warn">
+In strict mode (toggled from the panel header), warnings are promoted to errors and block export. Enable strict mode for teams that want to enforce a higher quality bar before merging changes.
+</Callout>
+
+## Navigating Errors
+
+Click any validation result to jump directly to the source. The behavior depends on the error type:
+
+| Error type | Navigation target |
+|------------|-------------------|
+| Frontmatter field error | Opens the Frontmatter form with the invalid field highlighted |
+| Broken reference in markdown | Opens the Editor with the cursor on the broken `[[...]]` token |
+| Edge condition error | Selects the edge on the canvas and opens its label for editing |
+| Unreachable node | Selects the node on the canvas and pans to center it |
+| File-level error | Opens the file in the Editor with a banner at the top |
+
+## Validation Rules Reference
+
+The validation engine includes 23 built-in rules organized by category:
+
+<Tabs items={['Structure', 'References', 'Content', 'Budget']}>
+<Tab value="Structure">
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `no-orphan-nodes` | Error | Every node (except the start node) must have at least one incoming edge |
+| `no-circular-deps` | Error | The workflow graph must not contain cycles that cause infinite loops |
+| `gateway-min-edges` | Error | Gateway nodes must have at least two outgoing edges |
+| `single-start-node` | Error | Exactly one node must be designated as the start node |
+| `terminal-node-exists` | Warning | At least one node should have no outgoing edges (terminal node) |
+| `no-duplicate-edges` | Error | Two nodes cannot be connected by more than one edge in the same direction |
+</Tab>
+<Tab value="References">
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `ref-exists` | Error | Every `[[...]]` reference must point to an existing resource file |
+| `ref-type-match` | Error | Reference prefix must match the resource type (e.g., `capability:` for capability files) |
+| `no-duplicate-refs` | Warning | A node should not reference the same resource twice |
+| `edge-ref-valid` | Warning | Edge references must match an outgoing edge from the current node |
+| `capability-server-exists` | Warning | MCP capabilities should reference a configured server |
+</Tab>
+<Tab value="Content">
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `required-fields` | Error | Required frontmatter fields must be present and non-empty |
+| `valid-enum-value` | Error | Enum fields must contain one of the allowed values |
+| `description-present` | Warning | Nodes should have a description for copilot accuracy |
+| `no-empty-body` | Warning | Node markdown body should not be empty |
+| `valid-yaml-syntax` | Error | Frontmatter must be valid YAML |
+| `deprecated-field` | Warning | Flags fields that have been renamed or replaced in the current schema version |
+</Tab>
+<Tab value="Budget">
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `token-budget-exceeded` | Error | Node token usage exceeds the configured `max_tokens` value |
+| `token-budget-approaching` | Warning | Node token usage is above 70% of the budget |
+| `workspace-budget-exceeded` | Error | Total workspace token usage exceeds the workspace-level ceiling |
+| `large-reference` | Info | A single reference contributes more than 40% of a node's budget |
+| `no-budget-set` | Info | Node has no explicit `max_tokens` and inherits the workspace default |
+</Tab>
+</Tabs>
+
+## Fixing Common Issues
+
+<Steps>
+<Step>
+### Broken references
+
+A broken reference means a node points to a resource file that does not exist. This usually happens after renaming or deleting a resource. Open the node in the editor, find the red-underlined `[[...]]` token, and either correct the name or remove the reference. Fix these first because they often cause cascading errors in token calculation and export.
+</Step>
+<Step>
+### Unreachable nodes
+
+Nodes with no incoming edges (other than the start node) will never execute. Either draw an edge from another node to connect it, or delete the orphaned node. The validator flags these because they indicate incomplete workflow design.
+</Step>
+<Step>
+### Missing required fields
+
+Each node type has required frontmatter fields. Click the error to open the Frontmatter form where the missing field is highlighted. Fill in the value and the error clears immediately.
+</Step>
+<Step>
+### Invalid edge conditions
+
+Edge conditions must reference valid output values from the source node. If a gateway has a condition checking a field that the source node never produces, update the condition expression or add the expected output to the source node.
+</Step>
+<Step>
+### Circular dependencies
+
+The validator detects cycles in the workflow graph that would cause infinite loops. Identify the cycle by following the error navigation (it highlights the involved nodes). Remove or redirect at least one edge to break the cycle.
+</Step>
+</Steps>
+
+## Auto-Refresh
+
+Validation runs automatically on every edit with no manual trigger required. The panel header shows a count of current errors and warnings. The status bar at the bottom of the studio also displays these counts for at-a-glance monitoring.
+
+When you fix an issue, the corresponding result disappears from the panel within a second. No need to re-run validation manually.
+
+<Callout type="info">
+For large workspaces with many files, validation runs incrementally -- only re-checking files that changed since the last run. Full workspace validation can be triggered from the command palette with "Validate Workspace".
+</Callout>
+
+## Integrating with CI
+
+The validation engine runs independently of the studio UI. Invoke it from the command line to integrate with your continuous integration pipeline:
+
+```bash
+npx agentflow validate .agentflow/
+```
+
+This command exits with code 0 if all checks pass, or code 1 if any errors are found. Warnings are printed to stderr but do not affect the exit code unless you pass the `--strict` flag:
+
+```bash
+npx agentflow validate .agentflow/ --strict --format json
+```
+
+The `--format json` option outputs structured results suitable for parsing in CI scripts or posting as PR comments. Each result includes the file path, line number, rule ID, severity, and human-readable message.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle validation panel | `Cmd+Shift+V` |
+| Navigate to next error | `F8` |
+| Navigate to previous error | `Shift+F8` |
+| Toggle strict mode | Click the strict mode toggle in the panel header |
+| Refresh validation | `Cmd+Shift+R` |
+
+## Tips
+
+- Address errors in order: broken references first, then structural issues, then content warnings. Broken references often cause cascading errors that disappear once the reference is fixed.
+- Use strict mode during final review before export to catch all warnings.
+- The CI command with `--format json` integrates well with GitHub Actions or GitLab CI for automated PR checks.
+- Click the error count in the status bar to jump directly to the validation panel.
+
+<Cards>
+  <Card title="Elements" href="/docs/studio/elements" description="Resources organized by category" />
+  <Card title="Tokens" href="/docs/studio/tokens" description="Context budget tracking per node" />
+</Cards>

@@ -1,0 +1,29 @@
+.midnight {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 8%;
+  --popover-foreground: 210 40% 98%;
+  --muted: 222 47% 14%;
+  --muted-foreground: 215 20% 65%;
+  --border: 222 47% 16%;
+  --input: 222 47% 16%;
+  --ring: 250 76% 67%;
+
+  --primary: 250 76% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 47% 14%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 222 47% 14%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 76% 36%;
+  --warning: 38 92% 50%;
+
+  --node-step: 210 91% 65%;
+  --node-router: 280 91% 70%;
+  --node-sub-workflow: 172 66% 60%;
+}

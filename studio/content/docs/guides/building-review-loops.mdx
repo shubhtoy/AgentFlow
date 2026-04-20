@@ -1,0 +1,286 @@
+---
+title: Building Review Loops
+description: Build the implement-gate-loop pattern with a 3-node workflow that iterates until approval.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Mermaid } from '@/components/docs/mdx-components';
+
+The most common AgentFlow pattern is the review loop: a step does work, a gate asks for approval, and rejection loops back with feedback. This guide builds a complete 3-node workflow implementing this pattern.
+
+## The pattern
+
+<Mermaid chart={`graph LR
+  implement[Implement] --> gate{Completion Gate}
+  gate -->|approved| verify[Verify]
+  gate -->|rejected| implement
+`} />
+
+Conditional edges are allowed to point backward. The validator permits this since a human controls whether the loop continues — there is always a conditional exit.
+
+## What you will build
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <Folder name="review-loop" defaultOpen>
+      <File name="AGENTS.md" />
+      <Folder name="implement">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="completion-gate">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="verify">
+        <File name="SKILL.md" />
+      </Folder>
+    </Folder>
+    <Folder name="runbooks" defaultOpen>
+      <File name="implementation-approved.md" />
+      <File name="needs-changes.md" />
+    </Folder>
+  </Folder>
+</Files>
+
+<Steps>
+
+<Step>
+## Create the workflow descriptor
+
+Create `.agentflow/review-loop/AGENTS.md`:
+
+```yaml
+---
+type: agents
+name: review-loop
+description: >
+  Implement a feature with a human review gate. The agent implements,
+  presents for review, and iterates on feedback until approved.
+---
+
+# Review Loop
+
+A 3-node workflow demonstrating the implement-gate-loop pattern.
+```
+</Step>
+
+<Step>
+## Create the implement node
+
+Create `.agentflow/review-loop/implement/SKILL.md`:
+
+```yaml
+---
+name: implement
+type: step
+entry: true
+outputs:
+  - name: implementation
+    format: markdown
+    description: The code changes and explanation of what was done
+---
+
+# Implement
+
+Write the code to satisfy the user's request.
+
+## First iteration
+
+1. Read the user's request carefully.
+2. Plan the minimal implementation.
+3. Write the code using {{capabilities/write-file}}.
+4. Run {{capabilities/get-diagnostics}} to check for errors.
+
+## Subsequent iterations (feedback received)
+
+1. Read the reviewer's feedback carefully.
+2. Address every point raised.
+3. Apply changes using {{capabilities/write-file}}.
+4. Run {{capabilities/get-diagnostics}} to verify fixes.
+
+Follow {{instructions/code-style}} conventions throughout.
+
+{{-> nodes/completion-gate}}
+```
+</Step>
+
+<Step>
+## Create the completion gate
+
+Create `.agentflow/review-loop/completion-gate/SKILL.md`:
+
+```yaml
+---
+name: completion-gate
+type: router
+---
+
+# Completion Gate
+
+Present the implementation from {{<< output.implement}} to the user
+for review via {{runbooks/implementation-approved}}.
+
+## What to show
+
+1. Summary of changes made.
+2. Files modified or created.
+3. Any trade-offs or assumptions.
+
+## Routing
+
+- If approved: {{-> nodes/verify | runbooks/implementation-approved}}
+- If rejected: {{-> nodes/implement | runbooks/needs-changes}}
+```
+
+<Callout type="warn">
+Router nodes should not reference capabilities or instructions. The validator emits `router_has_capabilities` if you attach tools to a router.
+</Callout>
+</Step>
+
+<Step>
+## Create the runbook conditions
+
+Create `.agentflow/runbooks/implementation-approved.md`:
+
+```yaml
+---
+type: condition
+name: implementation-approved
+check: The user explicitly approves the implementation
+---
+
+**True when:** The user says the implementation looks good.
+**False when:** The user requests changes or raises concerns.
+```
+
+Create `.agentflow/runbooks/needs-changes.md`:
+
+```yaml
+---
+type: condition
+name: needs-changes
+check: The user requests changes to the implementation
+---
+
+**True when:** The user provides feedback requesting modifications.
+**False when:** The user approves or has not yet responded.
+```
+</Step>
+
+<Step>
+## Create the verify node
+
+Create `.agentflow/review-loop/verify/SKILL.md`:
+
+```yaml
+---
+name: verify
+type: step
+---
+
+# Verify
+
+The implementation has been approved. Run the test suite.
+
+1. Run {{capabilities/run-tests}} on the affected code.
+2. Check that all existing tests still pass.
+3. Report the results.
+```
+</Step>
+
+<Step>
+## Validate
+
+```bash
+agentflow validate
+```
+
+```
+review-loop: 0 errors, 0 warnings
+```
+</Step>
+
+</Steps>
+
+## How the loop executes
+
+<Mermaid chart={`sequenceDiagram
+  participant R as Runtime
+  participant I as implement
+  participant G as completion-gate
+  participant V as verify
+  participant U as User
+
+  R->>I: Execute (first pass)
+  I->>R: Output: implementation
+  R->>G: Execute gate
+  G->>U: Present implementation
+  U->>G: "Change the error handling"
+  G->>R: Route: needs-changes
+  R->>I: Execute (with feedback)
+  I->>R: Output: revised implementation
+  R->>G: Execute gate
+  G->>U: Present revised implementation
+  U->>G: "Looks good"
+  G->>R: Route: implementation-approved
+  R->>V: Execute verify
+  V->>R: Output: tests pass
+`} />
+
+## Extending the pattern
+
+### Three-way routing
+
+Add a third condition for implementation failures:
+
+```yaml
+# completion-gate/SKILL.md (extended routing)
+- Approved: {{-> nodes/verify | runbooks/implementation-approved}}
+- Needs changes: {{-> nodes/implement | runbooks/needs-changes}}
+- Failed: {{-> nodes/implement | runbooks/implementation-failed}}
+```
+
+### Nested gates
+
+Chain multiple gates for multi-stage review:
+
+<Mermaid chart={`graph LR
+  design[Design] --> dg{Design Gate}
+  dg -->|approved| implement[Implement]
+  dg -->|rejected| design
+  implement --> cg{Code Gate}
+  cg -->|approved| verify[Verify]
+  cg -->|rejected| implement
+`} />
+
+### Loop with memory
+
+Track iteration history in a workflow-scoped memory file:
+
+```markdown
+Check {{memory/iteration-log}} for prior feedback on this task.
+After completing this iteration, append to {{memory/iteration-log}}:
+
+### Iteration N: YYYY-MM-DD
+- Feedback addressed: (summary)
+- Changes made: (summary)
+```
+
+## Common mistakes
+
+| Mistake | Symptom | Fix |
+|---------|---------|-----|
+| Router with capabilities | `router_has_capabilities` warning | Remove `{{capabilities/...}}` from the gate |
+| Missing runbook | `missing_condition` error | Create the `.md` file in `runbooks/` |
+| Unconditional loop | `unconditional_cycle` error | Use conditional edges with runbook references |
+| Data flow to future node | `data_flow_forward` error | `{{<< output.x}}` can only reference prior nodes |
+| No entry point | `no_entry_point` error | Add `entry: true` to the first node |
+
+<Cards>
+  <Card title="Patterns" href="/docs/authoring/patterns" description="All workflow patterns including fan-out and error recovery" />
+  <Card title="Edges" href="/docs/concepts/edges" description="Unconditional, conditional, and data flow edges" />
+  <Card title="Using MCP Servers" href="/docs/guides/using-mcp-servers" description="Connect external tools to your workflow" />
+  <Card title="Debugging Workflows" href="/docs/guides/debugging-workflows" description="Fix validation errors and broken references" />
+</Cards>

@@ -1,0 +1,259 @@
+---
+title: Common Errors
+description: Top validation and export errors with fixes.
+---
+
+import { Accordion, Accordions } from "fumadocs-ui/components/accordion"
+import { Callout } from "fumadocs-ui/components/callout"
+
+<Callout type="info">
+Run `agentflow validate` before exporting to catch these errors early.
+</Callout>
+
+<Accordions>
+<Accordion title="broken_ref">
+
+**What it means:** Your workflow references a resource (instruction, capability, or runbook) that does not exist.
+
+**Why it happens:** The filename is misspelled, or you are referencing a workflow-scoped resource from outside that workflow without using the correct path.
+
+**How to fix:**
+
+- Check the filename spelling in your `refs` array
+- Verify whether the resource is global (in `.agentflow/instructions/`) or workflow-scoped (inside the workflow directory)
+- Use the full relative path for workflow-scoped resources
+
+</Accordion>
+<Accordion title="missing_condition">
+
+**What it means:** A conditional edge exists but has no associated runbook defining the condition logic.
+
+**Why it happens:** You added a conditional edge in the graph but did not create the corresponding runbook file.
+
+**How to fix:**
+
+- Create a runbook file in `.agentflow/runbooks/` with `type: condition` in its frontmatter
+- Reference the runbook by name in the edge definition
+
+</Accordion>
+<Accordion title="no_entry_point">
+
+**What it means:** The workflow has no node marked as the starting point.
+
+**Why it happens:** No node in the workflow has `entry: true` in its frontmatter.
+
+**How to fix:**
+
+- Add `entry: true` to the frontmatter of the first node in your workflow
+
+</Accordion>
+<Accordion title="broken_data_flow">
+
+**What it means:** A data flow reference points to a node that does not exist or has no declared outputs.
+
+**Why it happens:** The referenced node name is misspelled, or the source node does not declare the expected output.
+
+**How to fix:**
+
+- Check the node name in your data flow reference
+- Ensure the source node declares its outputs in frontmatter
+
+</Accordion>
+<Accordion title="cycle">
+
+**What it means:** The workflow graph contains a circular dependency that cannot resolve.
+
+**Why it happens:** Unconditional edges form a loop with no exit path.
+
+**How to fix:**
+
+- Add a conditional exit edge to break the cycle
+- Ensure at least one edge in the loop has a condition that can evaluate to false
+
+</Accordion>
+<Accordion title="context_budget">
+
+**What it means:** A node's total context (instructions, refs, inputs) exceeds the configured `max_tokens` limit.
+
+**Why it happens:** Too many resources are referenced, or referenced documents are too large.
+
+**How to fix:**
+
+- Reduce the number of refs on the node
+- Use `scope: summary` on large references to include only summaries
+- Increase the `max_tokens` budget in the node frontmatter if appropriate
+
+</Accordion>
+<Accordion title="malformed_variable">
+
+**What it means:** An environment variable reference uses invalid syntax.
+
+**Why it happens:** The variable syntax deviates from the expected format.
+
+**How to fix:**
+
+- Use the correct format: `$&#123;env:VARIABLE_NAME&#125;`
+- Ensure there are no extra spaces or missing braces
+
+</Accordion>
+<Accordion title="schema">
+
+**What it means:** A frontmatter field has the wrong type (for example, a string where an array is expected).
+
+**Why it happens:** The value does not match the expected schema for that field.
+
+**How to fix:**
+
+- Check the TypeTable in the reference docs for the correct field types
+- Ensure arrays use YAML list syntax and booleans are not quoted
+
+</Accordion>
+<Accordion title="Export blocked by errors">
+
+**What it means:** The export command refuses to run because validation errors exist.
+
+**Why it happens:** AgentFlow requires a valid workflow before generating platform-specific output.
+
+**How to fix:**
+
+- Run `agentflow validate` to see all errors
+- Fix each reported error
+- Re-run the export command
+
+</Accordion>
+<Accordion title="MCP server connection failed">
+
+**What it means:** The configured MCP server cannot be reached or fails to start.
+
+**Why it happens:** The server command is incorrect, required environment variables are missing, or the server process crashes on startup.
+
+**How to fix:**
+
+- Check the `command` field in your MCP server configuration
+- Verify all required environment variables are set
+- Test the connection independently with `agentflow mcp test`
+
+</Accordion>
+</Accordions>
+
+## Export Errors
+
+<Accordions>
+<Accordion title="Export blocked by validation errors">
+
+**What it means:** The export pipeline refuses to proceed because the workflow contains unresolved validation errors.
+
+**Why it happens:** AgentFlow enforces a strict contract: only valid workflows can be exported. This prevents generating broken platform output that would fail silently at runtime.
+
+**How to fix:**
+
+- Run `agentflow validate` to see the full list of errors
+- Fix each error following the guidance in this page
+- Re-run the export once validation passes
+
+```bash
+agentflow validate
+# Fix reported issues...
+agentflow export --target langgraph
+```
+
+</Accordion>
+<Accordion title="Platform not found">
+
+**What it means:** The `--target` value does not match any known platform configuration.
+
+**Why it happens:** The platform name is misspelled, or you are targeting a custom platform whose JSON config file is missing.
+
+**How to fix:**
+
+- Check available platforms: `langgraph`, `claude`, `github-actions`, `openai`, `bedrock`, `crewai`, `autogen`
+- For custom platforms, verify the JSON config exists in `src/transport/`
+- Platform names are case-sensitive and use hyphens, not underscores
+
+</Accordion>
+<Accordion title="Transform failed">
+
+**What it means:** The platform adapter encountered a node or edge type it cannot map to the target platform.
+
+**Why it happens:** The target platform does not support a construct used in your workflow. For example, some platforms do not support conditional loops or sub-workflows.
+
+**How to fix:**
+
+- Check the platform's JSON config for supported node types
+- Simplify the workflow to use only constructs the target supports
+- Consider using a different target platform that supports your workflow structure
+- Run with `--verbose` to see which specific node or edge caused the failure
+
+</Accordion>
+<Accordion title="Path safety violation">
+
+**What it means:** An export path resolves to a location outside the allowed output directory.
+
+**Why it happens:** A path traversal (e.g., `../`) in a node name, resource reference, or output configuration attempts to write outside the designated export directory.
+
+**How to fix:**
+
+- Check node names and resource paths for `..` segments
+- Ensure output paths in your export configuration are relative and do not escape the project root
+- This is a security measure and cannot be bypassed
+
+</Accordion>
+</Accordions>
+
+## Studio Errors
+
+<Accordions>
+<Accordion title="Component not loading">
+
+**What it means:** A studio UI component fails to render, showing a blank area or error boundary message.
+
+**Why it happens:** Common causes include stale browser cache, a JavaScript error in a dependent component, or missing environment variables that the component requires at render time.
+
+**How to fix:**
+
+- Hard-refresh the browser (Ctrl+Shift+R or Cmd+Shift+R)
+- Check the browser console for JavaScript errors
+- Verify that `studio/.env.local` contains all required variables from `.env.example`
+- Clear the OPFS storage if the workspace state is corrupted: open DevTools, go to Application > Storage, and clear site data
+- Restart the dev server with `cd studio && npm run dev`
+
+</Accordion>
+<Accordion title="Search not working">
+
+**What it means:** The unified search in the studio returns no results or fails to respond.
+
+**Why it happens:** The search index may not have been built, the MCP registry may be unreachable, or the search service encountered an error during indexing.
+
+**How to fix:**
+
+- Check that the workspace has been loaded (search indexes on workspace load)
+- If searching the skills library, verify network connectivity to the registry
+- Check the terminal running the dev server for indexing errors
+- Restart the studio to trigger a fresh index build
+- For local-only search, ensure the `.agentflow/` directory is not empty
+
+</Accordion>
+<Accordion title="MCP connection timeout">
+
+**What it means:** The studio cannot establish a connection to a configured MCP server within the timeout period.
+
+**Why it happens:** The MCP server process failed to start, is taking too long to initialize, or the configured command is incorrect.
+
+**How to fix:**
+
+- Verify the MCP server command works independently in your terminal
+- Check that all environment variables referenced in the MCP config are set
+- Increase the timeout in your MCP configuration if the server has a slow startup
+- Check the server process logs for crash messages
+- Test the connection with `agentflow mcp test --server <name>`
+
+```bash
+# Test a specific MCP server
+agentflow mcp test --server my-server
+
+# Check MCP configuration
+agentflow mcp list
+```
+
+</Accordion>
+</Accordions>

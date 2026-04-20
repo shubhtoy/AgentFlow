@@ -1,0 +1,204 @@
+---
+title: Directory Layout
+description: File structure, naming conventions, and what goes where in an AgentFlow workspace.
+---
+
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Full Workspace Tree
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name="AGENTS.md" />
+    <Folder name="build-feature" defaultOpen>
+      <File name="AGENTS.md" />
+      <Folder name="gather-requirements">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="create-design">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="review-design-gate">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="implement-task">
+        <File name="SKILL.md" />
+      </Folder>
+      <Folder name="hooks">
+        <File name="test-on-change.json" />
+        <File name="lint-on-save.json" />
+      </Folder>
+    </Folder>
+    <Folder name="instructions">
+      <File name="code-style.md" />
+      <File name="testing-strategy.md" />
+    </Folder>
+    <Folder name="capabilities">
+      <File name="write-file.md" />
+      <File name="run-tests.md" />
+      <File name="create-issue.md" />
+    </Folder>
+    <Folder name="runbooks">
+      <File name="design-approved.md" />
+      <File name="tests-pass.md" />
+    </Folder>
+    <Folder name="memory">
+      <File name="decisions.md" />
+    </Folder>
+    <Folder name="hooks">
+      <File name="diagnostics-after-write.json" />
+    </Folder>
+  </Folder>
+</Files>
+
+## Reserved Directories
+
+Five directory names have special meaning. The parser treats them as resource categories. Everything else is a workflow.
+
+<TypeTable type={{
+  'instructions/': {
+    description: 'Guidance documents, conventions, style guides',
+    type: 'instruction',
+    default: 'Global scope',
+  },
+  'capabilities/': {
+    description: 'Tool definitions — builtin, script, MCP, package',
+    type: 'capability',
+    default: 'Global scope',
+  },
+  'runbooks/': {
+    description: 'Conditions for routing, interactions for human-in-loop',
+    type: 'runbook',
+    default: 'Global scope',
+  },
+  'memory/': {
+    description: 'Persistent state across runs — the only writable category',
+    type: 'memory',
+    default: 'Global scope',
+  },
+  'hooks/': {
+    description: 'Event-driven automation rules (JSON files)',
+    type: 'hook',
+    default: 'Global or workflow scope',
+  },
+}} />
+
+## Naming Conventions
+
+### Directories and files
+
+Use **kebab-case** for everything: `gather-requirements`, `code-style.md`, `test-on-change.json`. This isn't enforced by the validator, but the CLI and library follow it consistently.
+
+### Special file names
+
+The parser looks for files in this priority order when determining a node's primary file:
+
+1. Any file with `primary: true` in frontmatter
+2. `SKILL.md`
+3. `main.md`
+4. Alphabetically first `.md` file
+
+<Callout type="info" title="AGENTS.md is required">
+  Every workspace root and every workflow directory must have an `AGENTS.md` file with `type: agents` in its frontmatter. The validator emits an error if it's missing.
+</Callout>
+
+## Workflow Directories
+
+Any subdirectory of `.agentflow/` that isn't a reserved directory is treated as a workflow. Inside a workflow:
+
+<Tabs items={['Nodes', 'Workflow-scoped resources', 'Hooks']}>
+  <Tab value="Nodes">
+    Each subdirectory is a node. It must contain at least one `.md` file:
+
+    ```
+    build-feature/
+      gather-requirements/
+        SKILL.md              ← primary file
+        requirements-template.md  ← supporting context (primary: false)
+      create-design/
+        SKILL.md
+    ```
+
+    Multi-file nodes: all `.md` files are parsed. One is primary (the task definition), the rest are loaded as additional context for that node.
+  </Tab>
+  <Tab value="Workflow-scoped resources">
+    Workflows can have their own resource directories. These are only visible to nodes within that workflow:
+
+    ```
+    build-feature/
+      instructions/
+        requirements-elicitation.md   ← only build-feature nodes see this
+      runbooks/
+        design-approved.md            ← only build-feature nodes see this
+    ```
+
+    If a workflow-scoped resource has the same name as a global one, the workflow-scoped version takes precedence.
+  </Tab>
+  <Tab value="Hooks">
+    Workflow-scoped hooks live in a `hooks/` directory inside the workflow:
+
+    ```
+    build-feature/
+      hooks/
+        test-on-change.json
+        lint-on-save.json
+    ```
+
+    These hooks only fire when the workflow is active.
+  </Tab>
+</Tabs>
+
+## Excluded Directories
+
+The parser skips these directories entirely — they're never treated as nodes or resources:
+
+```
+node_modules, .git, dist, build, output, .next,
+__pycache__, .venv, venv, .cache, coverage
+```
+
+The `output/` directory inside a node is for artifacts, not context.
+
+## Config File
+
+The optional `agentflow.config.json` lives in the **project root** (parent of `.agentflow/`), not inside the workspace:
+
+```json
+{
+  "name": "MyTool",
+  "dir": ".mytool",
+  "cli": "mytool"
+}
+```
+
+<Accordions>
+  <Accordion title="Config fields">
+    | Field | Type | Default | Description |
+    |-------|------|---------|-------------|
+    | `name` | string (1-64 chars) | `"AgentFlow"` | Brand name shown in UI |
+    | `dir` | string (1-64 chars) | `".agentflow"` | Workspace directory name |
+    | `cli` | string (1-32 chars) | `"agentflow"` | CLI command name |
+    | `logo` | string | — | Path to logo file |
+    | `theme` | string | — | Theme name |
+
+    Precedence: env vars (`AGENTFLOW_BRAND_NAME`, `AGENTFLOW_DIR`, `AGENTFLOW_CLI`) > config file > defaults.
+  </Accordion>
+</Accordions>
+
+## Explore the Layout
+
+The Explorer panel below shows the full file tree of the build-feature workspace. Click any file to see its contents. Notice how workflows, nodes, and resources map to the directory structure described above.
+
+<ComponentPreview title="Workspace file tree" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['explorer', 'elements']} />
+</ComponentPreview>
+
+<Cards>
+  <Card title="Writing Workflows" href="/docs/authoring/writing-workflows" description="Create a workflow from scratch" />
+  <Card title="Writing Nodes" href="/docs/authoring/writing-nodes" description="SKILL.md structure and frontmatter" />
+  <Card title="Branding" href="/docs/reference/branding" description="agentflow.config.json reference" />
+</Cards>

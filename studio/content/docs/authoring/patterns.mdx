@@ -1,0 +1,306 @@
+---
+title: Patterns
+description: Approval gates, loops, fan-out, error recovery — with real file content.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+
+Every library workflow combines multiple patterns. This page shows each pattern with the actual files that implement it.
+
+## Approval Gates
+
+The most common pattern — a router node that blocks until a human approves. Used 8 times across the 6 library workflows.
+
+### The files
+
+<Tabs items={['Router SKILL.md', 'Condition runbook', 'Directory']}>
+  <Tab value="Router SKILL.md">
+    ```yaml
+    # review-design-gate/SKILL.md
+    ---
+    name: review-design-gate
+    type: router
+    context:
+      inputs:
+        - ref: memory/user
+          scope: summary
+    ---
+
+    # Review Design Gate
+
+    Present the design from {{<< output.create-design}} to the user
+    via {{runbooks/review-design}}.
+
+    ## Routing
+
+    - If approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
+    - If rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+    ```
+  </Tab>
+  <Tab value="Condition runbook">
+    ```yaml
+    # runbooks/design-approved.md
+    ---
+    type: condition
+    name: design-approved
+    check: The user explicitly approves the design
+    ---
+
+    # Design Approved
+
+    **True when:** The user accepted the design with no blocking feedback.
+    **False when:** The user rejected, requested changes, or hasn't responded.
+    ```
+  </Tab>
+  <Tab value="Directory">
+    <Files>
+      <Folder name="build-feature" defaultOpen>
+        <Folder name="create-design">
+          <File name="SKILL.md" />
+        </Folder>
+        <Folder name="review-design-gate">
+          <File name="SKILL.md" />
+        </Folder>
+        <Folder name="plan-tasks">
+          <File name="SKILL.md" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    The gate sits between the producing step and the consuming step. Rejection loops back to the producer.
+  </Tab>
+</Tabs>
+
+### Key rules
+
+- Router type is always `router` — gates don't produce artifacts
+- No capabilities or instructions — routers are lightweight
+- Two edges minimum — approved (forward) and rejected (backward with feedback)
+- The condition runbook has `type: condition` with a `check` field
+
+## Task Loops
+
+A step executes repeatedly until a completion condition is met. The build-feature workflow uses this for implementing tasks one at a time.
+
+### How it works
+
+```
+implement-task → task-completion-gate
+                    ├── task-failed → implement-task (retry same)
+                    ├── more-tasks-remain → implement-task (next task)
+                    └── all-tasks-done → verify-feature (exit loop)
+```
+
+The key is **three-way routing**: fail (retry), continue (next iteration), done (exit). State is tracked in the task list — `[x]` vs `[ ]` checkboxes that the step updates after each iteration.
+
+<Tabs items={['Gate SKILL.md', 'Condition: more tasks', 'Condition: all done']}>
+  <Tab value="Gate SKILL.md">
+    ```yaml
+    ---
+    name: task-completion-gate
+    type: router
+    ---
+
+    ## Logic
+
+    Read the task list. Count completed [x] vs uncompleted [ ] tasks.
+
+    ## Routing
+
+    - If current task failed → {{-> nodes/implement-task | runbooks/task-failed}}
+    - If more tasks remain → {{-> nodes/implement-task | runbooks/more-tasks-remain}}
+    - If all done → {{-> nodes/verify-feature | runbooks/all-tasks-done}}
+    ```
+  </Tab>
+  <Tab value="Condition: more tasks">
+    ```yaml
+    ---
+    type: condition
+    name: more-tasks-remain
+    check: One or more tasks in the list are not marked as done
+    ---
+
+    **True when:** At least one task has `[ ]` (unchecked).
+    **False when:** All tasks have `[x]` (checked).
+    ```
+  </Tab>
+  <Tab value="Condition: all done">
+    ```yaml
+    ---
+    type: condition
+    name: all-tasks-done
+    check: Every task completed, all tests pass, no diagnostics errors
+    ---
+
+    **True when:** All tasks `[x]`, all tests pass, no errors.
+    **False when:** Any task incomplete, tests failing, or errors exist.
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="info" title="Conversation loops">
+  The interactive-assistant uses a different loop: `triage → handler → user-review-gate → triage`. The user drives iteration — each loop is a new request, not a task from a list.
+</Callout>
+
+## Fan-Out (Router Dispatch)
+
+A classification step feeds a router that dispatches to specialist nodes. All specialists converge at a single output node.
+
+```
+triage → route-gate → billing    → respond
+                    → technical  → respond
+                    → general    → respond
+```
+
+### The router
+
+```yaml
+# route-gate/SKILL.md
+---
+name: route-gate
+type: router
+agent: support-router
+context:
+  max_tokens: 500
+  inputs:
+    - ref: nodes/triage
+      scope: output
+  exclude:
+    - instructions/*
+    - capabilities/*
+---
+
+## Routing Rules
+
+| Category    | Route                  |
+|-------------|------------------------|
+| `billing`   | → {{nodes/billing}}    |
+| `technical` | → {{nodes/technical}}  |
+| `general`   | → {{nodes/general}}    |
+
+### Urgency Override
+If urgency is `critical`:
+- {{runbooks/is-urgent}} → fast-track to {{nodes/respond}}
+```
+
+Notice the aggressive context scoping — the router loads only the triage output (`scope: output`) and excludes all instructions and capabilities. It needs minimal context to make a routing decision.
+
+## Error Recovery
+
+Four strategies, from simplest to most complex:
+
+<Tabs items={['Retry', 'Fallback', 'Priority list', 'Escalation']}>
+  <Tab value="Retry">
+    The task-completion-gate routes back to implement-task on failure. The step gets the error feedback and tries again:
+
+    ```
+    implement-task → task-completion-gate
+                        ├── task-failed → implement-task (with diagnostics)
+    ```
+  </Tab>
+  <Tab value="Fallback">
+    The verify step can route back to implementation if final tests fail:
+
+    ```markdown
+    If any tests fail → {{-> nodes/implement-task}} to fix.
+    ```
+  </Tab>
+  <Tab value="Priority list">
+    The incident-response workflow tries mitigations in order:
+
+    ```markdown
+    ### Mitigation Strategy (priority order)
+    1. Rollback — safest, fastest
+    2. Feature flag — disable broken feature
+    3. Scale up — add resources
+    4. Redirect traffic — route away from affected region
+    5. Hotfix — only if rollback isn't possible
+
+    If not recovered: try the next strategy.
+    ```
+  </Tab>
+  <Tab value="Escalation">
+    When the agent can't resolve the issue:
+
+    ```yaml
+    ---
+    name: escalate-to-human
+    type: escalation
+    ---
+
+    Used for: security-sensitive decisions, ambiguous requirements,
+    breaking changes, production data operations.
+    ```
+  </Tab>
+</Tabs>
+
+## Pattern Composition
+
+Real workflows combine patterns. Here's what each library workflow uses:
+
+| Workflow | Patterns | Nodes |
+|----------|----------|-------|
+| **build-feature** | Sequential + Gates (×3) + Task Loop + Error Recovery | 9 |
+| **agent-builder** | Sequential + Gates (×2) + Resource Scoping | 10 |
+| **content-pipeline** | Pipeline + Gate + Hooks | 6 |
+| **incident-response** | Supervisor + Priority List + Escalation | 7 |
+| **customer-support** | Fan-Out + Urgency Override + Convergence | 7 |
+| **interactive-assistant** | Router + Conversation Loop + Memory | 8 |
+
+## Explore Patterns Live
+
+The build-feature workflow demonstrates approval gates (diamond nodes), the task loop (implement-task ↔ task-completion-gate), and error recovery (verify → implement-task fallback). Click the router nodes to see their conditional edges.
+
+<ComponentPreview title="build-feature — gates, loops, and error recovery" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['validation', 'elements']} />
+</ComponentPreview>
+
+
+## Pattern Decision Tree
+
+Use this flowchart to determine which pattern fits your workflow requirement:
+
+```mermaid
+flowchart TD
+    A[What does your workflow need?] --> B{Is it linear?}
+    B -->|Yes| C[Pipeline]
+    B -->|No| D{Need human approval?}
+    D -->|Yes| E[Add a Gate]
+    D -->|No| F{Need iteration?}
+    F -->|Yes| G[Add a Loop]
+    F -->|No| H{Need classification?}
+    H -->|Yes| I[Fan-Out / Router Dispatch]
+    H -->|No| J{Need error handling?}
+    J -->|Yes| K[Add Retry / Fallback]
+    J -->|No| L[Start with a single step and compose later]
+
+    C --> M[Sequential steps, no branching]
+    E --> N[Router node with condition runbooks]
+    G --> O[Three-way gate: fail / continue / done]
+    I --> P[Triage + route-gate + specialist nodes]
+    K --> Q[Gate routes back on failure with diagnostics]
+```
+
+### How to read the tree
+
+Start at the top and answer each question about your workflow's requirements. Most real workflows combine multiple patterns — a pipeline with gates and a loop is the most common combination (see build-feature). If you answer "yes" to multiple questions, layer the patterns together using the composition table above.
+
+### Quick reference
+
+| Requirement | Pattern | Key mechanism |
+|-------------|---------|---------------|
+| Steps run in order | Pipeline | Linear edges between steps |
+| Human must approve | Gate | Router node with condition runbooks |
+| Repeat until done | Loop | Three-way router (fail/continue/done) |
+| Classify and dispatch | Fan-out | Triage step feeds a routing table |
+| Handle failures | Retry/Fallback | Gate routes back with error context |
+| Cannot resolve automatically | Escalation | Escalation node hands off to human |
+
+<Cards>
+  <Card title="Writing Workflows" href="/docs/authoring/writing-workflows" description="Build a workflow using these patterns" />
+  <Card title="Library" href="/docs/authoring/library" description="Import pre-built workflows" />
+  <Card title="Edges" href="/docs/concepts/edges" description="Edge types and conditional routing" />
+</Cards>

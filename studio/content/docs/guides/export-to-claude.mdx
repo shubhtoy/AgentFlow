@@ -1,0 +1,198 @@
+---
+title: Export to Claude Code
+description: Export your AgentFlow workspace to Claude Code's native .claude/ directory format with full support for hooks, MCP, and agent files.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+AgentFlow exports your workspace directly to Claude Code format. The exporter transforms your `.agentflow/` directory into the `.claude/` structure that Claude Code expects, mapping identity to `CLAUDE.md`, instructions to agent files, hooks to `settings.json`, and MCP to `.mcp.json`.
+
+<Mermaid chart={`graph LR
+  A[".agentflow/AGENTS.md"] -->|identity| B["CLAUDE.md"]
+  C["instructions/"] -->|global scope| B
+  D["instructions/"] -->|workflow scope| E[".claude/agents/*.md"]
+  F["hooks/"] --> G[".claude/settings.json"]
+  H["mcp.json"] --> I[".mcp.json"]
+  J["capabilities/"] -->|MCP type| I
+`} />
+
+## Export Steps
+
+<Steps>
+  <Step>
+    ### Run the export command
+
+    ```bash
+    agentflow export --platform claude-code
+    ```
+
+    This generates the Claude Code output in your project root.
+  </Step>
+
+  <Step>
+    ### Review the output
+
+    The export produces the following structure:
+
+    <Files>
+      <File name="CLAUDE.md" />
+      <Folder name=".claude" defaultOpen>
+        <Folder name="agents" defaultOpen>
+          <File name="build-feature.md" />
+          <File name="debug-issue.md" />
+        </Folder>
+        <File name="settings.json" />
+      </Folder>
+      <File name=".mcp.json" />
+    </Files>
+  </Step>
+
+  <Step>
+    ### Understand each file
+
+    | Output | Source | Description |
+    |---|---|---|
+    | `CLAUDE.md` | Root `AGENTS.md` + global instructions | Identity with frontmatter stripped, global instructions merged in |
+    | `.claude/agents/{name}.md` | Workflow instructions | Each workflow becomes a dedicated agent file |
+    | `.claude/settings.json` | Hooks | Converted to Claude Code native hooks format |
+    | `.mcp.json` | MCP capabilities | MCP server configuration for Claude Code |
+
+    Capabilities defined in your workspace are inlined directly into the relevant skill files rather than exported as separate tool definitions.
+  </Step>
+</Steps>
+
+## Identity Transform
+
+Your root `AGENTS.md` becomes `CLAUDE.md` with frontmatter stripped and global instructions appended.
+
+<Tabs items={["AgentFlow Source", "Claude Code Output"]}>
+  <Tab value="AgentFlow Source">
+    ```markdown title=".agentflow/AGENTS.md"
+    ---
+    name: my-assistant
+    description: A senior engineering agent
+    ---
+
+    You are a senior engineer who writes clean, tested code.
+
+    ## Guidelines
+
+    - Follow existing patterns in the codebase
+    - Write tests for all new features
+    - Use conventional commits
+    ```
+  </Tab>
+  <Tab value="Claude Code Output">
+    ```markdown title="CLAUDE.md"
+    You are a senior engineer who writes clean, tested code.
+
+    ## Guidelines
+
+    - Follow existing patterns in the codebase
+    - Write tests for all new features
+    - Use conventional commits
+
+    ## Code Style
+
+    Use TypeScript strict mode. Prefer const over let.
+    Always add return types to exported functions.
+    ```
+  </Tab>
+</Tabs>
+
+The global instructions from `.agentflow/instructions/` are appended after the identity content, so Claude Code reads everything as a single system prompt.
+
+## What Gets Transformed
+
+The export applies these conversions:
+
+- **Identity** — Frontmatter is stripped from `AGENTS.md` and the body becomes `CLAUDE.md`.
+- **Global instructions** — All files in `.agentflow/instructions/` are merged into `CLAUDE.md`.
+- **Workflow instructions** — Each workflow's instructions become `.claude/agents/{name}.md` files.
+- **Capabilities** — Tool definitions are inlined into the skill files that reference them.
+- **Hooks** — Converted to `.claude/settings.json` using Claude Code's native hooks format.
+- **MCP** — Restructured from `mcp.json` into `.mcp.json` with the schema Claude Code expects.
+
+## Hooks Export
+
+AgentFlow hooks map directly to Claude Code's native hook system. The exporter writes `.claude/settings.json` with the hook definitions translated to Claude Code's format.
+
+```json title=".claude/settings.json"
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit",
+        "hook": "npm run lint --fix $FILEPATH"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hook": "npm run format $FILEPATH"
+      }
+    ]
+  }
+}
+```
+
+Because Claude Code supports hooks natively, no workaround or wrapper script is needed. Your AgentFlow hook definitions translate one-to-one.
+
+## MCP Export
+
+MCP server configuration is exported to `.mcp.json` at the project root. Claude Code reads this file to discover available MCP servers.
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/project"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+## Importing from Claude Code
+
+<Callout type="info">
+  AgentFlow supports importing existing Claude Code projects back into your workspace. Run `agentflow import --platform claude-code` to convert `CLAUDE.md` into `AGENTS.md` and `.mcp.json` into your workspace MCP config.
+</Callout>
+
+The importer detects Claude Code projects by looking for `CLAUDE.md` or the `.claude/` directory. During import, `CLAUDE.md` content becomes your root `AGENTS.md` with generated frontmatter, and `.mcp.json` is converted to the workspace `mcp.json` format.
+
+## Interactive Preview
+
+Explore the export pipeline below. The playground shows how your AgentFlow source maps to Claude Code output files.
+
+<ComponentPreview>
+  <DocsPlayground id="export-claude-code" />
+</ComponentPreview>
+
+## Related Guides
+
+
+The export dialog below shows the actual interface for exporting to Claude Code. Select the Platform tab and choose Claude Code to see the output preview.
+
+
+<ComponentPreview title="Export Dialog" height="lg">
+  <DocsPlayground panel="export" />
+</ComponentPreview>
+
+
+<Cards>
+  <Card title="Export to Cursor" href="/docs/guides/export-to-cursor" description="Export to Cursor's .cursor/ directory format" />
+  <Card title="Export to Kiro" href="/docs/guides/export-to-kiro" description="Export to Kiro's native format" />
+  <Card title="Export Concepts" href="/docs/concepts/export" description="How the export system works under the hood" />
+</Cards>

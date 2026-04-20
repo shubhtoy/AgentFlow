@@ -1,0 +1,63 @@
+---
+title: Documentation
+description: Contribute to these docs.
+---
+
+## How the Docs System Works
+
+The documentation site is built with Fumadocs v16 and MDX. All content lives in `studio/content/docs/` as `.mdx` files organized by section.
+
+Navigation ordering is controlled by `meta.json` files in each directory. Each entry maps a slug to its position in the sidebar.
+
+## Live Components
+
+The docs include interactive components powered by the studio engine:
+
+- **DocsShowcase** — loads workflow data so live components can render real state
+- **DocsPlayground** — renders a canvas with a floating panel for interactive demos
+- **ComponentPreview** — wraps any component with a border frame and an expand button
+
+These are globally available alongside `Cards` and `Card` and do not need explicit imports.
+
+## Writing Rules
+
+Follow these rules when authoring pages:
+
+- No h1 headings in the body — the frontmatter `title` field renders the page heading automatically
+- Import from specific fumadocs-ui subpaths, not barrel exports
+- No template literal expressions in JSX children
+- No semicolons in code
+- Frontmatter must include `title` and `description`
+
+```mdx
+---
+title: My Page
+description: What this page covers.
+---
+
+## First Section
+
+Content starts at h2.
+```
+
+## Imports
+
+Always import from specific subpaths:
+
+```tsx
+import { Tab, Tabs } from "fumadocs-ui/components/tabs"
+import { Callout } from "fumadocs-ui/components/callout"
+```
+
+## Adding a New Page
+
+1. Create an `.mdx` file in the appropriate directory under `studio/content/docs/`
+2. Add frontmatter with `title` and `description`
+3. Add the file slug to the nearest `meta.json` to control nav position
+4. Run the build to verify the page renders correctly
+
+```json
+{
+  "pages": ["getting-started", "my-new-page", "reference"]
+}
+```

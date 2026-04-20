@@ -1,0 +1,112 @@
+---
+title: Node Types
+description: Step, router, and sub-workflow specifications.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+
+Every node in an AgentFlow workflow is one of three types: step, router, or sub-workflow. Each is defined as a `SKILL.md` file inside a named directory.
+
+<Tabs items={["Step", "Router", "Sub-workflow"]}>
+<Tab value="Step">
+
+A step is the primary execution unit. It runs instructions, invokes tools, and produces outputs.
+
+## Behavior
+
+- Executes sequentially within the workflow graph
+- Can reference capabilities (tools), instructions, and runbooks
+- Supports context inputs from other nodes via data flow edges
+- Produces outputs declared in frontmatter
+
+<TypeTable
+  type={{
+    name: { type: 'string', description: 'Display name of the step', required: true },
+    type: { type: '"step"', description: 'Must be "step"', required: true },
+    entry: { type: 'boolean', description: 'Whether this is the workflow entry point', default: 'false' },
+    capabilities: { type: 'string[]', description: 'Paths to capability files this step can invoke' },
+    instructions: { type: 'string[]', description: 'Paths to instruction files included in context' },
+    runbooks: { type: 'string[]', description: 'Paths to runbook files for conditional logic' },
+    inputs: { type: 'string[]', description: 'Context inputs from other nodes' },
+    outputs: { type: 'string[]', description: 'Declared output keys this step produces' },
+    max_tokens: { type: 'number', description: 'Context budget limit for this node' },
+  }}
+/>
+
+## Applicable validation rules
+
+- `no_entry_point` — at least one step must have `entry: true`
+- `broken_ref` — all capability/instruction/runbook paths must resolve
+- `broken_data_flow` — input refs must point to existing nodes
+- `context_budget` / `context_budget_high` — token limits
+- `output_declaration` — outputs referenced by other nodes must be declared
+
+</Tab>
+<Tab value="Router">
+
+A router is a decision node. It evaluates conditions and routes execution to different branches.
+
+## Behavior
+
+- Does not execute instructions or invoke tools
+- All outgoing edges must be conditional (linked to a runbook)
+- Must have at least two outgoing edges
+- Routes to exactly one branch per execution
+
+<TypeTable
+  type={{
+    name: { type: 'string', description: 'Display name of the router', required: true },
+    type: { type: '"router"', description: 'Must be "router"', required: true },
+    entry: { type: 'boolean', description: 'Whether this is the workflow entry point', default: 'false' },
+    runbooks: { type: 'string[]', description: 'Paths to runbook files defining branch conditions', required: true },
+    inputs: { type: 'string[]', description: 'Context inputs used for condition evaluation' },
+  }}
+/>
+
+## Constraints
+
+- Cannot reference capabilities (tools)
+- Cannot reference instructions
+- All outgoing edges must be conditional
+
+## Applicable validation rules
+
+- `router_single_exit` — must have more than one outgoing edge
+- `router_non_conditional` — all edges must use conditions
+- `router_has_capabilities` — no tool references allowed
+- `router_has_instructions` — no instruction references allowed
+- `missing_condition` — each conditional edge needs a runbook
+
+</Tab>
+<Tab value="Sub-workflow">
+
+A sub-workflow embeds another workflow as a single node, enabling composition and reuse.
+
+## Behavior
+
+- References an entire workflow directory
+- Executes the referenced workflow as a nested graph
+- Inputs are passed into the sub-workflow entry node
+- Outputs are collected from the sub-workflow terminal nodes
+
+<TypeTable
+  type={{
+    name: { type: 'string', description: 'Display name of the sub-workflow node', required: true },
+    type: { type: '"sub-workflow"', description: 'Must be "sub-workflow"', required: true },
+    entry: { type: 'boolean', description: 'Whether this is the workflow entry point', default: 'false' },
+    workflow: { type: 'string', description: 'Path to the referenced workflow directory', required: true },
+    inputs: { type: 'string[]', description: 'Context inputs passed to the nested workflow' },
+    outputs: { type: 'string[]', description: 'Outputs collected from the nested workflow' },
+  }}
+/>
+
+## Applicable validation rules
+
+- `broken_ref` — the workflow path must resolve to a valid workflow
+- `cycle` — sub-workflow must not create circular references
+- `broken_data_flow` — input/output refs must be valid
+- `unreachable` — the nested workflow must itself be valid
+
+</Tab>
+</Tabs>

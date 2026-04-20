@@ -1,0 +1,254 @@
+---
+title: Git Integration
+description: Sync your AgentFlow workflows with Git repositories using built-in version control support.
+---
+
+import { Accordion, Accordions } from "fumadocs-ui/components/accordion"
+import { Step, Steps } from "fumadocs-ui/components/steps"
+import { Tab, Tabs } from "fumadocs-ui/components/tabs"
+import { Mermaid } from '@/components/docs/mdx-components'
+
+## Overview
+
+AgentFlow includes built-in Git integration that lets you connect workflows to remote repositories, automatically detect `.agentflow/` directories, configure sync rules, and handle conflicts — all from the CLI or the Studio GitPanel.
+
+<Mermaid chart={`graph LR
+  A["Local .agentflow/"] -->|git push| B["Remote Repository"]
+  B -->|git pull| A
+  C["Studio GitPanel"] -->|commit + sync| B
+  D["CLI: agentflow git sync"] -->|commit + sync| B
+`} />
+
+## Getting Started
+
+<Steps>
+<Step>
+### Initialize a repository
+
+Connect your workspace to a remote Git repository:
+
+```bash
+agentflow git init https://github.com/your-org/your-repo.git
+```
+
+This clones the repository and sets up credential management via the internal `git-manager.js` wrapper around `simple-git`. Credentials are automatically sanitized from logs and error output.
+</Step>
+
+<Step>
+### Scan for workflow directories
+
+Detect all `.agentflow/` directories in the repository:
+
+```bash
+agentflow git scan
+```
+
+The `repo-scanner.js` module walks the repository tree up to a max depth of 5 to locate workflow directories.
+</Step>
+
+<Step>
+### Configure sync rules
+
+Create or edit `.agentflow/.gitconfig.yaml` to define how syncing behaves:
+
+```yaml
+sync:
+  direction: bidirectional
+  conflict_strategy: manual
+  lock_timeout: 30s
+  dry_run: false
+
+ignore:
+  - "memory/**"
+  - "*.tmp"
+```
+
+You can also run:
+
+```bash
+agentflow git config
+```
+</Step>
+
+<Step>
+### Sync your workflows
+
+Push and pull changes with lockfile protection:
+
+```bash
+agentflow git sync
+```
+
+The `sync-engine.js` module acquires a lockfile before performing operations, preventing concurrent writes. Use `--dry-run` to preview changes without applying them.
+</Step>
+
+<Step>
+### Handle conflicts
+
+Check status and resolve conflicts as they arise:
+
+```bash
+agentflow git status
+agentflow git resolve path/to/conflicted-file.md
+```
+</Step>
+</Steps>
+
+## Configuration Format
+
+The `.agentflow/.gitconfig.yaml` file controls all sync behavior:
+
+```yaml title=".agentflow/.gitconfig.yaml"
+sync:
+  direction: bidirectional       # bidirectional | push_only | pull_only
+  conflict_strategy: manual      # local_wins | remote_wins | manual | timestamp
+  lock_timeout: 30s
+  dry_run: false
+
+remote:
+  url: https://github.com/your-org/your-repo.git
+  branch: main
+
+ignore:
+  - "memory/**"
+  - "hooks/**"
+  - "*.tmp"
+```
+
+## Conflict Resolution Strategies
+
+<Tabs items={["local_wins", "remote_wins", "manual", "timestamp"]}>
+<Tab value="local_wins">
+Local changes always take precedence. Remote changes that conflict are discarded.
+
+```yaml
+sync:
+  conflict_strategy: local_wins
+```
+
+Best for single-developer workflows where the local copy is authoritative.
+</Tab>
+
+<Tab value="remote_wins">
+Remote changes always take precedence. Local conflicting changes are overwritten.
+
+```yaml
+sync:
+  conflict_strategy: remote_wins
+```
+
+Best for read-heavy workflows where the remote is the source of truth.
+</Tab>
+
+<Tab value="manual">
+Conflicts are flagged and must be resolved explicitly using `agentflow git resolve`.
+
+```yaml
+sync:
+  conflict_strategy: manual
+```
+
+Best for team collaboration where human review is required.
+</Tab>
+
+<Tab value="timestamp">
+The most recently modified version wins based on file timestamps.
+
+```yaml
+sync:
+  conflict_strategy: timestamp
+```
+
+Best for rapid iteration where the latest edit should always apply.
+</Tab>
+</Tabs>
+
+## Sync Directions
+
+| Direction | Behavior |
+|-----------|----------|
+| `bidirectional` | Pulls remote changes and pushes local changes in a single operation |
+| `push_only` | Only pushes local changes to the remote; never pulls |
+| `pull_only` | Only pulls remote changes; local edits are never pushed |
+
+## Advanced Configuration
+
+<Accordions>
+<Accordion title="Lockfile protection">
+The sync engine uses a lockfile (`.agentflow/.git.lock`) to prevent concurrent sync operations. If a lock is stale (exceeds `lock_timeout`), it is automatically released. You can configure the timeout:
+
+```yaml
+sync:
+  lock_timeout: 60s
+```
+</Accordion>
+
+<Accordion title="Dry-run mode">
+Preview what a sync operation would do without making changes:
+
+```bash
+agentflow git sync --dry-run
+```
+
+Or set it as the default in config:
+
+```yaml
+sync:
+  dry_run: true
+```
+</Accordion>
+
+<Accordion title="Ignoring paths">
+Exclude files or directories from sync using glob patterns in the `ignore` key:
+
+```yaml
+ignore:
+  - "memory/**"
+  - "hooks/**"
+  - "*.log"
+```
+</Accordion>
+
+<Accordion title="Branch configuration">
+Target a specific branch for sync operations:
+
+```yaml
+remote:
+  branch: develop
+```
+</Accordion>
+</Accordions>
+
+## Studio Integration
+
+The Studio provides a visual GitPanel for managing Git operations without the CLI.
+
+<ComponentPreview>
+  <DocsPlayground panel="git">
+    <Cards>
+      <Card title="Status" description="View uncommitted changes and sync state across all detected workflow directories." />
+      <Card title="Sync" description="Pull and push with a single click. Conflicts are highlighted inline for resolution." />
+      <Card title="History" description="Browse commit history filtered to your .agentflow/ directories." />
+    </Cards>
+  </DocsPlayground>
+</ComponentPreview>
+
+The Git panel below shows the visual interface for staging, committing, and syncing. In the studio, this panel appears as a floating window.
+
+
+<ComponentPreview title="Git Panel" height="lg">
+  <DocsPlayground panel="git" />
+</ComponentPreview>
+
+
+
+## CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `agentflow git init <url>` | Connect to a remote repository |
+| `agentflow git scan` | Detect `.agentflow/` directories (max depth 5) |
+| `agentflow git sync` | Pull and push with lockfile protection |
+| `agentflow git status` | Show current sync state and conflicts |
+| `agentflow git resolve <path>` | Resolve a conflicted file |
+| `agentflow git config` | Open or edit `.gitconfig.yaml` |

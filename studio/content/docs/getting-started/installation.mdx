@@ -1,0 +1,96 @@
+---
+title: Installation
+description: Set up AgentFlow Studio locally or use the hosted version.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+<Tabs items={['Hosted (no setup)', 'Local development']}>
+  <Tab value="Hosted (no setup)">
+    Visit [agentflow.studio](https://agentflow.studio) — the studio runs entirely in your browser. Your workspace is stored in the browser's Origin Private File System (OPFS). No account required.
+  </Tab>
+  <Tab value="Local development">
+    For full filesystem access, MCP stdio servers, and git integration, run the studio locally.
+
+    ### Requirements
+
+    - Node.js 20+
+    - npm 9+
+
+    <Steps>
+      <Step>
+        ### Clone and install
+
+        ```bash
+        git clone https://github.com/shubhtoy/agentflow
+        cd agentflow
+        npm install
+        cd studio
+        npm install
+        ```
+      </Step>
+      <Step>
+        ### Configure environment
+
+        ```bash
+        cp .env.example .env.local
+        ```
+
+        Add your LLM API keys for the AI copilot:
+
+        ```bash
+        # At least one is required for the copilot
+        ANTHROPIC_API_KEY=sk-ant-...
+        OPENAI_API_KEY=sk-...
+
+        # Optional: web search for the copilot
+        TAVILY_API_KEY=tvly-...
+        ```
+      </Step>
+      <Step>
+        ### Start the studio
+
+        ```bash
+        npm run dev
+        ```
+
+        Open `http://localhost:3000`.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Project Structure
+
+```
+agentflow/
+  src/              # Core engine (parser, validator, exporter)
+  studio/           # Visual editor (Next.js)
+  library/          # Pre-built resources and workflows
+  docs/             # Documentation source
+  bin/              # CLI
+  tests/            # Test suite
+```
+
+## CLI
+
+AgentFlow also ships a CLI for parsing and validating workspaces without the studio:
+
+```bash
+npx agentflow validate ./my-project/.agentflow
+npx agentflow parse ./my-project/.agentflow --format json
+npx agentflow export ./my-project/.agentflow --platform claude-code
+```
+
+<Accordions>
+  <Accordion title="Updating">
+    ```bash
+    git pull
+    npm install
+    cd studio && npm install
+    ```
+  </Accordion>
+</Accordions>

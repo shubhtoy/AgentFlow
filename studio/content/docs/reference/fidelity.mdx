@@ -1,0 +1,47 @@
+---
+title: Fidelity
+description: Export quality categories — how well each resource maps to the target platform.
+---
+
+## Fidelity Categories
+
+Every resource in an export report is assigned one of four fidelity categories:
+
+### native
+
+Direct platform equivalent. The resource maps 1:1 to a native platform feature with no loss of functionality.
+
+### on-demand
+
+Available but loaded on request. The resource exists on the target platform but is only included when the agent explicitly requests it at runtime.
+
+### translated
+
+Converted to a different format. The content is preserved but the structure changes to fit the target platform. For example, hooks become inline instructions on platforms without native hook support.
+
+### preserved
+
+Kept as-is. The resource is copied without transformation as a passthrough. The platform receives the raw content.
+
+## Platform Fidelity Matrix
+
+| Resource Type | LangGraph | Claude | GitHub Actions |
+| --- | --- | --- | --- |
+| Workflows | native | native | translated |
+| Instructions | native | native | preserved |
+| Capabilities | native | native | translated |
+| Runbooks | translated | native | preserved |
+| Hooks | native | translated | translated |
+| Memory | on-demand | on-demand | preserved |
+
+## Export Reports
+
+Fidelity reports are generated automatically during export. Each report lists every resource and its assigned fidelity category, giving you a clear view of what was mapped natively, what required translation, and what was preserved as-is.
+
+Run an export to see the report:
+
+```bash
+agentflow export --platform langgraph
+```
+
+The report output shows each resource with its fidelity status, letting you identify areas where manual adjustment may improve the result.

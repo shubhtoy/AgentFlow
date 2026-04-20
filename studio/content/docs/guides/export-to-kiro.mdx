@@ -1,0 +1,189 @@
+---
+title: Export to Kiro
+description: Export your AgentFlow workspace to Kiro's native .kiro/ directory format with full support for steering files, hooks, and MCP configuration.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+AgentFlow exports your workspace directly to Kiro format. The exporter transforms your `.agentflow/` directory into the `.kiro/` structure that Kiro expects, mapping identity to `steering/identity.md`, instructions to steering files, hooks to native JSON, and MCP to `settings/mcp.json`.
+
+<Mermaid chart={`graph LR
+  A[".agentflow/AGENTS.md"] -->|identity| B[".kiro/steering/identity.md"]
+  C["instructions/"] --> D[".kiro/steering/*.md"]
+  E["hooks/"] --> F[".kiro/hooks/*.json"]
+  G["mcp.json"] --> H[".kiro/settings/mcp.json"]
+`} />
+
+## Export Steps
+
+<Steps>
+  <Step>
+    ### Run the export command
+
+    ```bash
+    agentflow export --platform kiro
+    ```
+
+    This generates the Kiro output in your project root.
+  </Step>
+
+  <Step>
+    ### Review the output
+
+    The export produces the following structure:
+
+    <Files>
+      <Folder name=".kiro" defaultOpen>
+        <Folder name="steering" defaultOpen>
+          <File name="identity.md" />
+          <File name="code-style.md" />
+          <File name="testing.md" />
+        </Folder>
+        <Folder name="hooks" defaultOpen>
+          <File name="pre-commit.json" />
+          <File name="post-save.json" />
+        </Folder>
+        <Folder name="settings" defaultOpen>
+          <File name="mcp.json" />
+        </Folder>
+      </Folder>
+    </Files>
+  </Step>
+
+  <Step>
+    ### Understand each file
+
+    | Output | Source | Description |
+    |---|---|---|
+    | `.kiro/steering/identity.md` | Root `AGENTS.md` | Identity with `inclusion: auto` frontmatter added |
+    | `.kiro/steering/{name}.md` | Instructions | Each instruction becomes a dedicated steering file |
+    | `.kiro/hooks/{name}.json` | Hooks | Converted to Kiro native JSON hook format |
+    | `.kiro/settings/mcp.json` | MCP capabilities | MCP server configuration for Kiro |
+
+    Capabilities defined in your workspace are inlined directly into the relevant steering files rather than exported as separate tool definitions.
+  </Step>
+</Steps>
+
+## Identity Transform
+
+Your root `AGENTS.md` becomes `.kiro/steering/identity.md` with `inclusion: auto` added to the frontmatter.
+
+<Tabs items={["AgentFlow Source", "Kiro Output"]}>
+  <Tab value="AgentFlow Source">
+    ```markdown title=".agentflow/AGENTS.md"
+    ---
+    name: my-assistant
+    description: A senior engineering agent
+    ---
+
+    You are a senior engineer who writes clean, tested code.
+
+    ## Guidelines
+
+    - Follow existing patterns in the codebase
+    - Write tests for all new features
+    - Use conventional commits
+    ```
+  </Tab>
+  <Tab value="Kiro Output">
+    ```markdown title=".kiro/steering/identity.md"
+    ---
+    inclusion: auto
+    ---
+
+    You are a senior engineer who writes clean, tested code.
+
+    ## Guidelines
+
+    - Follow existing patterns in the codebase
+    - Write tests for all new features
+    - Use conventional commits
+    ```
+  </Tab>
+</Tabs>
+
+The `inclusion: auto` frontmatter tells Kiro to always include this steering file in the agent context. The original name and description frontmatter fields are stripped during export.
+
+## What Gets Transformed
+
+The export applies these conversions:
+
+- **Identity** — `AGENTS.md` becomes `.kiro/steering/identity.md` with `inclusion: auto` frontmatter.
+- **Instructions** — All files in `.agentflow/instructions/` become `.kiro/steering/{name}.md` files.
+- **Hooks** — Converted to `.kiro/hooks/{name}.json` using Kiro's native JSON format.
+- **MCP** — Restructured into `.kiro/settings/mcp.json` with the schema Kiro expects.
+- **Capabilities** — Tool definitions are inlined into the steering files that reference them.
+
+## Hooks Export
+
+AgentFlow hooks map directly to Kiro's native hook system. The exporter writes individual JSON files to `.kiro/hooks/` for each hook definition.
+
+```json title=".kiro/hooks/pre-commit.json"
+{
+  "name": "pre-commit",
+  "event": "beforeCommit",
+  "command": "npm run lint --fix",
+  "description": "Run linter before committing changes"
+}
+```
+
+```json title=".kiro/hooks/post-save.json"
+{
+  "name": "post-save",
+  "event": "afterSave",
+  "command": "npm run format",
+  "description": "Format file after saving"
+}
+```
+
+Because Kiro supports hooks natively in JSON format, no workaround or wrapper script is needed. Your AgentFlow hook definitions translate directly to individual hook files.
+
+## MCP Export
+
+MCP server configuration is exported to `.kiro/settings/mcp.json`. Kiro reads this file to discover available MCP servers.
+
+```json title=".kiro/settings/mcp.json"
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/project"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+## Importing from Kiro
+
+<Callout type="info">
+  AgentFlow supports importing existing Kiro projects back into your workspace. Run `agentflow import --platform kiro` to convert steering files into your AgentFlow workspace format.
+</Callout>
+
+The importer detects Kiro projects by looking for the `.kiro/steering` directory. During import, `.kiro/steering/identity.md` becomes your root `AGENTS.md` with generated frontmatter, and other steering files are converted to instructions in your workspace.
+
+## Interactive Preview
+
+Explore the export pipeline below. The playground shows how your AgentFlow source maps to Kiro output files.
+
+<ComponentPreview>
+  <DocsPlayground id="export-kiro" />
+</ComponentPreview>
+
+## Related Guides
+
+<Cards>
+  <Card title="Export to Claude Code" href="/docs/guides/export-to-claude" description="Export to Claude Code's .claude/ directory format" />
+  <Card title="Export to Cursor" href="/docs/guides/export-to-cursor" description="Export to Cursor's .cursor/ directory format" />
+  <Card title="Export Concepts" href="/docs/concepts/export" description="How the export system works under the hood" />
+</Cards>

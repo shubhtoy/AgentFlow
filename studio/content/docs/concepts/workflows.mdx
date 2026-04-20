@@ -1,0 +1,218 @@
+---
+title: Workflows
+description: Directed graphs of nodes connected by edges — the core unit of orchestration.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+A workflow is a directed graph of nodes connected by edges. It represents a complete process — from input to output — broken into discrete steps that an agent executes sequentially.
+
+Each workflow lives in its own directory inside `.agentflow/` and contains a descriptor (`AGENTS.md`) plus one or more node directories.
+
+## Directory Shape
+
+<Files>
+  <Folder name="build-feature" defaultOpen>
+    <File name="AGENTS.md" />
+    <Folder name="gather-requirements">
+      <File name="SKILL.md" />
+    </Folder>
+    <Folder name="create-design">
+      <File name="SKILL.md" />
+    </Folder>
+    <Folder name="review-design">
+      <File name="SKILL.md" />
+    </Folder>
+    <Folder name="implement">
+      <File name="SKILL.md" />
+    </Folder>
+    <Folder name="verify">
+      <File name="SKILL.md" />
+    </Folder>
+  </Folder>
+</Files>
+
+## Descriptor
+
+Every workflow has an `AGENTS.md` at its root — the workflow's identity (Layer 1 in the selective context model):
+
+```yaml
+# .agentflow/build-feature/AGENTS.md
+---
+name: Build Feature
+description: >
+  Spec-driven feature development. Takes a feature request through
+  requirements gathering, design, implementation, and verification
+  with approval gates between phases.
+---
+```
+
+## Entry Point
+
+One node must be marked as the entry point — where execution begins:
+
+```yaml
+# gather-requirements/SKILL.md
+---
+name: gather-requirements
+type: step
+entry: true
+---
+```
+
+The validator emits `no_entry_point` if none is set, and `multiple_entry_points` if more than one node has `entry: true`.
+
+## Graph Construction
+
+Nodes connect through edge references in their SKILL.md files. The parser reads these and builds the directed graph:
+
+```markdown
+# gather-requirements/SKILL.md
+{{-> nodes/create-design}}
+
+# create-design/SKILL.md
+{{-> nodes/review-design}}
+
+# review-design/SKILL.md (router)
+{{-> nodes/implement | runbooks/design-approved}}
+{{-> nodes/create-design | runbooks/needs-changes}}
+```
+
+- `{{-> nodes/target}}` — unconditional edge, always go to target
+- `{{-> nodes/target | runbooks/condition}}` — conditional edge, go if condition passes
+
+See [Edges](/docs/concepts/edges) for the full edge system.
+
+## Data Flow
+
+Nodes can reference outputs from earlier nodes:
+
+```markdown
+# implement/SKILL.md
+Using the design from {{<< output.create-design}}, implement the feature.
+```
+
+This loads the output that `create-design` produced during this run. Data flows forward — a node can only reference outputs from nodes that execute before it.
+
+<Callout type="warn" title="Acyclic graphs only">
+  Workflows must be DAGs — no circular dependencies. Conditional edges that loop back (like `review-design → create-design`) are allowed because they represent human-controlled iteration, not infinite loops.
+</Callout>
+
+<Accordions>
+  <Accordion title="Multiple workflows in one workspace">
+    A workspace can contain any number of workflows. They share global resources but are otherwise independent:
+
+    ```
+    .agentflow/
+      build-feature/AGENTS.md      ← 9 nodes, approval gates
+      fix-bug/AGENTS.md            ← 3 nodes, quick iteration
+      content-pipeline/AGENTS.md   ← 5 nodes, content creation
+    ```
+
+    The studio lets you switch between them.
+  </Accordion>
+  <Accordion title="Sub-workflows">
+    A node can reference another workflow as a sub-workflow. When the agent reaches this node, it executes the entire referenced workflow, then returns:
+
+    ```yaml
+    # deploy/SKILL.md
+    ---
+    name: deploy
+    type: sub-workflow
+    workflow: ci-cd
+    ---
+    ```
+  </Accordion>
+</Accordions>
+
+## Explore the Graph
+
+The canvas below renders the build-feature workflow — 9 nodes with conditional routing and approval gates. Drag to pan, scroll to zoom. Click any node to see its type, connections, and references in the Node Card that appears.
+
+<ComponentPreview title="build-feature workflow graph" height="lg">
+  <DocsPlayground workflow="build-feature" />
+</ComponentPreview>
+
+
+## Workflow Lifecycle
+
+Every workflow passes through five stages from creation to execution:
+
+<Mermaid chart={`
+graph LR
+    A[Author] --> B[Parse]
+    B --> C[Validate]
+    C --> D[Export]
+    D --> E[Execute]
+`} />
+
+### Author
+
+You write SKILL.md files, define edges, and reference resources. The studio provides a visual canvas, but the source of truth is always the markdown files on disk.
+
+### Parse
+
+The parser reads the workflow directory, discovers nodes, extracts edges from SKILL.md bodies, resolves references, and builds an in-memory directed graph. Template variables like `{{$workflows}}` are expanded at this stage.
+
+### Validate
+
+The validator checks the parsed graph for structural errors: missing entry points, unresolved edges, orphan nodes, unconditional cycles, and invalid references. Errors block export; warnings are reported but do not block.
+
+### Export
+
+The exporter transforms the validated graph into a target platform format. References are inlined, directory structures are remapped, and platform-specific conventions are applied. See [Export](/docs/concepts/export) for details.
+
+### Execute
+
+The agent runtime walks the graph node by node. At each node it assembles context (identity + instructions + prior outputs), sends the prompt to the LLM, stores the output, evaluates outgoing edges, and routes to the next node.
+
+## Workflow Scoping
+
+Resources in AgentFlow exist at two scopes: global and workflow-local.
+
+### Global resources
+
+Files in the top-level resource directories (`.agentflow/instructions/`, `.agentflow/capabilities/`, etc.) are available to every workflow in the workspace. Use global resources for cross-cutting concerns:
+
+- Coding standards that apply everywhere
+- Shared tool definitions (capabilities)
+- Organization-wide constraints
+
+### Workflow-scoped resources
+
+Files inside a workflow directory are scoped to that workflow only. Other workflows cannot reference them:
+
+```
+.agentflow/
+  build-feature/
+    instructions/        <-- only build-feature nodes can use these
+      design-patterns.md
+    runbooks/
+      design-approved.md
+  fix-bug/
+    instructions/        <-- only fix-bug nodes can use these
+      triage-steps.md
+```
+
+### When to use workflow scope
+
+Use workflow-scoped resources when:
+
+- The resource is specific to one process and would confuse other workflows
+- You want to keep a workflow self-contained and portable (copy the directory to another workspace)
+- Different workflows need different versions of similar instructions (e.g., different review criteria)
+
+Use global resources when:
+
+- Multiple workflows share the same instruction or capability
+- The resource represents a workspace-wide standard or constraint
+- You want a single source of truth that all workflows inherit
+
+<Cards>
+  <Card title="Nodes" href="/docs/concepts/nodes" description="Steps, routers, and sub-workflows" />
+  <Card title="Edges" href="/docs/concepts/edges" description="Flow control and conditional routing" />
+  <Card title="Writing Workflows" href="/docs/authoring/writing-workflows" description="How to create a workflow from scratch" />
+  <Card title="Canvas" href="/docs/studio/canvas" description="Visual workflow editing in the studio" />
+</Cards>

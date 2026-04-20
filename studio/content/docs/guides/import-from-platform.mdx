@@ -1,0 +1,185 @@
+---
+title: Import from Platform
+description: Import existing AI coding assistant configurations into AgentFlow from Cursor, Claude Code, Kiro, VS Code Copilot, Windsurf, and OpenClaw.
+---
+
+import { Callout } from "fumadocs-ui/components/callout"
+import { Steps, Step } from "fumadocs-ui/components/steps"
+import { Tabs, Tab } from "fumadocs-ui/components/tabs"
+import { Files, File, Folder } from "fumadocs-ui/components/files"
+
+AgentFlow can import configurations from six supported platforms, converting their rules, instructions, and project context into the `.agentflow/` directory structure.
+
+## Import Workflow
+
+<Steps>
+<Step>
+### Auto-detect platform
+
+Run the import command from your project root. AgentFlow will detect which platform configuration is present:
+
+```bash
+agentflow import --source ./my-project
+```
+
+If multiple platforms are detected, the one with the highest confidence score is selected. You can also specify the platform explicitly:
+
+```bash
+agentflow import --platform cursor --source ./my-project
+```
+</Step>
+
+<Step>
+### Run the import
+
+The import pipeline executes in order:
+
+1. Validate source directory
+2. Apply reverse transforms (platform format to AgentFlow format)
+3. Validate output paths
+4. Check for existing `AGENTS.md`
+
+</Step>
+
+<Step>
+### Review output
+
+Inspect the generated `.agentflow/` directory to confirm the imported structure matches your expectations.
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <File name="AGENTS.md" />
+    <Folder name="instructions">
+      <File name="imported-rules.md" />
+    </Folder>
+    <Folder name="memory">
+      <File name="context.md" />
+    </Folder>
+  </Folder>
+</Files>
+
+</Step>
+
+<Step>
+### Validate
+
+Run validation to ensure the imported workflow is well-formed:
+
+```bash
+agentflow validate
+```
+</Step>
+</Steps>
+
+## Platform Reference
+
+<Tabs items={["Cursor", "Claude Code", "Kiro", "VS Code Copilot", "Windsurf", "OpenClaw"]}>
+<Tab value="Cursor">
+
+**Source files read:**
+- `.cursor/rules`
+- `.cursorrules`
+
+**AgentFlow output:**
+- `AGENTS.md` — workspace identity derived from cursor rules
+- `instructions/` — individual rule files converted to reusable instructions
+
+</Tab>
+<Tab value="Claude Code">
+
+**Source files read:**
+- `CLAUDE.md`
+- `.claude/`
+
+**AgentFlow output:**
+- `AGENTS.md` — workspace identity from CLAUDE.md
+- `instructions/` — extracted guidelines and constraints
+- `memory/` — persistent context from .claude directory
+
+</Tab>
+<Tab value="Kiro">
+
+**Source files read:**
+- `.kiro/steering`
+
+**AgentFlow output:**
+- `AGENTS.md` — workspace identity from steering config
+- `instructions/` — steering rules as reusable instructions
+
+</Tab>
+<Tab value="VS Code Copilot">
+
+**Source files read:**
+- `.github/copilot-instructions.md`
+
+**AgentFlow output:**
+- `AGENTS.md` — workspace identity
+- `instructions/` — copilot instructions converted to AgentFlow format
+
+</Tab>
+<Tab value="Windsurf">
+
+**Source files read:**
+- `.windsurf/rules`
+- `.windsurfrules`
+
+**AgentFlow output:**
+- `AGENTS.md` — workspace identity from windsurf rules
+- `instructions/` — rule files as reusable instructions
+
+</Tab>
+<Tab value="OpenClaw">
+
+**Source files read:**
+- `SOUL.md`
+- `HEARTBEAT.md`
+
+**AgentFlow output:**
+- `AGENTS.md` — workspace identity from SOUL.md
+- `instructions/` — behavioural guidelines
+- `memory/` — heartbeat context as persistent memory
+
+</Tab>
+</Tabs>
+
+## Auto-detection
+
+When no `--platform` flag is provided, AgentFlow runs `detectPlatform()` which scans the source directory for marker files. Each platform has known markers:
+
+| Platform | Marker Files |
+|----------|-------------|
+| Kiro | `.kiro/steering` |
+| Cursor | `.cursor/rules`, `.cursorrules` |
+| Claude Code | `CLAUDE.md`, `.claude/` |
+| VS Code Copilot | `.github/copilot-instructions.md` |
+| Windsurf | `.windsurf/rules`, `.windsurfrules` |
+| OpenClaw | `SOUL.md`, `HEARTBEAT.md` |
+
+Each detected marker contributes to a confidence score. The platform with the highest score is selected for import.
+
+## Dry-run Mode
+
+Use `--dry-run` to preview what the import would produce without writing any files:
+
+```bash
+agentflow import --source ./my-project --dry-run
+```
+
+This outputs the list of files that would be created and any warnings, without modifying your filesystem.
+
+<Callout type="warn">
+Automated imports may not capture every nuance of your platform configuration. After importing, review the generated files and make manual adjustments — particularly for complex conditional rules, platform-specific tool integrations, or context that relies on runtime state.
+</Callout>
+
+## Supported Platforms
+
+<Cards>
+  <Card title="Cursor" description="Import from .cursor/rules or .cursorrules" />
+  <Card title="Claude Code" description="Import from CLAUDE.md and .claude directory" />
+  <Card title="Kiro" description="Import from .kiro/steering configuration" />
+  <Card title="VS Code Copilot" description="Import from .github/copilot-instructions.md" />
+  <Card title="Windsurf" description="Import from .windsurf/rules or .windsurfrules" />
+  <Card title="OpenClaw" description="Import from SOUL.md and HEARTBEAT.md" />
+</Cards>
+
+<ComponentPreview name="import-pipeline" description="Visual representation of the import pipeline: validate source, apply reverse transforms, validate output paths, check for AGENTS.md." />

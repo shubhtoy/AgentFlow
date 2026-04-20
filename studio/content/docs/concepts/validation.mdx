@@ -1,0 +1,210 @@
+---
+title: Validation
+description: What AgentFlow checks and why — 23 rules that catch problems before the agent runs.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+AgentFlow validates your workspace structure, references, and configuration before the agent ever runs. The validator checks 23 rules and reports errors (must fix) and warnings (should fix).
+
+This means you catch broken references, missing conditions, cycles, and context budget overruns at authoring time — not in production.
+
+## Rule Categories
+
+<Tabs items={['Graph structure', 'References', 'Context', 'Schema', 'Identity']}>
+  <Tab value="Graph structure">
+    Rules about the workflow graph itself:
+
+    | Rule | Severity | What it catches |
+    |------|----------|-----------------|
+    | `cycle` | error | Circular dependency with no conditional exit |
+    | `no_entry_point` | error | Workflow has no node with `entry: true` |
+    | `multiple_entry_points` | warning | More than one entry node |
+    | `unreachable` | warning | Node not reachable from the entry point |
+    | `router_single_exit` | warning | Router with only one outgoing edge |
+    | `orphaned_sub_workflow` | warning | Sub-workflow directory exists but no node references it |
+    | `infinite_sub_workflow` | error | Sub-workflow chain creates an infinite recursion |
+  </Tab>
+  <Tab value="References">
+    Rules about `{{...}}` references:
+
+    | Rule | Severity | What it catches |
+    |------|----------|-----------------|
+    | `broken_ref` | error | Reference to non-existent resource |
+    | `missing_condition` | error | Conditional edge without a runbook |
+    | `broken_data_flow` | error | Data flow ref to non-existent node |
+    | `ambiguous_ref` | warning | Reference matches multiple files |
+    | `router_non_conditional` | warning | Router with unconditional edges |
+    | `router_has_capabilities` | warning | Router shouldn't have capabilities |
+    | `router_has_instructions` | warning | Router shouldn't have instructions |
+    | `missing_sub_workflow_target` | warning | Workflow ref points to a non-existent workflow directory |
+    | `unresolved_workflow_ref` | warning | Workflow ref cannot resolve the target AGENTS.md |
+  </Tab>
+  <Tab value="Context">
+    Rules about token budgets and context assembly:
+
+    | Rule | Severity | What it catches |
+    |------|----------|-----------------|
+    | `context_budget` | warning | Node exceeds its `max_tokens` budget |
+    | `context_budget_high` | warning | Node is approaching its budget |
+    | `context_input_broken` | error | Context input ref is broken |
+    | `output_declaration` | warning | Output ref without matching declaration |
+  </Tab>
+  <Tab value="Schema">
+    Rules about frontmatter structure:
+
+    | Rule | Severity | What it catches |
+    |------|----------|-----------------|
+    | `schema` | warning | Frontmatter field has wrong type or invalid value |
+    | `malformed_variable` | error | Invalid template variable syntax |
+    | `unknown_category` | warning | Reference to non-standard resource category |
+    | `misplaced_resource` | warning | Resource file in wrong directory |
+  </Tab>
+  <Tab value="Identity">
+    Rules about workspace and workflow identity:
+
+    | Rule | Severity | What it catches |
+    |------|----------|-----------------|
+    | `identity` | warning | Missing name, description, or identity fields |
+    | `missing_mcp_server` | error | MCP tool references non-existent server |
+    | `orphaned_mcp_tool` | warning | MCP tool defined but never referenced |
+  </Tab>
+</Tabs>
+
+## Running Validation
+
+<Steps>
+  <Step>
+    ### In the studio
+
+    Validation runs automatically when you edit files. Results appear in the Validation panel — errors in red, warnings in yellow. Click any result to jump to the source file.
+  </Step>
+  <Step>
+    ### From the CLI
+
+    ```bash
+    agentflow validate
+    ```
+
+    ```
+    ✓ build-feature: 0 errors, 2 warnings
+      ⚠ context_budget_high: Node "implement" at 7,200/8,000 tokens (90%)
+      ⚠ unreachable: Node "legacy-step" is not reachable from entry point
+    ```
+  </Step>
+  <Step>
+    ### In CI/CD
+
+    ```yaml
+    # .github/workflows/validate.yml
+    - run: npx agentflow validate --strict
+    ```
+
+    The `--strict` flag treats warnings as errors — useful for CI where you want a clean workspace.
+  </Step>
+</Steps>
+
+## Errors vs Warnings
+
+| Severity | Meaning | Blocks export? | Example |
+|----------|---------|----------------|---------|
+| **Error** | Workflow will not work correctly. Must fix. | Yes | `broken_ref` — node references a file that doesn't exist |
+| **Warning** | Workflow will work but may have issues. Should fix. | No | `unreachable` — node exists but can never execute |
+
+## Common Fixes
+
+<Accordions>
+  <Accordion title="broken_ref — reference to non-existent resource">
+    ```
+    ✗ broken_ref: Reference "instructions/codestyle" not found
+      in build-feature/implement/SKILL.md
+    ```
+
+    **Fix:** Check the filename. It's probably `code-style` not `codestyle`:
+
+    ```markdown
+    {{instructions/code-style}}
+    ```
+
+    The validator checks both global and workflow-scoped directories. If neither has the file, this error fires.
+  </Accordion>
+  <Accordion title="missing_condition — conditional edge without a runbook">
+    ```
+    ✗ missing_condition: Conditional edge references "runbooks/approved"
+      but no such runbook exists
+    ```
+
+    **Fix:** Create the runbook file:
+
+    ```yaml
+    # runbooks/approved.md
+    ---
+    type: condition
+    name: approved
+    check: The user explicitly approves
+    ---
+    ```
+  </Accordion>
+  <Accordion title="no_entry_point — workflow has no entry node">
+    ```
+    ✗ no_entry_point: Workflow "build-feature" has no entry node
+    ```
+
+    **Fix:** Add `entry: true` to the first node's frontmatter:
+
+    ```yaml
+    ---
+    name: gather-requirements
+    type: step
+    entry: true
+    ---
+    ```
+  </Accordion>
+  <Accordion title="context_budget — node exceeds token limit">
+    ```
+    ⚠ context_budget: Node "implement" context is 9,240 tokens (budget: 8,000)
+    ```
+
+    **Fix:** Either increase the budget, remove unnecessary references, or use `scope: summary` for data flow inputs:
+
+    ```yaml
+    context:
+      max_tokens: 10000   # increase budget
+      inputs:
+        - ref: output.gather-requirements
+          scope: summary   # or reduce input size
+    ```
+  </Accordion>
+  <Accordion title="infinite_sub_workflow — recursive sub-workflow chain">
+    ```
+    ✗ infinite_sub_workflow: Sub-workflow chain "deploy → ci-cd → deploy" creates infinite recursion
+    ```
+
+    **Fix:** Break the cycle. A sub-workflow must not reference a workflow that eventually delegates back to itself. Restructure the chain so each sub-workflow terminates without re-entering a parent workflow.
+  </Accordion>
+  <Accordion title="orphaned_sub_workflow — unreferenced sub-workflow directory">
+    ```
+    ⚠ orphaned_sub_workflow: Workflow directory "ci-cd" exists but no sub-workflow node references it
+    ```
+
+    **Fix:** Either add a sub-workflow node that references the workflow via `{{workflows/ci-cd}}`, or remove the unused workflow directory.
+  </Accordion>
+</Accordions>
+
+## Explore Validation in the Studio
+
+The Validation panel below shows real-time results for the build-feature workflow. Expand any result to see the source file and line. Switch to the Tokens panel to see how context budgets map to each node.
+
+<ComponentPreview title="Validation results for build-feature" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['validation', 'tokens']} />
+</ComponentPreview>
+
+<Cards>
+  <Card title="Validation Rules Reference" href="/docs/reference/validation-rules" description="Complete list of all 23 rules" />
+  <Card title="Common Errors" href="/docs/troubleshooting/common-errors" description="Top errors with detailed fixes" />
+  <Card title="CI/CD Integration" href="/docs/guides/ci-cd" description="Run validation in your pipeline" />
+</Cards>

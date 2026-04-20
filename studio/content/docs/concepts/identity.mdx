@@ -1,0 +1,245 @@
+---
+title: Identity
+description: Workspace and workflow AGENTS.md — defining who the agent is at each level.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+
+Identity in AgentFlow is defined through AGENTS.md files at two levels: the workspace root (global identity) and each workflow directory (workflow-specific identity). Together they tell the agent who it is, how it should behave, and what constraints it must follow.
+
+## Two Levels
+
+<Tabs items={['Workspace identity', 'Workflow identity']}>
+  <Tab value="Workspace identity">
+    The root `.agentflow/AGENTS.md` — defines the agent across all workflows. This is Layer 0 in the selective context model and is always loaded for every node.
+
+    ```yaml
+    ---
+    name: Widget Platform
+    description: A SaaS platform for widget management and analytics.
+    identity:
+      name: Widget Engineer
+      role: >
+        Senior full-stack engineer specializing in React, TypeScript,
+        Node.js, and PostgreSQL. Writes clean, tested, production-ready code.
+      personality: Thorough, pragmatic, test-driven
+      constraints:
+        - Always write tests before implementation
+        - Follow existing patterns in the codebase
+        - Never modify files outside the project scope
+        - Ask for clarification rather than guessing
+    ---
+
+    # Widget Platform
+
+    This workspace contains workflows for feature development,
+    bug fixing, and content management.
+
+    ## Available Workflows
+
+    {{$workflows}}
+    ```
+  </Tab>
+  <Tab value="Workflow identity">
+    Each workflow's `AGENTS.md` — provides workflow-specific context. This is Layer 1, loaded when this workflow is active.
+
+    ```yaml
+    ---
+    name: Build Feature
+    description: >
+      Spec-driven feature development. Takes a feature request through
+      requirements, design, implementation, and verification
+      with approval gates between phases.
+    ---
+
+    # Build Feature
+
+    This workflow produces production-ready features from user requests.
+    Each phase has an approval gate — the workflow only proceeds when
+    the previous phase's output is approved.
+
+    ## Phases
+
+    1. Requirements gathering
+    2. Technical design
+    3. Task planning
+    4. Implementation
+    5. Verification
+    ```
+  </Tab>
+</Tabs>
+
+## Identity Fields
+
+The `identity` object in the root AGENTS.md supports these fields:
+
+<TypeTable type={{
+  name: {
+    description: 'Agent persona name — how the agent identifies itself',
+    type: 'string',
+    default: '—',
+  },
+  role: {
+    description: 'What the agent does, its expertise and specialization',
+    type: 'string',
+    default: '—',
+  },
+  personality: {
+    description: 'Communication style and behavioral traits',
+    type: 'string',
+    default: '—',
+  },
+  constraints: {
+    description: 'Hard rules the agent must never break — these override other instructions',
+    type: 'string[]',
+    default: '[]',
+  },
+}} />
+
+### How each field shapes behavior
+
+**Role** tells the agent what expertise to bring. A "Senior full-stack engineer" produces different output than a "Technical writer" — even given the same task. Be specific about technologies and domain knowledge.
+
+**Personality** shapes communication style. "Thorough, pragmatic" produces detailed explanations with practical tradeoffs. "Concise, direct" produces shorter, action-oriented output.
+
+**Constraints** are non-negotiable rules. If a node's instructions conflict with a constraint, the constraint wins. Use these for safety rails:
+
+```yaml
+constraints:
+  - Always write tests before implementation
+  - Never modify files outside the project scope
+  - Ask for clarification rather than guessing
+  - Keep functions under 50 lines
+```
+
+## Per-Node Agent Override
+
+Individual nodes can override the workspace agent with a different persona. This is useful for review gates where you want a different perspective:
+
+```yaml
+# review-design-gate/SKILL.md
+---
+name: review-design-gate
+type: router
+agent: Senior Architect
+---
+```
+
+This node uses "Senior Architect" as its persona instead of the workspace-level identity. The override applies only to this node — other nodes continue using the workspace identity.
+
+## Template Variables
+
+The root AGENTS.md can use template variables that resolve at export time:
+
+```markdown
+## Available Workflows
+
+{{$workflows}}
+```
+
+This resolves to a list of all workflows in the workspace, keeping the identity file automatically up-to-date as you add or remove workflows. See [References](/docs/concepts/references) for all available template variables.
+
+<Callout type="info" title="Validation">
+  The validator checks identity configuration and emits `identity` warnings for missing `name` field, missing `description`, empty `identity` object, or missing workflow descriptor.
+</Callout>
+
+## Explore Identity in the Studio
+
+The Explorer panel below shows the file tree of the build-feature workspace. Notice the two AGENTS.md files — one at the workspace root (identity) and one inside the workflow directory (descriptor). Click either to see its contents.
+
+<ComponentPreview title="Workspace and workflow AGENTS.md files" height="lg">
+  <DocsPlayground workflow="build-feature" panel="explorer" />
+</ComponentPreview>
+
+
+## Identity Inheritance Chain
+
+Identity is assembled in layers. Each layer can extend or override the previous one, with constraints always cascading downward.
+
+<Mermaid chart={`
+graph TD
+    L0[Layer 0: Root AGENTS.md] --> L1[Layer 1: Workflow AGENTS.md]
+    L1 --> L2[Layer 2: Node SKILL.md agent override]
+    L0 -->|identity.role| L1
+    L0 -->|identity.personality| L1
+    L0 -->|identity.constraints| L1
+    L1 -->|description, context| L2
+    L2 -->|agent field overrides persona| FINAL[Final assembled identity]
+    L0 -->|constraints always cascade| FINAL
+`} />
+
+### Layer 0 — Workspace root
+
+The `.agentflow/AGENTS.md` file defines the base identity. Its `identity` object (name, role, personality, constraints) applies to every node in every workflow unless overridden.
+
+### Layer 1 — Workflow descriptor
+
+The workflow's `AGENTS.md` adds workflow-specific context: what this process does, its phases, and any additional behavioral guidance. It does not replace Layer 0 — it extends it.
+
+### Layer 2 — Node override
+
+A node's `agent` field in its SKILL.md frontmatter can override the persona for that single node. This is useful when a review gate needs a "Senior Architect" perspective while the rest of the workflow uses a "Full-stack Engineer."
+
+### How constraints cascade
+
+Constraints defined at Layer 0 are never overridden — they always apply. A node cannot remove a workspace-level constraint. This makes constraints the right place for safety rails and non-negotiable rules.
+
+If Layer 1 adds constraints (via the workflow body), those apply to all nodes in that workflow but not to other workflows. Layer 2 cannot add constraints — it can only change the persona.
+
+## Writing Effective Identity
+
+### Be specific about role
+
+Vague roles produce generic output. Compare:
+
+```yaml
+# Weak
+role: Developer
+
+# Strong
+role: >
+  Senior TypeScript engineer specializing in React Server Components,
+  PostgreSQL query optimization, and accessibility compliance.
+  10 years of experience shipping production SaaS products.
+```
+
+The specific role tells the agent what expertise to bring, what patterns to prefer, and what quality bar to target.
+
+### Use constraints as safety rails
+
+Constraints are for rules that must never be broken, regardless of what a node's instructions say:
+
+```yaml
+constraints:
+  - Never delete or overwrite user data without explicit confirmation
+  - All API endpoints must validate input before processing
+  - Never commit secrets, tokens, or credentials to version control
+  - Ask for clarification when requirements are ambiguous
+```
+
+Keep constraints short, unambiguous, and testable. Avoid vague guidance like "write good code" — that belongs in the role or personality.
+
+### Personality affects output style
+
+Personality is not cosmetic — it shapes how the agent communicates and structures its work:
+
+| Personality | Effect on output |
+|-------------|-----------------|
+| `Thorough, methodical` | Longer explanations, step-by-step reasoning, explicit tradeoffs |
+| `Concise, direct` | Short answers, action-oriented, minimal preamble |
+| `Cautious, security-minded` | Flags risks proactively, prefers safe defaults, asks before destructive actions |
+| `Creative, exploratory` | Proposes alternatives, considers unconventional approaches |
+
+Choose a personality that matches the workflow's purpose. A bug-fix workflow benefits from "methodical, precise." A brainstorming workflow benefits from "creative, exploratory."
+
+### Keep identity stable
+
+Avoid changing identity frequently. The agent builds a consistent mental model from its identity — frequent changes produce inconsistent output. If you need different perspectives at different stages, use per-node agent overrides rather than rewriting the root identity.
+
+<Cards>
+  <Card title="AGENTS.md Standard" href="/docs/concepts/agents-md-standard" description="The open standard AgentFlow builds on" />
+  <Card title="Workspaces" href="/docs/concepts/workspaces" description="The .agentflow/ container" />
+  <Card title="Selective Context" href="/docs/concepts/selective-context" description="How identity fits into the 5-layer model" />
+</Cards>

@@ -1,0 +1,45 @@
+---
+title: New Features
+description: Propose and build new features.
+---
+
+import { Steps, Step } from "fumadocs-ui/components/steps"
+
+## Process
+
+<Steps>
+  <Step>
+    ### Open an issue
+
+    Start by opening a GitHub issue describing the feature you want to build. Include the problem it solves and who benefits from it.
+  </Step>
+  <Step>
+    ### Write an RFC
+
+    For non-trivial features, write a short design document (RFC) and attach it to the issue. This lets the team provide feedback before you invest time in implementation.
+  </Step>
+  <Step>
+    ### Get feedback
+
+    Wait for maintainer feedback on your RFC. Iterate on the design based on comments. Consensus on the approach avoids rework later.
+  </Step>
+  <Step>
+    ### Implement
+
+    Once the design is approved, implement the feature on a branch. Follow the existing code patterns and add tests for new behavior.
+  </Step>
+  <Step>
+    ### Submit a PR
+
+    Open a pull request referencing the original issue. Include a summary of changes, how to test, and any migration notes.
+  </Step>
+</Steps>
+
+## What a good RFC includes
+
+- **Problem statement** — what user need or gap does this address
+- **Proposed solution** — how the feature works at a high level
+- **API surface** — new functions, services, or CLI commands introduced
+- **Alternatives considered** — other approaches and why they were rejected
+- **Migration impact** — whether existing workflows or configs need changes
+- **Testing strategy** — how correctness will be verified

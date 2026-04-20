@@ -1,0 +1,72 @@
+---
+title: Library
+description: Add workflows and resources to the library.
+---
+
+import { Steps, Step } from "fumadocs-ui/components/steps"
+import { Files, Folder, File } from "fumadocs-ui/components/files"
+
+The library contains pre-built workflows and resources that users can install into their workspace. Contributions here help the entire community.
+
+## Directory Structure
+
+<Files>
+  <Folder name="library" defaultOpen>
+    <Folder name="workflows">
+      <Folder name="build-feature">
+        <File name="AGENTS.md" />
+        <Folder name="gather-requirements">
+          <File name="SKILL.md" />
+        </Folder>
+      </Folder>
+    </Folder>
+    <Folder name="instructions">
+      <File name="code-review.md" />
+    </Folder>
+    <Folder name="capabilities">
+      <File name="github-api.md" />
+    </Folder>
+    <Folder name="runbooks">
+      <File name="deploy-checklist.md" />
+    </Folder>
+    <Folder name="memory">
+      <File name="project-context.md" />
+    </Folder>
+    <Folder name="hooks">
+      <File name="on-commit.md" />
+    </Folder>
+  </Folder>
+</Files>
+
+## Naming Conventions
+
+- Use lowercase kebab-case for all directory and file names
+- Workflow directories should describe the action: `build-feature`, `review-pr`, `debug-issue`
+- Resource files should describe their purpose: `code-review.md`, `deploy-checklist.md`
+- Node directories within workflows should be verb-first: `gather-requirements`, `validate-output`
+
+## Adding a Resource
+
+<Steps>
+  <Step>
+    ### Create the resource
+
+    Add your workflow or resource file to the appropriate subdirectory under `library/`. Follow the markdown format used by existing entries.
+  </Step>
+  <Step>
+    ### Test with the library index
+
+    Run the library indexer to verify your addition is discovered correctly:
+
+    ```bash
+    npx agentflow library index
+    ```
+
+    Confirm your resource appears in the output with the correct metadata.
+  </Step>
+  <Step>
+    ### Submit a PR
+
+    Open a pull request with your addition. Include a brief description of what the resource does and when someone would use it.
+  </Step>
+</Steps>

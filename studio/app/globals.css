@@ -1,0 +1,532 @@
+@import "@fontsource/roboto/300.css";
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/500.css";
+@import "@fontsource/roboto/700.css";
+@import "@fontsource/roboto-mono/400.css";
+@import "@fontsource/roboto-mono/500.css";
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-node-step: hsl(var(--node-step));
+  --color-node-router: hsl(var(--node-router));
+  --color-node-sub-workflow: hsl(var(--node-sub-workflow));
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+  :root {
+    --background: 40 20% 98%;
+    --foreground: 240 10% 10%;
+    --card: 40 15% 96%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+    --muted: 40 10% 93%;
+    --muted-foreground: 240 5% 45%;
+    --border: 40 10% 90%;
+    --input: 40 10% 90%;
+    --ring: 220 90% 56%;
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 10% 93%;
+    --secondary-foreground: 240 5.9% 10%;
+    --accent: 40 10% 93%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --node-step: 217 91% 60%;
+    --node-router: 271 91% 65%;
+    --node-sub-workflow: 172 66% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 6%;
+    --foreground: 0 0% 98%;
+    --card: 240 8% 11%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 8% 11%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 240 5% 20%;
+    --muted-foreground: 240 5% 65%;
+    --border: 240 5% 22%;
+    --input: 240 5% 22%;
+    --ring: 220 90% 62%;
+    --primary: 220 90% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 17%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 240 5% 17%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 42%;
+    --warning: 38 92% 55%;
+    --node-step: 217 91% 65%;
+    --node-router: 271 91% 70%;
+    --node-sub-workflow: 172 66% 55%;
+  }
+}
+
+/*
+ * Studio body/border styles — unlayered to override fumadocs' @layer base resets.
+ * Scoped to body:not(:has(#nd-docs-layout)) so they don't affect docs pages.
+ */
+body:not(:has(#nd-docs-layout)) {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body:not(:has(#nd-docs-layout)) * {
+  border-color: hsl(var(--border));
+}
+
+@layer base {
+  code, pre, kbd {
+    font-family: 'Roboto Mono', monospace;
+  }
+}
+
+/* ── React Flow overrides ─────────────────────────────────── */
+.react-flow {
+  background: hsl(var(--background));
+}
+.react-flow__node { cursor: pointer !important; }
+.react-flow__edge-path { transition: stroke 0.2s; }
+.react-flow__minimap { border-radius: 12px !important; }
+.dark .react-flow__minimap-mask { fill: rgba(0,0,0,0.5) !important; }
+.dark .react-flow__minimap { background: #1e1e1e !important; }
+
+/* ── CSS variables for ProseMirror extensions ─────────────── */
+:root {
+  --surface-elevated: #ffffff;
+  --border-primary: rgba(0, 0, 0, 0.12);
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+}
+.dark {
+  --surface-elevated: #1e1e1e;
+  --border-primary: rgba(255, 255, 255, 0.12);
+  --text-primary: #e0e0e0;
+  --text-secondary: #9e9e9e;
+}
+
+/* ── Narrative block decoration ───────────────────────────── */
+.narrative-block {
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 2px solid rgba(0, 0, 0, 0.12);
+  padding: 4px 8px 4px 32px;
+  border-radius: 8px;
+  margin: 2px 0;
+  transition: background 0.15s ease;
+  position: relative;
+}
+.narrative-block:hover { background: rgba(0, 0, 0, 0.05); }
+.dark .narrative-block { background: rgba(255, 255, 255, 0.05); border-left-color: rgba(255, 255, 255, 0.15); }
+.dark .narrative-block:hover { background: rgba(255, 255, 255, 0.08); }
+
+.narrative-move-buttons {
+  position: absolute; left: 3px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0px;
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.narrative-block:hover .narrative-move-buttons { opacity: 1; }
+
+.narrative-drag-handle {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 14px; cursor: grab; font-size: 10px; line-height: 1;
+  color: rgba(0, 0, 0, 0.3); border-radius: 3px; transition: all 0.1s ease; user-select: none;
+}
+.narrative-drag-handle:hover { background: rgba(0, 0, 0, 0.08); color: rgba(0, 0, 0, 0.5); }
+.narrative-drag-handle:active { cursor: grabbing; }
+.dark .narrative-drag-handle { color: rgba(255, 255, 255, 0.3); }
+.dark .narrative-drag-handle:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
+
+.narrative-move-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 14px; border: none; background: transparent;
+  color: rgba(0, 0, 0, 0.35); cursor: pointer; font-size: 10px; line-height: 1;
+  padding: 0; border-radius: 3px; transition: all 0.1s ease;
+}
+.narrative-move-btn:hover { background: rgba(0, 0, 0, 0.08); color: rgba(0, 0, 0, 0.6); }
+.dark .narrative-move-btn { color: rgba(255, 255, 255, 0.35); }
+.dark .narrative-move-btn:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
+
+.narrative-drop-target { outline: 2px dashed rgba(25, 118, 210, 0.5); outline-offset: -2px; border-radius: 8px; background: rgba(25, 118, 210, 0.04); }
+.dark .narrative-drop-target { outline-color: rgba(100, 181, 246, 0.5); background: rgba(100, 181, 246, 0.06); }
+
+.ref-chip-wrapper { display: inline; line-height: inherit; }
+.ref-chip-wrapper .ProseMirror-selectednode { outline: 2px solid rgb(59 130 246 / 0.5); border-radius: 6px; }
+
+/* ── TipTap / ProseMirror editor styles ───────────────────── */
+.ProseMirror { outline: none; min-height: 100%; }
+.ProseMirror > * + * { margin-top: 0.5em; }
+.ProseMirror h1 { font-size: 1.375rem; font-weight: 700; line-height: 1.3; margin-top: 1.25em; margin-bottom: 0.5em; }
+.ProseMirror h2 { font-size: 1.2rem; font-weight: 600; line-height: 1.35; margin-top: 1em; margin-bottom: 0.4em; }
+.ProseMirror h3 { font-size: 1.05rem; font-weight: 600; line-height: 1.4; margin-top: 0.85em; margin-bottom: 0.35em; }
+.ProseMirror p { margin: 0.5em 0; line-height: 1.7; }
+.ProseMirror ul { padding-left: 1.5em; margin: 0.5em 0; list-style-type: disc; }
+.ProseMirror ol { padding-left: 1.5em; margin: 0.5em 0; list-style-type: decimal; }
+.ProseMirror ul ul { list-style-type: circle; }
+.ProseMirror ul ul ul { list-style-type: square; }
+.ProseMirror li { margin: 0.25em 0; line-height: 1.6; display: list-item; }
+.ProseMirror li p { margin: 0; }
+.ProseMirror ul[data-type="taskList"] { list-style-type: none; padding-left: 0.25em; }
+.ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.4em; }
+.ProseMirror ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 0.25em; }
+.ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
+.ProseMirror s, .ProseMirror del { text-decoration: line-through; }
+.ProseMirror table { border-collapse: collapse; width: 100%; margin: 0.75em 0; font-size: 0.9em; }
+.ProseMirror th, .ProseMirror td { border: 1px solid rgba(0, 0, 0, 0.12); padding: 0.4em 0.75em; text-align: left; }
+.ProseMirror th { font-weight: 600; background: rgba(0, 0, 0, 0.04); }
+.dark .ProseMirror th, .dark .ProseMirror td { border-color: rgba(255, 255, 255, 0.12); }
+.dark .ProseMirror th { background: rgba(255, 255, 255, 0.06); }
+.ProseMirror code { font-family: 'Roboto Mono', monospace; font-size: 0.875em; background: rgba(0, 0, 0, 0.06); padding: 0.15em 0.4em; border-radius: 4px; }
+.dark .ProseMirror code { background: rgba(255, 255, 255, 0.08); }
+.ProseMirror pre { background: #1e1e1e; color: #e8e8e8; border-radius: 8px; padding: 0.85em 1em; font-family: 'Roboto Mono', monospace; font-size: 0.8125rem; line-height: 1.6; overflow-x: auto; margin: 0.75em 0; }
+.ProseMirror pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.ProseMirror blockquote { border-left: 3px solid rgba(0, 0, 0, 0.2); padding-left: 1em; margin: 0.75em 0; font-style: italic; }
+.dark .ProseMirror blockquote { border-left-color: rgba(255, 255, 255, 0.2); }
+.ProseMirror hr { border: none; border-top: 1px solid rgba(0, 0, 0, 0.1); margin: 1.5em 0; }
+.dark .ProseMirror hr { border-top-color: rgba(255, 255, 255, 0.1); }
+.ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; color: rgba(0, 0, 0, 0.38); pointer-events: none; height: 0; }
+.dark .ProseMirror p.is-editor-empty:first-child::before { color: rgba(255, 255, 255, 0.38); }
+.ProseMirror strong { font-weight: 600; }
+.ProseMirror em { font-style: italic; }
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.animate-in { animation: fade-in 0.2s ease-out; }
+
+/* ── assistant-ui composer input ──────────────────────────── */
+.aui-composer-input {
+  flex: 1; font-size: 0.8125rem; font-family: 'Roboto', sans-serif;
+  border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 8px; padding: 8px 12px;
+  outline: none; background: transparent; color: inherit; resize: none;
+}
+.aui-composer-input::placeholder { color: rgba(0, 0, 0, 0.38); }
+.dark .aui-composer-input { border-color: rgba(255, 255, 255, 0.12); }
+.dark .aui-composer-input::placeholder { color: rgba(255, 255, 255, 0.38); }
+
+/* ── CopilotKit theme bridge — match AgentFlow theme ──────── */
+/* CopilotKit v2 uses oklch() for CSS variables. We override with
+   oklch equivalents of the AgentFlow HSL palette so colors match. */
+
+[data-copilotkit][data-copilotkit] {
+  --background: oklch(100% 0 0);
+  --foreground: oklch(13.1% 0.02 264);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(13.1% 0.02 264);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(13.1% 0.02 264);
+  --primary: oklch(48.8% 0.243 264);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(96.7% 0.003 264);
+  --secondary-foreground: oklch(21% 0.006 286);
+  --muted: oklch(96.7% 0.003 264);
+  --muted-foreground: oklch(55.1% 0.027 264);
+  --accent: oklch(96.7% 0.003 264);
+  --accent-foreground: oklch(21% 0.006 286);
+  --destructive: oklch(57.7% 0.245 27);
+  --destructive-foreground: oklch(98.5% 0 0);
+  --border: oklch(91.4% 0.004 264);
+  --input: oklch(91.4% 0.004 264);
+  --ring: oklch(48.8% 0.243 264);
+  --radius: 0.5rem;
+  --sidebar: oklch(100% 0 0);
+  --sidebar-foreground: oklch(13.1% 0.02 264);
+  --sidebar-primary: oklch(48.8% 0.243 264);
+  --sidebar-primary-foreground: oklch(100% 0 0);
+  --sidebar-accent: oklch(96.7% 0.003 264);
+  --sidebar-accent-foreground: oklch(21% 0.006 286);
+  --sidebar-border: oklch(91.4% 0.004 264);
+  --sidebar-ring: oklch(48.8% 0.243 264);
+  --cpk-default-font-family: 'Roboto', system-ui, sans-serif;
+  --cpk-default-mono-font-family: 'Roboto Mono', monospace;
+  --cpk-spacing: 0.15rem;
+  --cpk-text-xs: 0.65rem;
+  --cpk-text-sm: 0.75rem;
+  --cpk-text-base: 0.8125rem;
+  --cpk-text-xl: 1rem;
+  --cpk-text-2xl: 1.15rem;
+  font-family: 'Roboto', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Dark mode overrides — AgentFlow dark palette in oklch */
+.dark [data-copilotkit][data-copilotkit],
+[data-copilotkit][data-copilotkit].dark {
+  --background: oklch(16% 0.014 264);
+  --foreground: oklch(98.5% 0 0);
+  --card: oklch(19.5% 0.014 264);
+  --card-foreground: oklch(98.5% 0 0);
+  --popover: oklch(19.5% 0.014 264);
+  --popover-foreground: oklch(98.5% 0 0);
+  --primary: oklch(55% 0.25 264);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(27% 0.005 264);
+  --secondary-foreground: oklch(98.5% 0 0);
+  --muted: oklch(27% 0.005 264);
+  --muted-foreground: oklch(68% 0.01 264);
+  --accent: oklch(27% 0.005 264);
+  --accent-foreground: oklch(98.5% 0 0);
+  --destructive: oklch(39.6% 0.141 26);
+  --destructive-foreground: oklch(98.5% 0 0);
+  --border: oklch(27% 0.005 264);
+  --input: oklch(27% 0.005 264);
+  --ring: oklch(55% 0.25 264);
+  --sidebar: oklch(16% 0.014 264);
+  --sidebar-foreground: oklch(98.5% 0 0);
+  --sidebar-primary: oklch(55% 0.25 264);
+  --sidebar-primary-foreground: oklch(100% 0 0);
+  --sidebar-accent: oklch(27% 0.005 264);
+  --sidebar-accent-foreground: oklch(98.5% 0 0);
+  --sidebar-border: oklch(27% 0.005 264);
+  --sidebar-ring: oklch(55% 0.25 264);
+}
+
+/* ── Code blocks inside chat ── */
+[data-copilotkit] pre {
+  font-family: 'Roboto Mono', monospace !important;
+  font-size: 0.75rem !important;
+  border-radius: 8px !important;
+}
+
+/* ── Fix scrollbar layout shift in sidebar ── */
+/* Reserve scrollbar space so content doesn't shift when messages appear */
+[data-copilot-sidebar],
+[data-copilotkit] {
+  scrollbar-gutter: stable;
+}
+[data-copilot-sidebar] *,
+[data-copilotkit] * {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(68% 0.01 264 / 0.2) transparent;
+}
+
+/* ── Tighter chat padding (CopilotKit default is too wide for panels) ── */
+div[data-sidebar-chat] .cpk\:\[div\[data-sidebar-chat\]_\&\]\:px-8,
+[data-copilotkit] .cpk\:px-8,
+[data-copilotkit] .cpk\:px-6 {
+  padding-inline: 0.75rem !important;
+}
+
+/* ── Tighter input area padding ── */
+[data-copilot-sidebar] .cpk\:sm\:px-0,
+[data-copilotkit] .cpk\:sm\:px-0 {
+  padding-inline: 0.5rem !important;
+}
+
+/* ── Nicer message bubbles ── */
+[data-copilotkit] [data-role="assistant"] {
+  background: color-mix(in oklch, var(--muted) 50%, transparent) !important;
+  border-radius: 12px !important;
+  padding: 0.5rem 0.75rem !important;
+  margin: 0.25rem 0 !important;
+}
+
+[data-copilotkit] [data-role="user"] {
+  background: color-mix(in oklch, var(--primary) 10%, transparent) !important;
+  border-radius: 12px !important;
+  padding: 0.5rem 0.75rem !important;
+  margin: 0.25rem 0 !important;
+}
+
+/* ── Input styling ── */
+[data-copilotkit] textarea,
+[data-copilotkit] input[type="text"] {
+  border-radius: 10px !important;
+  font-size: 0.8125rem !important;
+}
+
+/* ── Override Tailwind prose inside CopilotKit ── */
+/* prose sets its own font-size/line-height/margins independent of --cpk-spacing */
+[data-copilotkit] .cpk\:prose {
+  font-size: inherit !important;
+  line-height: 1.5 !important;
+}
+[data-copilotkit] .cpk\:prose p,
+[data-copilotkit] .cpk\:prose ul,
+[data-copilotkit] .cpk\:prose ol,
+[data-copilotkit] .cpk\:prose pre,
+[data-copilotkit] .cpk\:prose blockquote {
+  margin-top: 0.35em !important;
+  margin-bottom: 0.35em !important;
+}
+[data-copilotkit] .cpk\:prose li {
+  margin-top: 0.1em !important;
+  margin-bottom: 0.1em !important;
+}
+[data-copilotkit] .cpk\:prose h1,
+[data-copilotkit] .cpk\:prose h2,
+[data-copilotkit] .cpk\:prose h3,
+[data-copilotkit] .cpk\:prose h4 {
+  margin-top: 0.6em !important;
+  margin-bottom: 0.3em !important;
+}
+
+
+/* ── AgentFlow Canvas: Focus + Dim (spotlight) ─────────────────────── */
+
+/* Smooth transitions on all React Flow node wrappers */
+.react-flow__node {
+  transition: opacity 0.3s ease-out, filter 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+/* Only animate position when not dragging */
+.react-flow__node:not(.dragging) {
+  transition: opacity 0.3s ease-out, filter 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+
+/* Focused node: full opacity + stronger glow + lift */
+.react-flow__node.af-node-focused {
+  opacity: 1;
+  filter: none;
+  z-index: 10;
+  transform: scale(1.04);
+}
+.react-flow__node.af-node-focused > div > div {
+  box-shadow: 0 0 24px rgba(var(--primary-rgb, 99, 102, 241), 0.35),
+              0 0 48px rgba(var(--primary-rgb, 99, 102, 241), 0.12),
+              0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Neighbor nodes: full opacity, subtle lift */
+.react-flow__node.af-node-neighbor {
+  opacity: 1;
+  filter: none;
+  z-index: 5;
+}
+.react-flow__node.af-node-neighbor > div > div {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Dimmed nodes: faded + slight blur */
+.react-flow__node.af-node-dimmed {
+  opacity: 0.15;
+  filter: blur(0.6px) saturate(0.3);
+  pointer-events: auto;
+}
+.react-flow__node.af-node-dimmed:hover {
+  opacity: 0.4;
+  filter: none;
+}
+
+/* Path trace: nodes on the active path */
+.react-flow__node.af-node-on-path {
+  opacity: 1;
+  filter: none;
+}
+.react-flow__node.af-node-on-path > div > div {
+  box-shadow: 0 0 16px rgba(var(--primary-rgb, 99, 102, 241), 0.2);
+}
+
+/* Edge transitions */
+.react-flow__edge {
+  transition: opacity 0.3s ease-out;
+}
+
+/* Canvas spotlight overlay — subtle background darken when a node is focused */
+.af-canvas-spotlight .react-flow__background {
+  opacity: 0.5;
+}
+
+/* Path edge glow animation */
+@keyframes af-edge-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px currentColor); }
+  50% { filter: drop-shadow(0 0 6px currentColor); }
+}
+.react-flow__edge.af-edge-active path {
+  animation: af-edge-pulse 2s ease-in-out infinite;
+}
+
+/* Floating cloud dots — subtle drift */
+@keyframes af-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.react-flow__node.af-node-cloud {
+  animation: af-float 4s ease-in-out infinite;
+  animation-delay: var(--af-float-delay, 0s);
+}
+
+/* Monaco editor context menu fix — prevent overflow in panels */
+.monaco-editor .monaco-menu-container {
+  position: fixed !important;
+}
+.monaco-editor .overflow-guard {
+  overflow: visible !important;
+}
+/* Monaco widgets (suggest, hover, context menu) — fix positioning inside transformed parents (framer-motion) */
+.monaco-editor .suggest-widget,
+.monaco-editor .editor-widget.parameter-hints-widget,
+.monaco-editor .monaco-hover,
+.monaco-editor .monaco-menu-container {
+  z-index: 9999 !important;
+}
+/* Override widgets container to escape transform context */
+.overflowingContentWidgets {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
+/* DocViewer CSV table fix */
+#react-doc-viewer {
+  height: 100% !important;
+  overflow: auto !important;
+}
+#react-doc-viewer #csv-renderer {
+  overflow: auto !important;
+  max-height: 100% !important;
+}
+#react-doc-viewer #csv-renderer table {
+  width: max-content;
+  min-width: 100%;
+}
+#react-doc-viewer #csv-renderer td,
+#react-doc-viewer #csv-renderer th {
+  padding: 6px 12px;
+  border: 1px solid hsl(var(--border));
+  font-size: 12px;
+  white-space: nowrap;
+}
+#react-doc-viewer #csv-renderer th {
+  background: hsl(var(--muted));
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}

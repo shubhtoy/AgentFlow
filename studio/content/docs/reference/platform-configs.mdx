@@ -1,0 +1,220 @@
+---
+title: Platform Configs
+description: All 7 platform export mappings and what each produces.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs"
+import { File, Folder, Files } from "fumadocs-ui/components/files"
+import { Callout } from "fumadocs-ui/components/callout"
+
+Each platform export maps AgentFlow concepts to the native configuration format of the target platform.
+
+<Tabs items={["claude-code", "cursor", "kiro", "windsurf", "vscode-copilot", "openclaw", "agent-spec"]}>
+<Tab value="claude-code">
+
+## claude-code
+
+Exports to Claude Code's native `.claude/` directory structure.
+
+<Files>
+  <Folder name=".claude" defaultOpen>
+    <Folder name="agents" defaultOpen>
+      <File name="skill-name.md" />
+    </Folder>
+    <File name="settings.json" />
+  </Folder>
+  <File name="CLAUDE.md" />
+  <File name=".mcp.json" />
+</Files>
+
+**Key Transforms:**
+
+- Identity from `AGENTS.md` written to `CLAUDE.md` with identity markers stripped
+- Skills exported as individual files in `.claude/agents/`
+- MCP capabilities mapped to `.mcp.json`
+- Hooks converted to `.claude/settings.json`
+
+**Fidelity:** High. Most AgentFlow concepts have direct equivalents.
+
+**Import Support:** Yes. Can import existing `.claude/` configurations into AgentFlow.
+
+</Tab>
+<Tab value="cursor">
+
+## cursor
+
+Exports to Cursor's `.cursor/` directory structure.
+
+<Files>
+  <Folder name=".cursor" defaultOpen>
+    <Folder name="rules" defaultOpen>
+      <File name="skill-name.mdc" />
+    </Folder>
+    <File name="mcp.json" />
+    <File name="hooks.json" />
+  </Folder>
+  <File name="AGENTS.md" />
+</Files>
+
+**Key Transforms:**
+
+- Identity passed through as `AGENTS.md` (no transformation)
+- Skills converted to MDC format in `.cursor/rules/`
+- MCP capabilities mapped to `.cursor/mcp.json`
+- Hooks converted to `.cursor/hooks.json`
+
+**Fidelity:** High. MDC format supports metadata frontmatter for rule configuration.
+
+**Import Support:** Yes. Can import existing `.cursor/` configurations into AgentFlow.
+
+</Tab>
+<Tab value="kiro">
+
+## kiro
+
+Exports to Kiro's `.kiro/` directory structure.
+
+<Files>
+  <Folder name=".kiro" defaultOpen>
+    <Folder name="steering" defaultOpen>
+      <File name="identity.md" />
+      <File name="skill-name.md" />
+    </Folder>
+    <Folder name="settings" defaultOpen>
+      <File name="mcp.json" />
+    </Folder>
+    <Folder name="hooks" defaultOpen>
+      <File name="hook-name.json" />
+    </Folder>
+  </Folder>
+</Files>
+
+**Key Transforms:**
+
+- Identity extracted to `.kiro/steering/identity.md`
+- Skills exported as individual files in `.kiro/steering/`
+- MCP capabilities mapped to `.kiro/settings/mcp.json`
+- Hooks exported as individual JSON files in `.kiro/hooks/`
+
+**Fidelity:** High. Direct mapping for all AgentFlow concepts.
+
+**Import Support:** Yes. Can import existing `.kiro/` configurations into AgentFlow.
+
+</Tab>
+<Tab value="windsurf">
+
+## windsurf
+
+Exports to Windsurf's `.windsurf/` directory structure.
+
+<Files>
+  <Folder name=".windsurf" defaultOpen>
+    <Folder name="rules" defaultOpen>
+      <File name="identity.md" />
+      <File name="skill-name.md" />
+    </Folder>
+    <File name="mcp.json" />
+    <File name="hooks.json" />
+  </Folder>
+</Files>
+
+**Key Transforms:**
+
+- Identity written to `.windsurf/rules/identity.md` with `trigger: always_on` metadata
+- Skills exported as individual files in `.windsurf/rules/`
+- MCP capabilities mapped to `.windsurf/mcp.json`
+- Hooks converted to `.windsurf/hooks.json`
+
+**Fidelity:** High. Rule trigger system maps well to AgentFlow conditions.
+
+**Import Support:** Yes. Can import existing `.windsurf/` configurations into AgentFlow.
+
+</Tab>
+<Tab value="vscode-copilot">
+
+## vscode-copilot
+
+Exports to VS Code Copilot's distributed configuration structure.
+
+<Files>
+  <Folder name=".github" defaultOpen>
+    <Folder name="instructions" defaultOpen>
+      <File name="skill-name.instructions.md" />
+    </Folder>
+    <Folder name="hooks" defaultOpen>
+      <File name="agentflow-hooks.json" />
+    </Folder>
+    <File name="copilot-instructions.md" />
+  </Folder>
+  <Folder name=".vscode" defaultOpen>
+    <File name="mcp.json" />
+  </Folder>
+  <File name="AGENTS.md" />
+</Files>
+
+**Key Transforms:**
+
+- Identity passed through as `AGENTS.md`
+- Global instructions merged into `.github/copilot-instructions.md`
+- Skills exported as `.github/instructions/{name}.instructions.md`
+- MCP capabilities mapped to `.vscode/mcp.json`
+- Hooks converted to `.github/hooks/agentflow-hooks.json`
+
+**Fidelity:** Medium. Some AgentFlow features require merging into fewer files.
+
+**Import Support:** Yes. Can import existing Copilot configurations into AgentFlow.
+
+</Tab>
+<Tab value="openclaw">
+
+## openclaw
+
+Exports to OpenClaw's hook-based structure.
+
+<Files>
+  <Folder name="hooks" defaultOpen>
+    <Folder name="hook-name" defaultOpen>
+      <File name="HOOK.md" />
+    </Folder>
+  </Folder>
+  <File name="AGENTS.md" />
+  <File name="config.json" />
+</Files>
+
+**Key Transforms:**
+
+- Identity passed through as `AGENTS.md`
+- Skills and workflows mapped to `hooks/{name}/HOOK.md`
+- MCP capabilities mapped to `config.json`
+
+**Fidelity:** Medium. Hook-centric model requires flattening workflow graphs.
+
+**Import Support:** Yes. Can import existing OpenClaw configurations into AgentFlow.
+
+</Tab>
+<Tab value="agent-spec">
+
+## agent-spec
+
+Exports the full workflow graph as an Oracle Open Agent Spec JSON file.
+
+<Files>
+  <File name="agent-spec.json" />
+</Files>
+
+**Key Transforms:**
+
+- Complete workflow graph serialized to Open Agent Spec format
+- All nodes, edges, conditions, and metadata included
+- Resources inlined or referenced per spec requirements
+
+**Fidelity:** High. Full graph representation without loss.
+
+**Import Support:** No. Export only.
+
+<Callout type="warn">
+This format is export-only. AgentFlow cannot import from agent-spec.json files.
+</Callout>
+
+</Tab>
+</Tabs>

@@ -1,0 +1,13 @@
+{
+  "name": "guard-tool-use",
+  "version": "1.0.0",
+  "description": "Log all tool invocations for audit and safety review",
+  "event": "postToolUse",
+  "action": {
+    "type": "log",
+    "target": "tool-audit",
+    "params": {}
+  },
+  "enabled": true,
+  "priority": 50
+}

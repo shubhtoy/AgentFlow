@@ -1,0 +1,594 @@
+---
+title: Cheatsheet
+description: Single-page quick reference for everything in AgentFlow — concepts, syntax, and examples
+---
+
+---
+
+## What is AgentFlow?
+
+AgentFlow is a directory-based framework for building AI agent workflows. Instead of code, you define agent behavior using **Markdown files** organized in a specific directory structure. Each file has a role — identity, routing, instructions, tools — and the framework stitches them together into an executable workflow graph.
+
+---
+
+## Core Concepts
+
+### Workspace
+
+A workspace is a directory (`.agentflow/`) that contains everything an AI agent needs: its identity, workflows, tools, instructions, and memory. Think of it as the agent's entire brain, laid out as files.
+
+### Workflow
+
+A workflow is a directed graph of **nodes** connected by **edges**. It defines the order in which an agent performs tasks. Each workflow lives in its own subdirectory and has an `AGENTS.md` descriptor that lists its nodes.
+
+### Node
+
+A node is a single stage in a workflow. It has a `SKILL.md` file that tells the agent what to do at that stage. There are three types:
+
+- **Step** — Does actual work. Has tools (capabilities) and instructions. This is where the agent reads code, writes files, runs tests, etc.
+- **Router** — Makes a decision. Has no tools or instructions — just conditions that determine which node to go to next.
+- **Sub-workflow** — Delegates to another workflow entirely. The agent enters the sub-workflow, completes it, then returns.
+
+### Resource
+
+A resource is a reusable piece of context that nodes can reference. Resources live in category directories at the workspace root:
+
+- **Capability** — A tool the agent can use (read files, run tests, search the web)
+- **Instruction** — A reusable how-to guide (how to write requirements, how to decompose tasks)
+- **Runbook** — A routing condition or human interaction template (approval gates, checkpoints)
+- **Memory** — Persistent state that survives across sessions (user preferences, past decisions)
+- **Hook** — An event-driven automation rule (run linter on save, run tests on change)
+
+### Reference
+
+A reference (`{{category/name}}`) is how nodes load resources. When the agent reaches a node, it resolves the references in that node's `SKILL.md` to load the actual content. This keeps each node lightweight — it only loads what it needs.
+
+### Edge
+
+An edge (`{{-> nodes/target}}`) connects two nodes. It tells the agent where to go next. Conditional edges (`{{-> nodes/target | runbooks/condition}}`) only fire when a condition is met.
+
+---
+
+## Workspace Structure
+
+```
+.agentflow/
+  AGENTS.md                    # Who is this agent? What workflows exist?
+  mcp.json                     # MCP server configuration (optional)
+
+  capabilities/                # Tools the agent can use
+    read-code.md
+    write-file.md
+    run-tests.md
+
+  instructions/                # Reusable how-to guides
+    requirements-elicitation.md
+    task-decomposition.md
+
+  runbooks/                    # Routing conditions + human touchpoints
+    design-approved.md
+    review-design.md
+
+  memory/                      # Persistent state
+    user.md
+    decisions.md
+
+  hooks/                       # Event automation (JSON)
+    lint-on-save.json
+
+  build-feature/               # A workflow
+    AGENTS.md                  # Workflow descriptor + node graph
+    gather-requirements/       # A node
+      SKILL.md                 # What this node does
+    review-gate/
+      SKILL.md
+    implement/
+      SKILL.md
+      output/                  # Runtime artifacts (never loaded as context)
+
+  agent-builder/               # Another workflow
+    AGENTS.md
+    extract-intent/
+      SKILL.md
+```
+
+---
+
+## Reference Syntax
+
+There are five types of references. They all use `{{double braces}}`.
+
+### Mention — load a resource
+
+```markdown
+{{capabilities/read-code}}
+{{instructions/task-decomposition}}
+{{memory/decisions}}
+```
+
+The agent resolves this to the resource's content and loads it into context.
+
+### Edge — go to the next node
+
+```markdown
+{{-> nodes/review-gate}}
+```
+
+Tells the agent: "when you're done here, go to review-gate next."
+
+### Conditional edge — go IF a condition is met
+
+```markdown
+{{-> nodes/plan-tasks | runbooks/design-approved}}
+{{-> nodes/create-design | runbooks/design-rejected}}
+```
+
+The agent evaluates the runbook's `check` field to decide which edge to follow.
+
+### Data flow — read a previous node's output
+
+```markdown
+{{<< output.gather-requirements}}
+```
+
+Loads the output artifact from a previous node. The agent reads what `gather-requirements` produced.
+
+### Workflow ref — link to a sub-workflow
+
+```markdown
+{{workflows/agent-builder}}
+```
+
+Resolves to the linked workflow's `AGENTS.md`. Used in sub-workflow nodes to give the agent a traversable path into the sub-workflow.
+
+---
+
+## File Templates
+
+### Root AGENTS.md
+
+This is the agent's identity. Every workspace has exactly one.
+
+```yaml
+---
+type: agents
+name: my-project
+description: Full-stack development assistant
+identity:
+  name: Senior Engineer
+  role: Full-stack developer
+  personality: Methodical, thorough, test-driven
+  constraints:
+    - Never skip tests
+    - Always run diagnostics after code changes
+    - Ask for clarification when requirements are ambiguous
+---
+# My Project
+
+## Workflows
+- {{-> nodes/build-feature}} — Spec-driven feature development
+- {{-> nodes/code-review}} — Review and improve code
+
+## Capabilities
+{{capabilities/read-code}}, {{capabilities/write-file}}, {{capabilities/run-tests}}
+
+## Instructions
+{{instructions/coding-standards}}
+
+## Memory
+{{memory/user}}, {{memory/decisions}}
+```
+
+### Workflow AGENTS.md
+
+Each workflow has its own `AGENTS.md` that describes the node graph.
+
+```yaml
+---
+type: agents
+name: build-feature
+description: Spec-driven feature development
+---
+# Build Feature
+
+Senior software engineer. Gathers requirements, designs, plans, implements, verifies.
+
+## Constraints
+- Never skip requirements or design phase
+- One task at a time during implementation
+
+## Nodes
+- {{-> nodes/gather-requirements}} — Understand the problem
+- {{-> nodes/review-requirements-gate}} — User approves or rejects
+- {{-> nodes/create-design}} — Architecture and API contracts
+- {{-> nodes/review-design-gate}} — User approves or rejects
+- {{-> nodes/plan-tasks}} — Break into atomic tasks
+- {{-> nodes/implement-task}} — Write code, test, verify
+- {{-> nodes/verify-feature}} — Final integration check
+```
+
+### Step Node SKILL.md
+
+A step node does work. It has tools, instructions, and produces output.
+
+```yaml
+---
+name: gather-requirements
+type: step
+entry: true
+description: Transform the user's request into testable requirements
+agent: requirements-analyst
+context:
+  max_tokens: 3000
+  inputs:
+    - ref: instructions/requirements-elicitation
+      scope: full
+    - ref: capabilities/read-code
+      scope: signature
+    - ref: memory/user
+      scope: full
+  exclude:
+    - instructions/technical-design
+outputs:
+  - name: requirements-doc
+    format: markdown
+---
+# Gather Requirements
+
+## Instructions
+
+### Step 1: Understand the context
+Query {{capabilities/source-agent}} to understand the codebase.
+Use {{capabilities/read-code}} to examine relevant files.
+Read {{memory/user}} for the user's preferences.
+
+### Step 2: Write requirements
+Apply {{instructions/requirements-elicitation}} to structure the document.
+For each requirement, write:
+- A user story: "As a [role], I want [capability], so that [benefit]"
+- Acceptance criteria in WHEN/THEN format
+
+### Step 3: Save
+Use {{capabilities/write-file}} to create `specs/requirements.md`.
+
+## Next
+Present to user, then proceed to review.
+-> {{-> nodes/review-requirements-gate}}
+{{<< output.gather-requirements}}
+```
+
+### Router Node SKILL.md
+
+A router makes a decision. No tools, no instructions — just conditions.
+
+```yaml
+---
+name: review-design-gate
+type: router
+description: User approves or rejects the design
+---
+# Review Design Gate
+
+Present the design from {{<< output.create-design}} to the user
+via {{runbooks/review-design}}.
+
+## Routing
+- If approved -> {{-> nodes/plan-tasks | runbooks/design-approved}}
+- If rejected -> {{-> nodes/create-design | runbooks/design-rejected}}
+```
+
+### Sub-workflow Node SKILL.md
+
+A sub-workflow delegates to another workflow entirely.
+
+```yaml
+---
+name: design-agentflow
+type: sub-workflow
+description: Delegates to agent-builder for AgentFlow features
+workflow: agent-builder
+---
+# Design AgentFlow
+
+This node delegates to the **agent-builder** sub-workflow.
+
+## When to enter
+The feature involves designing an AgentFlow workflow or agent workspace.
+
+## Context passed in
+- Requirements from {{<< output.gather-requirements}}
+- Design from {{<< output.create-design}}
+- {{instructions/prompt-engineering}}
+
+## Expected outcome
+A fully scaffolded AgentFlow workspace with validated structure.
+
+## Workflow definition
+{{workflows/agent-builder}}
+
+## Next
+-> {{-> nodes/verify-feature}}
+```
+
+---
+
+## Resource Templates
+
+### Capability — Builtin tool
+
+```yaml
+---
+name: read-code
+type: builtin
+builtin_mapping: readCode
+description: Read and analyze source code files
+outputs: [source_code, file_structure]
+---
+# Read Code
+
+Read the contents of one or more source files. Returns the full source code
+and can analyze file structure, imports, and exports.
+
+## Parameters
+- `path` (required) — File path or glob pattern
+- `maxLines` (optional) — Limit output length
+```
+
+### Capability — MCP tool
+
+```yaml
+---
+name: source-agent
+type: mcp
+mcp: source-agent-server
+description: Semantic code search across the repository
+parameters:
+  query: { type: string, required: true }
+outputs: [relevant_files, code_snippets]
+---
+# Source Agent
+
+Ask natural language questions about the codebase. Returns relevant files
+and code snippets ranked by semantic similarity.
+```
+
+### Capability — Script tool
+
+```yaml
+---
+name: run-tests
+type: script
+command: npm test
+description: Run the project test suite
+outputs: [test_results, pass_count, fail_count]
+---
+# Run Tests
+
+Executes the project's test suite and returns structured results.
+```
+
+### Instruction — Workflow scope
+
+Loaded only by nodes that reference it.
+
+```yaml
+---
+name: requirements-elicitation
+scope: workflow
+description: How to transform requests into testable requirements
+---
+# Requirements Elicitation
+
+## Structure
+1. Write an Introduction explaining what and why
+2. Define a Glossary of domain terms
+3. For each requirement:
+   - Numbered heading (Requirement 1, 2, ...)
+   - User story: "As a [role], I want [X], so that [Y]"
+   - Acceptance criteria: WHEN [condition] THEN [expected]
+```
+
+### Instruction — Global scope
+
+Auto-loaded every session, regardless of which node is active.
+
+```yaml
+---
+name: coding-standards
+scope: global
+inclusion: auto
+description: Project-wide coding conventions
+---
+# Coding Standards
+
+- Use TypeScript strict mode
+- Prefer named exports over default exports
+- All public functions must have JSDoc comments
+- Maximum file length: 300 lines
+```
+
+### Runbook — Condition
+
+Used in conditional edges. The `check` field must be unambiguous.
+
+```yaml
+---
+name: design-approved
+type: condition
+check: The user explicitly approved the design with no outstanding concerns
+---
+# Design Approved
+
+The user has reviewed the technical design and confirmed it meets their
+requirements. No changes requested.
+```
+
+### Runbook — Interaction
+
+A human touchpoint where the agent pauses for input.
+
+```yaml
+---
+name: review-design
+type: approval
+timeout: 300
+description: Present design for user review
+---
+# Review Design
+
+## What to Present
+- Architecture overview
+- Data models and types
+- API contracts
+- Testing strategy
+
+## User Options
+- **Approve** — proceed to implementation planning
+- **Reject** — provide feedback, return to design phase
+- **Edit** — make specific changes to the design
+```
+
+### Memory
+
+```yaml
+---
+name: decisions
+description: Record of choices made and their reasoning
+---
+# Decisions
+
+[2024-03-15] Chose PostgreSQL over MongoDB for structured data requirements.
+Reasoning: strong typing, ACID compliance, better for relational queries.
+
+[2024-03-16] Using Express over Fastify for API layer.
+Reasoning: team familiarity, larger ecosystem, sufficient performance.
+```
+
+### Hook
+
+```json
+{
+  "name": "lint-on-save",
+  "version": "1.0.0",
+  "event": "fileEdited",
+  "condition": {
+    "field": "path",
+    "operator": "matches",
+    "value": "\\.(ts|js)$"
+  },
+  "action": {
+    "type": "run-script",
+    "target": "npm run lint -- --fix"
+  },
+  "enabled": true,
+  "priority": 100
+}
+```
+
+**Events:** `fileEdited`, `fileCreated`, `fileDeleted`, `preToolUse`, `postToolUse`, `workflowStarted`, `workflowCompleted`, `nodeEntered`, `nodeCompleted`, `memoryUpdated`, `pre-commit`, `session-end`
+
+**Actions:** `trigger-workflow`, `run-script`, `notify`, `log`
+
+---
+
+## MCP Configuration
+
+`mcp.json` at the workspace root configures external tool servers.
+
+```json
+{
+  "mcpServers": {
+    "source-agent-server": {
+      "command": "uvx",
+      "args": ["source-agent-mcp@latest"],
+      "env": {
+        "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
+      },
+      "required": true,
+      "description": "Semantic code search"
+    }
+  }
+}
+```
+
+- `${env:VAR}` — resolved at connection time, never stored in plaintext
+- `{rootDir}` — replaced with workspace root path
+- `required: true` — workflow aborts if server unavailable
+
+---
+
+## Context Layers and Token Budgets
+
+| Layer | What | Budget | When loaded |
+|-------|------|--------|-------------|
+| L0 Identity | Root `AGENTS.md` | ~200 tok | Always |
+| L1 Routing | Workflow `AGENTS.md` | ~500-800 tok | Always |
+| L2 Contract | Node `SKILL.md` | ~1000-3000 tok | Current stage |
+| L3 References | Resources via `{{ref}}` | On demand | Per reference |
+| L4 Artifacts | `output/` directories | 0 (never loaded) | Written only |
+
+**Hard limit:** L0 + L1 + active L2 + resolved L3 refs must stay under **8,000 tokens**. If a node exceeds this, split it into two nodes.
+
+Token estimation: ~1 token per 4 characters (English), ~1 token per 3 characters (code).
+
+---
+
+## Graph Patterns
+
+**Linear** — Simple sequential flow:
+```
+gather-req -> design -> implement -> verify
+```
+
+**Review gates** — Human approval between phases:
+```
+gather-req -> review-gate -> design -> review-gate -> implement
+```
+
+**Rejection loops** — Go back and revise:
+```
+review-gate --rejected--> gather-req (revise and resubmit)
+```
+
+**Iteration loops** — Repeat until done:
+```
+implement -> completion-gate --more-tasks--> implement
+                             --all-done----> verify
+```
+
+**Sub-workflow delegation** — Hand off to another workflow:
+```
+review-gate --agentflow--> design-agentflow (sub-wf) -> verify
+            --normal-----> plan-tasks -> implement -> verify
+```
+
+---
+
+## Validation Rules
+
+| Rule | Severity | What it checks |
+|------|----------|---------------|
+| Broken ref | Error | `{{ref}}` doesn't resolve to any file |
+| Missing entry node | Error | No `entry: true` node in workflow |
+| Infinite sub-workflow loop | Error | Workflow A -> sub-wf B -> sub-wf A |
+| Router with tools | Error | Router nodes must have zero capabilities |
+| Orphaned sub-workflow | Warning | `type: sub-workflow` but `workflow:` is empty |
+| Missing sub-workflow target | Warning | `workflow: X` but X doesn't exist |
+| Unresolved workflow ref | Warning | `{{workflows/X}}` doesn't match any workflow |
+| Unreachable node | Warning | No incoming edges and not entry node |
+| Token budget exceeded | Warning | Node context exceeds 8k tokens |
+| Graph cycle | Warning | Cycle in the workflow edge graph |
+
+---
+
+## Pre-Shipped Library
+
+**Capabilities (12):** `read-code`, `write-file`, `run-tests`, `get-diagnostics`, `web-search`, `git-history`, `source-agent`, `analyze-image`, `file-search`, `list-directory`, `grep-search`, `shell-exec`
+
+**Instructions (12):** `requirements-elicitation`, `technical-design`, `task-decomposition`, `implementation-discipline`, `code-search`, `security-review`, `api-design`, `test-analysis`, `coding-standards`, `debugging`, `refactoring`, `prompt-engineering`
+
+**Workflows (4):** `build-feature` (10 nodes), `agent-builder` (10 nodes), `code-review` (3 nodes), `interactive-assistant`
+
+**Memory (5):** `user`, `decisions`, `lessons`, `facts`, `MEMORY`
+
+**Hooks (5):** `diagnostics-after-write`, `lint-on-save`, `test-on-change`, `security-scan-on-commit`, `memory-on-session-end`

@@ -1,0 +1,222 @@
+---
+title: Quickstart
+description: Build your first AI agent workflow in 5 minutes.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+
+Build a working agent workflow from scratch in 5 minutes. By the end, you'll have a multi-step workflow with conditional routing, resource references, and a visual graph on the canvas.
+
+<Steps>
+  <Step>
+    ### Open the Studio
+
+    If running locally:
+
+    ```bash
+    cd agentflow/studio && npm run dev
+    ```
+
+    Open `http://localhost:3000`. You'll see an empty workspace with a blank canvas.
+  </Step>
+  <Step>
+    ### Create your identity
+
+    Every workspace starts with an `AGENTS.md` file — this defines who your agent is.
+
+    Click **New File** in the Explorer panel (or `Cmd+N`) and create `AGENTS.md`:
+
+    ```yaml
+    ---
+    type: agents
+    name: my-first-workspace
+    description: A simple coding assistant
+    identity:
+      name: CodeBot
+      role: Junior developer assistant
+      personality: Helpful, concise, asks clarifying questions
+      constraints:
+        - Always run tests before marking work complete
+        - Never modify files outside the project directory
+    ---
+
+    # CodeBot Workspace
+
+    This workspace contains workflows for automated coding tasks.
+
+    ## Workflows
+
+    {{$workflows}}
+
+    ## Available Tools
+
+    {{$resources}}
+    ```
+  </Step>
+  <Step>
+    ### Add a workflow
+
+    Create a new directory `fix-bug/` with an `AGENTS.md` descriptor:
+
+    ```yaml
+    ---
+    type: agents
+    name: fix-bug
+    description: Diagnose and fix a reported bug
+    ---
+
+    # Fix Bug
+
+    A simple linear workflow: reproduce → fix → verify.
+
+    ## Nodes
+
+    - {{-> nodes/reproduce}} — Reproduce the bug
+    - {{-> nodes/fix}} — Apply the fix
+    - {{-> nodes/verify}} — Run tests to confirm
+    ```
+  </Step>
+  <Step>
+    ### Add nodes
+
+    Create three node directories, each with a `SKILL.md`:
+
+    <Files>
+      <Folder name="fix-bug" defaultOpen>
+        <File name="AGENTS.md" />
+        <Folder name="reproduce">
+          <File name="SKILL.md" />
+        </Folder>
+        <Folder name="fix">
+          <File name="SKILL.md" />
+        </Folder>
+        <Folder name="verify">
+          <File name="SKILL.md" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    **reproduce/SKILL.md** — the entry point:
+
+    ```yaml
+    ---
+    name: reproduce
+    type: step
+    entry: true
+    context:
+      max_tokens: 3000
+    outputs:
+      - name: repro-steps
+        format: markdown
+    ---
+
+    # Reproduce the Bug
+
+    Read the bug report and reproduce the issue locally.
+
+    1. Read the bug report carefully
+    2. Identify the affected file(s) using {{capabilities/read-code}}
+    3. Write a minimal reproduction case
+    4. Document the exact steps in your output
+
+    {{-> nodes/fix}}
+    ```
+
+    **fix/SKILL.md:**
+
+    ```yaml
+    ---
+    name: fix
+    type: step
+    ---
+
+    # Fix the Bug
+
+    Apply the minimal fix based on {{<< output.reproduce}}.
+
+    1. Read the reproduction steps from the previous node
+    2. Identify the root cause
+    3. Apply the fix using {{capabilities/write-file}}
+    4. Run {{capabilities/get-diagnostics}} to check for errors
+
+    {{-> nodes/verify}}
+    ```
+
+    **verify/SKILL.md:**
+
+    ```yaml
+    ---
+    name: verify
+    type: step
+    ---
+
+    # Verify the Fix
+
+    Run the test suite and confirm the bug is resolved.
+
+    1. Run {{capabilities/run-tests}}
+    2. Verify the original bug no longer reproduces
+    3. Check for regressions
+    ```
+  </Step>
+  <Step>
+    ### See it on the canvas
+
+    Switch to the **fix-bug** workflow in the dropdown. You'll see three nodes connected linearly:
+
+    ```
+    [reproduce] → [fix] → [verify]
+    ```
+
+    The canvas auto-layouts the graph based on the edges defined in your `{{-> nodes/...}}` references.
+  </Step>
+  <Step>
+    ### Validate
+
+    Press `Cmd+Shift+V` or click the validation indicator in the status bar:
+
+    - No errors — all refs resolve, entry point exists
+    - Possible warnings about missing capabilities (we haven't created them yet)
+  </Step>
+  <Step>
+    ### Add a capability
+
+    Create `capabilities/read-code.md` to resolve the warning:
+
+    ```yaml
+    ---
+    name: read-code
+    type: builtin
+    builtin_mapping: readCode
+    description: Read source files from the project
+    ---
+
+    Read one or more source files. Accepts glob patterns.
+    ```
+
+    Re-validate — the warning disappears.
+  </Step>
+</Steps>
+
+<Callout type="info" title="What you built">
+  A 3-node linear workflow with an entry point, data flow between nodes (`{{<< output.reproduce}}`), resource references (`{{capabilities/read-code}}`), and edge declarations (`{{-> nodes/fix}}`). This is the same pattern used by the 9-node build-feature workflow — just smaller.
+</Callout>
+
+## Explore the Build-Feature Workflow
+
+The canvas below shows a more complex workflow — build-feature — with 9 nodes, conditional routing, and approval gates. This is what your workflows can grow into. Click any node to see its SKILL.md structure, references, and connections.
+
+<ComponentPreview title="build-feature — a production-ready workflow" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['explorer', 'elements']} />
+</ComponentPreview>
+
+## Next Steps
+
+<Cards>
+  <Card title="Concepts: Workflows" href="/docs/concepts/workflows" description="Understand the graph model" />
+  <Card title="Concepts: Selective Context" href="/docs/concepts/selective-context" description="Control what the agent sees" />
+  <Card title="Studio: Canvas" href="/docs/studio/canvas" description="Master the visual editor" />
+  <Card title="Authoring: Patterns" href="/docs/authoring/patterns" description="Linear, gates, loops, and more" />
+</Cards>

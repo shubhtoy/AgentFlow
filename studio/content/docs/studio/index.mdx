@@ -1,0 +1,93 @@
+---
+title: Studio
+description: Every panel in the AgentFlow visual editor.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+The studio is a visual editor for designing, editing, and testing AgentFlow workflows. It runs in the browser and operates directly on your `.agentflow/` directory, so every change you make in the UI is written to disk as plain markdown and YAML files.
+
+## Launching the Studio
+
+<Steps>
+<Step>
+### Install the CLI
+
+```bash
+npm install -g agentflow
+```
+</Step>
+<Step>
+### Open a workspace
+
+Navigate to a directory that contains an `.agentflow/` folder (or where you want to create one) and run:
+
+```bash
+agentflow studio
+```
+
+The studio opens at `http://localhost:4200` by default. Pass `--port` to change it.
+</Step>
+<Step>
+### Create a new workspace (optional)
+
+If no `.agentflow/` directory exists, the studio shows a setup wizard that scaffolds the directory structure for you. You can also run `agentflow init` from the terminal first.
+</Step>
+</Steps>
+
+## Main Areas
+
+The studio interface is divided into four regions:
+
+### Canvas (center)
+
+The main editing surface where you build workflows as directed graphs. Drag nodes, draw edges, and arrange layouts visually. The canvas supports panning, zooming, multi-select, and right-click context menus.
+
+### Sidebar (left)
+
+The sidebar contains the **Explorer** (file tree of your `.agentflow/` workspace) and the **Elements** panel (resources grouped by category). Toggle the sidebar with `Cmd+B`.
+
+### Panels (right and bottom)
+
+Context-sensitive panels open alongside the canvas. The **Editor** and **Frontmatter** panels appear when you select a node. The **Validation**, **Tokens**, **Git**, **MCP**, and **Copilot** panels are available from the toolbar or keyboard shortcuts.
+
+### Status Bar (bottom)
+
+Displays the active workflow name, current branch, validation summary (error and warning counts), and total token usage. Click any status bar item to open its corresponding panel.
+
+<Callout type="info">
+Every panel can be resized, collapsed, or detached into a floating window. Drag a panel header to reposition it, or double-click to toggle between docked and floating modes.
+</Callout>
+
+## Keyboard Quick Reference
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+K` | Command palette |
+| `Cmd+B` | Toggle sidebar |
+| `Cmd+,` | Settings |
+| `Cmd+Shift+E` | Export dialog |
+| `Cmd+S` | Save current file |
+| `Cmd+Z` | Undo |
+| `Cmd+Shift+Z` | Redo |
+| `Delete` | Remove selected node or edge |
+| `Space` (hold) | Pan mode on canvas |
+
+## Panel Reference
+
+<Cards>
+  <Card title="Canvas" href="/docs/studio/canvas" description="The workflow graph -- nodes, edges, layout" />
+  <Card title="Editor" href="/docs/studio/editor" description="Markdown editor with ref badges and preview" />
+  <Card title="Frontmatter" href="/docs/studio/frontmatter" description="Structured YAML editing with form controls" />
+  <Card title="Explorer" href="/docs/studio/explorer" description="File tree of your workspace" />
+  <Card title="Elements" href="/docs/studio/elements" description="Resources organized by category" />
+  <Card title="Validation" href="/docs/studio/validation" description="Real-time error and warning checks" />
+  <Card title="Tokens" href="/docs/studio/tokens" description="Context budget tracking per node" />
+  <Card title="Git" href="/docs/studio/git" description="Stage, commit, push, pull, conflicts" />
+  <Card title="MCP" href="/docs/studio/mcp" description="Server management and registry browser" />
+  <Card title="Copilot" href="/docs/studio/copilot" description="AI chat with workflow awareness" />
+  <Card title="Command Palette" href="/docs/studio/command-palette" description="Fuzzy search for files, actions, workflows" />
+  <Card title="Export" href="/docs/studio/export-dialog" description="Multi-format export with preview" />
+  <Card title="Settings" href="/docs/studio/settings" description="API keys, theme, models, auto-save" />
+</Cards>

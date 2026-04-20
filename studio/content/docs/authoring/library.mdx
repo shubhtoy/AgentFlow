@@ -1,0 +1,218 @@
+---
+title: Library
+description: Browse, import, and customize pre-built workflows and resources.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+AgentFlow ships with a library of production-ready workflows, resources, and hooks. Import what you need, customize it for your team, and start running.
+
+## Importing a Workflow
+
+<Steps>
+  <Step>
+    ### Browse what's available
+
+    ```bash
+    agentflow library
+    ```
+
+    ```
+    Workflows:
+      build-feature        Spec-driven feature development (9 nodes)
+      agent-builder        Guided agent creation (10 nodes)
+      content-pipeline     Content creation pipeline (6 nodes)
+      incident-response    Incident management (7 nodes)
+      customer-support     Ticket handling with routing (7 nodes)
+      interactive-assistant Conversational agent (8 nodes)
+
+    Resources:
+      7 capabilities, 7 instructions, 7 runbooks, 4 memory, 11 hooks
+    ```
+
+    Or use the Skills panel in the studio to browse with previews.
+  </Step>
+  <Step>
+    ### Import
+
+    ```bash
+    agentflow import workflow build-feature
+    ```
+
+    ```
+    ✓ Copied build-feature/ (9 nodes, 3 gates)
+    ✓ Copied 7 capabilities
+    ✓ Copied 4 instructions
+    ✓ Copied 5 runbooks
+    ✓ Copied 4 memory files
+    ✓ Copied 3 hooks
+    ```
+
+    The command copies the workflow and all its referenced resources into your workspace. Existing files are not overwritten unless you pass `--overwrite`.
+  </Step>
+  <Step>
+    ### Customize
+
+    The imported files are yours. Common customizations:
+
+    - Edit `AGENTS.md` to change the workflow description
+    - Adjust `context.max_tokens` in node frontmatter
+    - Modify instruction content to match your team's conventions
+    - Add or remove approval gates
+    - Change runbook conditions to match your criteria
+    - Enable/disable hooks
+  </Step>
+</Steps>
+
+## Skills.sh Marketplace
+
+Beyond the built-in library, AgentFlow integrates with [skills.sh](https://skills.sh) — a marketplace of 34,000+ agent skills contributed by the community.
+
+<Steps>
+  <Step>
+    ### Search
+
+    Open the Skills panel in the studio and type a query. Results come from the skills.sh API with install counts and source links.
+  </Step>
+  <Step>
+    ### Preview
+
+    Click any skill to preview it. AgentFlow downloads the skill to a temporary directory, parses its SKILL.md, and auto-classifies it into the right resource category (capabilities, instructions, or runbooks) based on content analysis.
+  </Step>
+  <Step>
+    ### Install
+
+    Review the preview — see the name, category, description, and full SKILL.md content. Click Install to write the file into your workspace's corresponding resource directory.
+  </Step>
+</Steps>
+
+The Skills panel below lets you search and preview skills from the marketplace. Try searching for "code review", "testing", or "documentation".
+
+
+<ComponentPreview title="Skills marketplace — search 34k+ agent skills" height="lg">
+  <DocsPlayground panel="skills" />
+</ComponentPreview>
+
+
+## Importing Individual Resources
+
+You don't have to import entire workflows. Pick individual resources:
+
+```bash
+agentflow import capability write-file
+agentflow import instruction code-style
+agentflow import hook lint-on-save
+agentflow import runbook is-approved
+agentflow import memory decisions
+```
+
+Each command copies the file into the corresponding directory in your workspace.
+
+## What's in the Library
+
+### Workflows
+
+<Accordions>
+  <Accordion title="build-feature — spec-driven development">
+    **9 nodes:** gather-requirements → review-requirements-gate → create-design → review-design-gate → plan-tasks → review-tasks-gate → implement-task ↔ task-completion-gate → verify-feature
+
+    **Patterns:** 3 approval gates, task loop with 3-way routing, error recovery, context scoping per phase.
+
+    **Best for:** Feature development with human review at each phase.
+  </Accordion>
+  <Accordion title="agent-builder — guided agent creation">
+    **10 nodes:** extract-intent → review-intent-gate → select-resources → design-nodes → review-scaffold-gate → generate-workspace → validate-and-fix → verify-feature
+
+    **Patterns:** 2 approval gates, resource selection, workspace generation.
+
+    **Best for:** Building new AgentFlow workspaces interactively.
+  </Accordion>
+  <Accordion title="content-pipeline — content creation">
+    **6 nodes:** research → draft → edit → review-gate → publish
+
+    **Patterns:** Linear pipeline, single approval gate, workflow-scoped hooks.
+
+    **Best for:** Blog posts, documentation, reports.
+  </Accordion>
+  <Accordion title="incident-response — incident management">
+    **7 nodes:** detect → triage → investigate → mitigate → review-gate → postmortem
+
+    **Patterns:** Mitigation priority list (rollback → feature flag → scale up → hotfix), escalation to humans.
+
+    **Best for:** Production incident handling.
+  </Accordion>
+  <Accordion title="customer-support — ticket handling">
+    **7 nodes:** triage → route-gate → billing/technical/general → respond
+
+    **Patterns:** Fan-out routing, urgency override, convergence point.
+
+    **Best for:** Support ticket classification and routing.
+  </Accordion>
+  <Accordion title="interactive-assistant — conversational agent">
+    **8 nodes:** triage → 6 specialist handlers → user-review-gate (loop)
+
+    **Patterns:** Router dispatch to specialists, conversation loop, memory persistence.
+
+    **Best for:** General-purpose coding assistant.
+  </Accordion>
+</Accordions>
+
+### Resources
+
+<Tabs items={['Capabilities', 'Instructions', 'Runbooks', 'Hooks']}>
+  <Tab value="Capabilities">
+    | Name | Type | Description |
+    |------|------|-------------|
+    | `read-code` | builtin | Read source files |
+    | `write-file` | builtin | Create or modify files |
+    | `shell-exec` | builtin | Execute shell commands |
+    | `run-tests` | script | Run test suite |
+    | `get-diagnostics` | builtin | Get lint/type errors |
+    | `search-codebase` | builtin | Search across files |
+    | `agent-browser` | package | Browser automation |
+  </Tab>
+  <Tab value="Instructions">
+    | Name | Scope | Description |
+    |------|-------|-------------|
+    | `code-style` | global | Coding conventions |
+    | `testing-strategy` | global | Test writing guidelines |
+    | `implementation-discipline` | workflow | Production code practices |
+    | `requirements-elicitation` | workflow | Requirements gathering technique |
+    | `technical-design` | workflow | Design document structure |
+    | `task-decomposition` | workflow | Breaking work into tasks |
+    | `prompt-engineering` | global | Writing effective prompts |
+  </Tab>
+  <Tab value="Runbooks">
+    | Name | Type | Description |
+    |------|------|-------------|
+    | `is-approved` | condition | Generic approval check |
+    | `tests-pass` | condition | All tests passing |
+    | `checkpoint` | confirm | Continue/cancel decision |
+    | `confirm-destructive` | confirm | Irreversible action gate |
+    | `escalate-to-human` | escalation | Hand off to human |
+  </Tab>
+  <Tab value="Hooks">
+    11 pre-built hooks covering: linting (`lint-on-save`), testing (`test-on-change`), diagnostics (`diagnostics-after-write`), security (`security-scan-on-commit`), auditing (`guard-tool-use`), notifications (`notify-workflow-failure`), and memory persistence (`memory-on-complete`).
+  </Tab>
+</Tabs>
+
+## Explore the Library
+
+The canvas below shows the build-feature workflow from the library. Click any node to see its SKILL.md — this is exactly what you get when you run `agentflow import workflow build-feature`. The Elements panel shows all the resources it references.
+
+<ComponentPreview title="build-feature from the library" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['explorer', 'elements']} />
+</ComponentPreview>
+
+<Callout type="info" title="Contributing">
+  See [Contributing: Library](/docs/contributing/library) for how to add your own workflows and resources to the library.
+</Callout>
+
+<Cards>
+  <Card title="Patterns" href="/docs/authoring/patterns" description="Understand the patterns used in library workflows" />
+  <Card title="Writing Workflows" href="/docs/authoring/writing-workflows" description="Build your own from scratch" />
+  <Card title="MCP" href="/docs/authoring/mcp" description="Add external tools to your workflows" />
+</Cards>

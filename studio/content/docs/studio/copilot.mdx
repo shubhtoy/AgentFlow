@@ -1,0 +1,166 @@
+---
+title: Copilot
+description: AI chat assistant with workflow awareness and tool-calling.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The copilot is a CopilotKit-powered AI chat panel that understands your workspace. It can read workflow structure, navigate nodes, suggest edits, and call tools directly from the chat interface.
+
+## Opening the Copilot
+
+Press `Cmd+Shift+C` to toggle the copilot panel, or click the copilot icon in the toolbar. The panel opens on the right side of the canvas.
+
+## What the Copilot Can Do
+
+The copilot has access to your workspace structure and can perform actions through tool-calling:
+
+| Capability | Example prompt |
+|------------|---------------|
+| **Read nodes** | "What does the classify-intent node do?" |
+| **Navigate the graph** | "Go to the error-handler node" |
+| **Suggest edits** | "Add a retry condition to this gateway" |
+| **Explain validation errors** | "Why is the export blocked?" |
+| **Write SKILL.md** | "Create a node that fetches user data from the API" |
+| **Search resources** | "Which capabilities use the GitHub API?" |
+| **Analyze token usage** | "Why is this node over budget?" |
+| **Generate edge conditions** | "Route to success if status is 200, otherwise route to error" |
+| **Scaffold workflows** | "Create a code review workflow with gather, review, and approve steps" |
+
+## Asking Flow to Create Workflows
+
+The copilot can scaffold entire workflows from a natural language description:
+
+<Steps>
+<Step>
+### Describe the workflow
+
+Tell the copilot what you want to build. Be specific about the steps, decision points, and expected outcomes.
+
+Example: "Create a workflow that takes a bug report, classifies its severity, routes critical bugs to an immediate fix path, and routes non-critical bugs to a backlog triage step."
+</Step>
+<Step>
+### Review the proposal
+
+The copilot responds with a structured plan: node names, types (step or gateway), edge conditions, and a brief description of each node. Review the plan before accepting.
+</Step>
+<Step>
+### Accept or refine
+
+Click **Apply** to create all the nodes and edges on the canvas. Or ask for changes: "Make the classification step a gateway with three outputs instead of two." The copilot adjusts the plan and presents it again.
+</Step>
+<Step>
+### Fill in details
+
+After scaffolding, each node has a title and description but minimal instructions. Select each node and ask the copilot to flesh out its SKILL.md: "Write detailed instructions for the classify-severity node."
+</Step>
+</Steps>
+
+## Explaining and Fixing Validation Errors
+
+When the validation panel shows errors, the copilot can explain and fix them:
+
+<Steps>
+<Step>
+### Ask about a specific error
+
+Select the node with the error on the canvas, then ask: "Why does this node have a validation error?" The copilot reads the validation state and explains the issue in plain language.
+</Step>
+<Step>
+### Request a fix
+
+Ask: "Fix the broken reference in this node." The copilot identifies the broken `[[...]]` token, searches for the correct resource name, and proposes an edit. Click **Accept** to apply the change.
+</Step>
+</Steps>
+
+<Callout type="info">
+The copilot reads the currently selected node and active workflow as context. Select the relevant node before asking questions about it for the most accurate responses.
+</Callout>
+
+## Model Picker
+
+The copilot header includes a model picker dropdown. Click it to switch between available models. The available models depend on which API keys you have configured in Settings.
+
+<Tabs items={['Anthropic', 'OpenAI', 'Google']}>
+<Tab value="Anthropic">
+Set your API key in Settings under `ANTHROPIC_API_KEY`. Available models include Claude Sonnet and Claude Haiku. Anthropic is the default provider and offers the best tool-calling reliability for workflow operations.
+</Tab>
+<Tab value="OpenAI">
+Set your API key in Settings under `OPENAI_API_KEY`. Available models include GPT-4o and GPT-4o-mini. OpenAI models work well for general questions and content generation.
+</Tab>
+<Tab value="Google">
+Set your API key in Settings under `GOOGLE_AI_API_KEY`. Available models include Gemini Pro and Gemini Flash. Google models offer large context windows useful for discussing complex workflows with many nodes.
+</Tab>
+</Tabs>
+
+You can switch providers at any time. The conversation history is preserved when switching models.
+
+## Conversation History
+
+The copilot maintains conversation history within a session. Previous messages provide context for follow-up questions, so you can have a multi-turn conversation:
+
+1. "What workflows are in this workspace?" -- The copilot lists them.
+2. "Open the build-feature workflow." -- The copilot navigates to it.
+3. "Which nodes are over their token budget?" -- The copilot checks and reports.
+4. "Fix the one with the highest usage." -- The copilot knows which node you mean from context.
+
+Conversation history is cleared when you close the studio or click the **New Conversation** button in the panel header.
+
+## Effective Prompting
+
+<Tabs items={['Be specific', 'Reference by name', 'Explain before fix', 'Iterate']}>
+<Tab value="Be specific">
+Instead of "fix my workflow," say "the gateway node at step-3 has a validation error about a missing condition -- explain what it needs." Specificity helps the copilot focus its tool calls and avoid unnecessary exploration.
+</Tab>
+<Tab value="Reference by name">
+Use the exact node directory name when referring to nodes. "Look at the classify-intent node" is better than "look at the second step." The copilot resolves exact names immediately.
+</Tab>
+<Tab value="Explain before fix">
+When unsure about a validation error or token issue, ask the copilot to explain it before requesting a fix. This gives you context to evaluate whether the suggested fix is appropriate.
+</Tab>
+<Tab value="Iterate">
+When the copilot generates a SKILL.md or instruction file, review it and ask for specific adjustments rather than regenerating from scratch. "Make the third instruction more specific about error handling" produces better results than "try again."
+</Tab>
+</Tabs>
+
+## Tool-Calling Visibility
+
+When the copilot calls a tool (reads a node, navigates the graph, searches resources), the tool call appears as a collapsible block in the chat. Expand it to see exactly what the copilot read or did. This transparency helps you verify that the copilot is working with the correct context.
+
+If a tool call fails (e.g., the copilot tries to read a node that does not exist), the error appears in the tool call block. You can correct the copilot: "That node is called classify-intent, not classify."
+
+## Configuration
+
+To use the copilot, configure at least one API key in the Settings panel. The copilot is disabled until a valid key is provided.
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Settings > API Keys | Enables Claude models |
+| `OPENAI_API_KEY` | Settings > API Keys | Enables GPT models |
+| `GOOGLE_AI_API_KEY` | Settings > API Keys | Enables Gemini models |
+| Default model | Settings > Models | Which model the copilot uses by default |
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle copilot panel | `Cmd+Shift+C` |
+| Focus chat input | `/` (when panel is open) |
+| Send message | `Enter` |
+| New line in message | `Shift+Enter` |
+| New conversation | `Cmd+N` (when panel is focused) |
+| Accept suggestion | Click **Accept** or `Cmd+Enter` |
+
+## Tips
+
+- Use the copilot for discovery when you are new to a workspace. Ask "what workflows are defined here?" or "which nodes use the search capability?" to get oriented quickly.
+- The copilot can generate edge conditions from natural language. Describe the branching logic you want and it produces the condition syntax.
+- When the copilot suggests an edit, review the diff before accepting. The suggestion appears as a highlighted change in the editor.
+- Switch to a faster model (Haiku, GPT-4o-mini, Gemini Flash) for simple questions to reduce response latency.
+
+<Cards>
+  <Card title="Settings" href="/docs/studio/settings" description="Configure API keys and select your LLM provider" />
+  <Card title="Command Palette" href="/docs/studio/command-palette" description="Quick actions and search" />
+</Cards>

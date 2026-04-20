@@ -1,0 +1,157 @@
+---
+title: Command Palette
+description: Fuzzy search for files, actions, and workflows.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Press `Cmd+K` (or `Ctrl+K` on Windows/Linux) to open the command palette. It provides fuzzy search across files, nodes, workflows, and actions -- the fastest way to navigate and execute commands in the studio.
+
+## How It Works
+
+The command palette is a single text input that searches across everything in your workspace. Start typing and results appear instantly, ranked by relevance. Select a result with `Enter` to execute it.
+
+Results are grouped into categories:
+
+| Category | What it matches |
+|----------|----------------|
+| **Files** | Any file in your `.agentflow/` workspace by name |
+| **Nodes** | Node directories in the active workflow |
+| **Workflows** | Workflow directories in the workspace |
+| **Actions** | Studio commands (validate, export, toggle panels, etc.) |
+| **Recent** | Previously accessed items, shown at the top when the input is empty |
+
+## Keyboard Navigation
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+K` / `Ctrl+K` | Open the command palette |
+| `Arrow Up` / `Arrow Down` | Navigate results |
+| `Enter` | Select the highlighted item |
+| `Esc` | Close the palette |
+| `Cmd+Backspace` | Clear the search input |
+
+The palette remembers your last query when reopened within the same session. Press `Esc` twice to close and clear.
+
+## Available Actions
+
+Type any part of an action name to find it. Actions are organized by verb:
+
+<Tabs items={['Validate', 'Export', 'Toggle', 'Create', 'Navigate', 'Git']}>
+<Tab value="Validate">
+| Action | Description |
+|--------|-------------|
+| Validate Workflow | Run all validation rules on the active workflow |
+| Validate Workspace | Run validation across all workflows in the workspace |
+</Tab>
+<Tab value="Export">
+| Action | Description |
+|--------|-------------|
+| Export to LangGraph | Export the active workflow as a LangGraph Python file |
+| Export to Claude | Export as a Claude-compatible agent configuration |
+| Export to GitHub Actions | Export as a GitHub Actions workflow YAML |
+</Tab>
+<Tab value="Toggle">
+| Action | Description |
+|--------|-------------|
+| Toggle File Tree | Show or hide the explorer panel |
+| Toggle Copilot | Show or hide the AI copilot panel |
+| Toggle Elements | Show or hide the elements panel |
+| Toggle Validation | Show or hide the validation panel |
+| Toggle Tokens | Show or hide the token budget panel |
+</Tab>
+<Tab value="Create">
+| Action | Description |
+|--------|-------------|
+| Create Node | Add a new node to the active workflow |
+| Create Capability | Create a new capability resource file |
+| Create Instruction | Create a new instruction resource file |
+| Create Runbook | Create a new runbook resource file |
+</Tab>
+<Tab value="Navigate">
+| Action | Description |
+|--------|-------------|
+| Switch Workflow | Open a picker to change the active workflow |
+| Focus Canvas | Dismiss all panels and focus the workflow canvas |
+| Zoom to Fit | Adjust canvas zoom to show all nodes |
+| Reset Layout | Auto-arrange nodes using the layout algorithm |
+| Open Settings | Open the studio settings panel |
+</Tab>
+<Tab value="Git">
+| Action | Description |
+|--------|-------------|
+| Git Sync | Pull and push in one action |
+| Git Commit | Stage all changes and commit with a message |
+</Tab>
+</Tabs>
+
+Actions that modify files (create, export) prompt for confirmation or additional input before executing. Read-only actions (toggle, switch, zoom) execute immediately.
+
+## Search Syntax
+
+The command palette uses fuzzy matching. Understanding how it scores results helps you find items faster.
+
+### How Fuzzy Matching Works
+
+The algorithm checks whether your input characters appear in order within the candidate string, but they do not need to be adjacent. Typing "val" matches "**V**alid**a**te Work**f**low". Typing "vw" also matches because "v" and "w" appear in order.
+
+### Scoring Priority
+
+Results are ranked by a combination of factors:
+
+1. **Exact prefix match** -- Candidates that start with your input score highest. Typing "exp" ranks "Export to LangGraph" above "File Explorer."
+2. **Consecutive character matches** -- More adjacent matching characters produce a higher score.
+3. **Word boundary matches** -- Characters that match at the start of words score higher. Typing "sw" matches the "S" in "Switch" and "w" in "Workflow" at word boundaries.
+4. **Recency** -- Among equally-scored results, items you accessed recently appear first.
+
+### Fast Navigation Patterns
+
+- Type the first two letters of each word: "cr no" finds "Create Node" immediately.
+- Use action verbs as prefixes: "toggle", "create", "export", "switch".
+- Type just the panel name: "copilot" finds "Toggle Copilot" as the top result.
+- Press `Enter` on an empty palette to repeat your last action.
+
+<Callout type="info">
+The command palette is context-aware. When a node is selected on the canvas, node-specific actions (like "Edit Node" or "Delete Node") appear in the results. When no node is selected, these actions are hidden.
+</Callout>
+
+## Practical Examples
+
+### Jump to a node by name
+
+1. Press `Cmd+K`.
+2. Type the first few characters of the node name (e.g., "class" for "classify-intent").
+3. Press `Enter`. The canvas pans to the node and selects it.
+
+### Run validation quickly
+
+1. Press `Cmd+K`.
+2. Type "val".
+3. "Validate Workflow" appears as the top result. Press `Enter`.
+4. The validation panel opens with results.
+
+### Switch between workflows
+
+1. Press `Cmd+K`.
+2. Type "switch" or the name of the target workflow.
+3. Select "Switch Workflow" or the workflow name directly.
+4. The canvas loads the selected workflow.
+
+### Export without opening the dialog
+
+1. Press `Cmd+K`.
+2. Type "export claude" (or "export cursor", "export langgraph").
+3. Select the matching action. The export runs with the last-used settings, or prompts for configuration if this is the first export.
+
+## Tips
+
+- The command palette is the fastest way to do almost anything in the studio. Learn the two-letter patterns for your most common actions.
+- Recent items appear when the palette is empty, so pressing `Cmd+K` then `Enter` repeats your last action.
+- Use the palette to toggle panels instead of remembering individual panel shortcuts.
+- The palette works from any context -- even when a modal dialog is open, `Cmd+K` opens the palette on top.
+
+<Cards>
+  <Card title="Canvas" href="/docs/studio/canvas" description="The workflow graph for dragging and connecting nodes" />
+  <Card title="Settings" href="/docs/studio/settings" description="API keys, theme, models, auto-save" />
+</Cards>

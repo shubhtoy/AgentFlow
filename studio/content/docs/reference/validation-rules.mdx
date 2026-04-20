@@ -1,0 +1,46 @@
+---
+title: Validation Rules
+description: All 23 validation rules with severity, description, and fix.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+
+AgentFlow validates workflows against 23 rules across five categories. In permissive mode (default), issues surface as warnings. In strict mode, all rules become errors.
+
+| Rule | Severity | Category | Description | Fix |
+| --- | --- | --- | --- | --- |
+| `broken_ref` | error | refs | Reference to non-existent resource | Check filename spelling |
+| `missing_condition` | error | refs | Conditional edge without runbook | Create the runbook file |
+| `broken_data_flow` | error | refs | Data flow ref to non-existent node | Check node name |
+| `malformed_variable` | error | schema | Invalid `${env:...}` syntax | Fix variable format |
+| `no_entry_point` | error | graph | No node with `entry: true` | Add `entry: true` to first node |
+| `context_input_broken` | error | context | Context input ref broken | Fix the ref path |
+| `missing_mcp_server` | error | identity | MCP tool refs non-existent server | Add server to `mcp.json` |
+| `cycle` | warning/error | graph | Circular dependency | Add conditional exit |
+| `multiple_entry_points` | warning | graph | More than one entry node | Remove extra `entry: true` |
+| `unreachable` | warning | graph | Node not reachable from entry | Wire edges or remove node |
+| `router_single_exit` | warning | graph | Router with one exit | Add more conditional edges |
+| `router_non_conditional` | warning | refs | Router with unconditional edges | Use conditional edges |
+| `router_has_capabilities` | warning | refs | Router with tools | Remove capability refs from router |
+| `router_has_instructions` | warning | refs | Router with instructions | Remove instruction refs |
+| `ambiguous_ref` | warning | refs | Ref matches multiple files | Use full path |
+| `context_budget` | warning | context | Node exceeds max_tokens | Reduce refs or increase budget |
+| `context_budget_high` | warning | context | Node approaching budget | Consider reducing |
+| `output_declaration` | warning | context | Output ref without declaration | Add outputs to frontmatter |
+| `unknown_category` | warning | schema | Unknown resource category | Use standard categories |
+| `misplaced_resource` | warning | schema | Resource in wrong directory | Move to correct dir |
+| `schema` | warning | schema | Frontmatter field wrong type | Fix the value |
+| `identity` | warning | identity | Missing name/description | Add to `AGENTS.md` |
+| `orphaned_mcp_tool` | warning | identity | MCP tool never referenced | Reference it or remove |
+
+## Modes
+
+<Cards>
+<Card title="Permissive (default)">
+Non-critical issues are reported as warnings. The workflow still runs.
+</Card>
+<Card title="Strict">
+All rules become errors. The workflow will not export until every issue is resolved.
+</Card>
+</Cards>

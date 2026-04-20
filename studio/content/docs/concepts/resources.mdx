@@ -1,0 +1,183 @@
+---
+title: Resources
+description: The five resource categories — instructions, capabilities, runbooks, memory, and hooks.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+Resources are the reusable building blocks that nodes reference. They live in dedicated directories and are loaded into a node's context only when explicitly referenced via `{{category/name}}`.
+
+<Files>
+  <Folder name=".agentflow" defaultOpen>
+    <Folder name="instructions" defaultOpen>
+      <File name="code-style.md" />
+      <File name="testing-strategy.md" />
+    </Folder>
+    <Folder name="capabilities" defaultOpen>
+      <File name="write-file.md" />
+      <File name="run-tests.md" />
+    </Folder>
+    <Folder name="runbooks" defaultOpen>
+      <File name="design-approved.md" />
+      <File name="tests-pass.md" />
+    </Folder>
+    <Folder name="memory" defaultOpen>
+      <File name="decisions.md" />
+    </Folder>
+    <Folder name="hooks" defaultOpen>
+      <File name="diagnostics-after-write.json" />
+    </Folder>
+  </Folder>
+</Files>
+
+<Mermaid chart={`
+graph LR
+    I["Instructions"] --> N["Nodes"]
+    C["Capabilities"] --> N
+    R["Runbooks"] --> N
+    M["Memory"] --> N
+    H["Hooks"] -->|"event triggers"| N
+`} />
+
+## Categories
+
+<Accordions>
+  <Accordion title="Instructions — guidance and conventions">
+    The agent treats these as constraints to follow. Referenced as `{{instructions/name}}`.
+
+    ```yaml
+    # instructions/code-style.md
+    ---
+    name: Code Style
+    ---
+
+    ## TypeScript Conventions
+
+    - Use strict mode
+    - Prefer functional patterns
+    - No `any` types — use `unknown` and narrow
+    ```
+
+    Scopes: global (workspace-level) or workflow-scoped (inside a workflow directory).
+  </Accordion>
+  <Accordion title="Capabilities — tool definitions">
+    What the agent can do. Referenced as `{{capabilities/name}}`. Types: `builtin`, `script`, `mcp`, `package`.
+
+    ```yaml
+    # capabilities/agent-browser.md
+    ---
+    type: builtin
+    name: agent-browser
+    description: Browser automation CLI for AI agents.
+    allowed-tools: Bash(agent-browser:*), Bash(npx agent-browser:*)
+    ---
+
+    Browser automation CLI for AI agents. Uses Chrome/Chromium via CDP.
+    ```
+  </Accordion>
+  <Accordion title="Runbooks — conditions and interactions">
+    Decision criteria for routers and human-in-the-loop patterns. Referenced as `{{runbooks/name}}`.
+
+    ```yaml
+    # runbooks/design-approved.md
+    ---
+    type: condition
+    name: design-approved
+    check: The user explicitly approves the design
+    ---
+
+    **True when:** The user says the design is approved.
+    **False when:** The user requests changes or raises concerns.
+    ```
+
+    Types: `condition` (for routing decisions) and `interaction` (for human-in-the-loop steps).
+  </Accordion>
+  <Accordion title="Memory — persistent state">
+    Decisions, preferences, and context that persists across workflow runs. Referenced as `{{memory/name}}`. The only resource category the agent can write to during execution.
+
+    ```yaml
+    # memory/decisions.md
+    ---
+    name: Architecture Decisions
+    ---
+
+    ## 2024-03-15: Database Choice
+
+    Chose PostgreSQL over MongoDB for relational data integrity.
+    ```
+  </Accordion>
+  <Accordion title="Hooks — event triggers">
+    JSON files (not markdown) defining event → condition → action pipelines that run automatically.
+
+    ```json
+    {
+      "name": "diagnostics-after-write",
+      "event": "fileEdited",
+      "condition": {
+        "field": "path",
+        "operator": "matches",
+        "value": "\\.(ts|tsx|js|jsx)$"
+      },
+      "action": {
+        "type": "trigger-workflow",
+        "target": "get-diagnostics"
+      },
+      "enabled": true
+    }
+    ```
+  </Accordion>
+</Accordions>
+
+## Scoping
+
+<Tabs items={['Global', 'Workflow-scoped']}>
+  <Tab value="Global">
+    ```
+    .agentflow/instructions/code-style.md
+    ```
+
+    Available to all workflows.
+  </Tab>
+  <Tab value="Workflow-scoped">
+    ```
+    .agentflow/build-feature/instructions/requirements-elicitation.md
+    ```
+
+    Available only to nodes within `build-feature`. If both levels have a file with the same name, the workflow-scoped version takes precedence.
+  </Tab>
+</Tabs>
+
+## Loading
+
+Resources are Layer 3 in the selective context model. They're loaded only when a node explicitly references them:
+
+```markdown
+# implement/SKILL.md
+
+Follow {{instructions/code-style}} conventions.
+Use {{capabilities/write-file}} and {{capabilities/run-tests}}.
+```
+
+This node loads 3 resources. All other resources in the workspace are excluded. See [Selective Context](/docs/concepts/selective-context) for the full loading model.
+
+<Callout type="info" title="Validation">
+  The validator checks that every `{{category/name}}` reference points to an existing file. If not, it emits a `broken_ref` error. It also warns about `unknown_category` if you reference a directory that isn't one of the five standard categories.
+</Callout>
+
+## Explore Resources in the Studio
+
+The Elements panel below shows all resources in the build-feature workflow, organized by category — capabilities, instructions, runbooks. Click any resource to see which nodes reference it. Switch to the Explorer panel to see the same resources as files in the directory tree.
+
+<ComponentPreview title="Resources in build-feature" height="lg">
+  <DocsPlayground workflow="build-feature" panels={['elements', 'explorer']} />
+</ComponentPreview>
+
+<Cards>
+  <Card title="Writing Resources" href="/docs/authoring/writing-resources" description="How to create each resource type" />
+  <Card title="References" href="/docs/concepts/references" description="The {{...}} syntax for loading resources" />
+  <Card title="Selective Context" href="/docs/concepts/selective-context" description="How resources fit into the 5-layer model" />
+</Cards>

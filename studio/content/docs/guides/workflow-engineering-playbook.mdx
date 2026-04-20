@@ -1,0 +1,394 @@
+---
+title: Workflow Engineering Playbook
+description: A framework-agnostic guide to designing effective AI agent workflows — patterns, pitfalls, and principles.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Mermaid } from '@/components/docs/mdx-components'
+
+This guide is not about any specific tool. It is a distilled set of principles for designing AI agent workflows that actually work — regardless of what framework, platform, or orchestration layer you use.
+
+Give this to your agent. Or read it yourself. Either way, it will help you build workflows that are predictable, debuggable, and efficient.
+
+---
+
+## What is a workflow?
+
+A workflow is a directed graph where each node is a task an AI agent performs, and each edge is a transition between tasks. The agent moves through the graph, executing one node at a time, until it reaches a terminal state.
+
+<Mermaid chart={`graph LR
+  A[Understand] --> B[Plan]
+  B --> C[Execute]
+  C --> D{Check}
+  D -->|pass| E[Done]
+  D -->|fail| C
+`} />
+
+That is the simplest useful workflow: understand the problem, plan the approach, execute, check the result, loop if needed.
+
+Most real workflows are variations of this pattern.
+
+---
+
+## Principle 1: One job per node
+
+Each node should do exactly one thing. If you find yourself writing "first do X, then do Y, then do Z" in a single node, split it into three nodes.
+
+Why? Because:
+- A node with one job is easier to debug when it fails
+- You can retry a single node without re-running the entire workflow
+- Token budgets stay manageable when each node loads only what it needs
+- You can reorder, skip, or replace individual nodes without rewriting everything
+
+Bad:
+```
+Node: "Gather requirements, design the architecture, and write the implementation plan"
+```
+
+Good:
+```
+Node 1: "Gather requirements"
+Node 2: "Design the architecture"
+Node 3: "Write the implementation plan"
+```
+
+---
+
+## Principle 2: Context is a budget, not a dump
+
+The biggest mistake in agent workflow design is giving every node access to everything. This leads to:
+- Token budget overruns (the agent literally cannot process all the context)
+- Confused behavior (the agent tries to act on irrelevant information)
+- Slow execution (more tokens = more latency = more cost)
+
+Instead, treat context like a budget. Each node gets exactly what it needs — no more.
+
+### The layer model
+
+Think of context in layers, from most persistent to most transient:
+
+| Layer | What | Lifetime | Size |
+|-------|------|----------|------|
+| Identity | Who is this agent? What are its constraints? | Always loaded | Small (~200 tokens) |
+| Routing | What nodes exist? What is the execution order? | Always loaded | Small (~500 tokens) |
+| Task | What should this specific node do? | Current node only | Medium (~2000 tokens) |
+| References | What external knowledge does this node need? | Current node only | Variable |
+| Artifacts | What did previous nodes produce? | On demand | Variable |
+
+A well-designed node loads layers 1-3 always, layer 4 selectively, and layer 5 only when explicitly needed.
+
+### The 8K rule of thumb
+
+For most language models, a single node's total context (all layers combined) should stay under 8,000 tokens. Beyond that, the model starts losing track of instructions, hallucinating, or ignoring parts of the prompt.
+
+If a node needs more than 8K tokens of context, it is doing too much. Split it.
+
+---
+
+## Principle 3: Edges are contracts
+
+An edge between two nodes is not just "go here next." It is a contract that says:
+- What the source node must produce before the transition
+- What the target node can expect to receive
+- Under what conditions the transition happens
+
+### Unconditional edges
+
+"When you are done, go here." Simple, linear flow.
+
+```
+gather-requirements --> design
+```
+
+### Conditional edges
+
+"Go here IF this condition is true." Used for branching.
+
+```
+review-gate --[approved]--> implement
+review-gate --[rejected]--> revise
+```
+
+The condition must be unambiguous. "If the user is happy" is bad. "If the user explicitly says 'approved' with no outstanding concerns" is good.
+
+### Data flow edges
+
+"Load the output from that node." Used to pass information forward without loading everything into every node.
+
+```
+implement reads output from design
+verify reads output from implement
+```
+
+This is how you avoid the "dump everything" anti-pattern. Each node declares exactly which prior outputs it needs.
+
+---
+
+## Principle 4: Gates prevent runaway agents
+
+A gate (or review node) is a checkpoint where the agent pauses and asks for human input before continuing. Gates are the single most important pattern for building trustworthy workflows.
+
+<Mermaid chart={`graph LR
+  A[Generate] --> B{Review Gate}
+  B -->|approved| C[Continue]
+  B -->|rejected| A
+`} />
+
+Without gates, the agent will happily generate an entire codebase based on a misunderstood requirement. With gates, you catch the misunderstanding after the first step.
+
+### Where to place gates
+
+- After every phase that produces a document (requirements, design, plan)
+- Before any destructive action (deploying, deleting, publishing)
+- After any action that is expensive to undo
+
+### Gate design
+
+A good gate:
+1. Presents what was produced (not just "do you approve?")
+2. Offers clear options (approve, reject with feedback, edit specific parts)
+3. Loops back to the producing node on rejection (not to the beginning)
+
+---
+
+## Principle 5: Loops need exit conditions
+
+Iteration is powerful but dangerous. An implement-check-retry loop without a clear exit condition will run forever.
+
+<Mermaid chart={`graph LR
+  A[Implement] --> B{Check}
+  B -->|tests fail| A
+  B -->|tests pass| C[Done]
+  B -->|3 failures| D[Ask for help]
+`} />
+
+Every loop needs:
+- A success condition (tests pass, user approves)
+- A failure limit (after N retries, escalate or stop)
+- A different strategy on repeated failure (do not just retry the same thing)
+
+Bad:
+```
+implement --> check --> implement (forever)
+```
+
+Good:
+```
+implement --> check
+  if pass --> done
+  if fail and attempts < 3 --> implement (with error feedback)
+  if fail and attempts >= 3 --> ask human for help
+```
+
+---
+
+## Principle 6: Separate routing from doing
+
+A node should either do work or make decisions — not both. Mixing the two leads to unpredictable behavior because the model tries to both reason about what to do and execute at the same time.
+
+**Worker nodes** (steps):
+- Have tools and instructions
+- Produce output
+- Do not decide where to go next (they just declare their outgoing edge)
+
+**Router nodes** (gates/decisions):
+- Have no tools
+- Evaluate conditions
+- Decide which worker to activate next
+
+This separation makes the workflow predictable: you always know whether a node is going to act or decide.
+
+---
+
+## Principle 7: Resources are shared, context is not
+
+In a multi-node workflow, you will have reusable knowledge: coding standards, API conventions, testing strategies. These should be defined once and referenced by the nodes that need them.
+
+But "referenced" does not mean "always loaded." A node that writes code needs coding standards. A node that reviews requirements does not. Loading coding standards into the requirements node wastes tokens and confuses the agent.
+
+The pattern:
+1. Define reusable knowledge as standalone files (instructions, tool definitions, etc.)
+2. Each node explicitly declares which files it needs
+3. The runtime loads only those files into the node's context
+
+This is the difference between a shared library (good) and a global variable (bad).
+
+---
+
+## Principle 8: Design for observability
+
+When a workflow fails (and it will), you need to answer: which node failed, what was in its context, and what did it produce?
+
+Design your workflow so that:
+- Each node's inputs and outputs are explicit and inspectable
+- The execution path is traceable (you can see which edges were followed)
+- Intermediate artifacts are preserved (not overwritten by later nodes)
+- Validation runs before execution (catch structural problems early)
+
+### What to validate before running
+
+- Every reference resolves to an existing file
+- Every conditional edge has a defined condition
+- No cycles without exit conditions
+- Token budgets are within limits
+- Entry points are defined
+
+If you can validate these statically, you eliminate an entire class of runtime failures.
+
+---
+
+## Principle 9: Start linear, add complexity later
+
+The most common mistake is designing a complex workflow upfront. Start with the simplest possible linear flow:
+
+```
+understand --> plan --> execute --> verify
+```
+
+Run it. See where it fails. Then add complexity where needed:
+- Add a gate where the agent made a wrong assumption
+- Add a loop where the agent needed multiple attempts
+- Split a node where it was doing too much
+- Add a conditional branch where different inputs need different handling
+
+Complexity should be earned by failure, not assumed by design.
+
+---
+
+## Principle 10: The agent reads your workflow
+
+Your workflow definition is not just configuration — it is part of the agent's prompt. The agent reads the node descriptions, edge conditions, and resource references to understand what it should do.
+
+This means:
+- Node names should be descriptive (`gather-requirements` not `step-1`)
+- Descriptions should be actionable ("Transform the user's request into testable requirements" not "Do requirements")
+- Conditions should be evaluable ("The user explicitly approved" not "Things look good")
+- Instructions should be step-by-step, not vague
+
+Write your workflow as if you are onboarding a new team member. Because you are.
+
+---
+
+## Common patterns
+
+### Linear pipeline
+
+The simplest pattern. Each node feeds into the next.
+
+```
+research --> draft --> edit --> publish
+```
+
+Use when: tasks are sequential and each depends on the previous output.
+
+### Review loop
+
+Add human checkpoints between phases.
+
+```
+draft --> review --> draft (if rejected)
+                --> publish (if approved)
+```
+
+Use when: the output quality matters and mistakes are costly to fix later.
+
+### Iteration loop
+
+Repeat a task until a condition is met.
+
+```
+implement --> test --> implement (if failing)
+                  --> done (if passing)
+```
+
+Use when: the task may need multiple attempts (code generation, search, optimization).
+
+### Fan-out / fan-in
+
+Split work across parallel tracks, then merge.
+
+```
+analyze-frontend --|
+analyze-backend  --|--> synthesize-report
+analyze-infra   --|
+```
+
+Use when: independent subtasks can run in parallel.
+
+### Sub-workflow delegation
+
+Hand off to a specialized workflow for a subset of the work.
+
+```
+main-workflow --> specialized-workflow --> main-workflow continues
+```
+
+Use when: a phase is complex enough to be its own workflow (e.g., a code review pipeline within a feature-building workflow).
+
+### Escalation
+
+When automated handling fails, escalate to a human or a different strategy.
+
+```
+auto-fix --> check --> auto-fix (retry)
+                   --> human-review (after 3 failures)
+```
+
+Use when: you need a safety net for cases the agent cannot handle.
+
+---
+
+## Anti-patterns
+
+### The monolith node
+
+One node that does everything. Impossible to debug, impossible to retry partially, always exceeds token budgets.
+
+Fix: split into focused nodes with one job each.
+
+### The context dump
+
+Every node loads every resource. The agent drowns in irrelevant information.
+
+Fix: each node declares exactly what it needs. Nothing more.
+
+### The infinite loop
+
+A retry loop with no exit condition. The agent retries forever.
+
+Fix: add a failure counter and an escalation path.
+
+### The invisible gate
+
+The agent makes a critical decision (which architecture to use, which files to modify) without human review.
+
+Fix: add a review gate before any irreversible action.
+
+### The premature branch
+
+Adding conditional routing before you know you need it. Adds complexity without value.
+
+Fix: start linear. Add branches only when you observe the need.
+
+### The orphan node
+
+A node that exists but is never reachable from the entry point. Dead code in your workflow.
+
+Fix: validate reachability. Remove or connect orphan nodes.
+
+---
+
+## Checklist
+
+Before running any workflow, verify:
+
+- [ ] Every node has exactly one job
+- [ ] Total context per node is under 8K tokens
+- [ ] Every loop has an exit condition and a failure limit
+- [ ] Every phase boundary has a review gate
+- [ ] Every reference resolves to an existing file
+- [ ] Every conditional edge has an unambiguous condition
+- [ ] Node names are descriptive and actionable
+- [ ] The workflow starts linear and adds complexity only where needed
+- [ ] Intermediate outputs are preserved and inspectable
+- [ ] There are no orphan nodes

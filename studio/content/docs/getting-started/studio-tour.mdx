@@ -1,0 +1,137 @@
+---
+title: Studio Tour
+description: A visual walkthrough of every panel in the AgentFlow Studio.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+A quick look at every panel in the studio, rendered live with the **build-feature** workflow.
+
+<Callout title="Live previews" type="info">
+  Everything below is real — rendered from actual workflow data. Interact with it — drag, click, scroll.
+</Callout>
+
+---
+
+
+
+## Canvas
+
+The workflow graph. Nodes are steps (▪) or routers (◇). Green border marks entry points. Edges show execution flow — conditional edges are labeled with their runbook.
+
+<ComponentPreview height="lg">
+  <DocsPlayground panel="none" />
+</ComponentPreview>
+
+Drag to reposition • Scroll to zoom • Click to select • Double-click to edit • Right-click for context menu
+
+---
+
+## Editor & Frontmatter
+
+<PreviewGrid>
+  <ComponentPreview title="Markdown Editor" description="Syntax highlighting, ref badges, live preview. Double-click any node to open." height="lg">
+    <DocsPlayground panel="editor" />
+  </ComponentPreview>
+  <ComponentPreview title="Frontmatter Form" description="Structured YAML editing. Enums → dropdowns. Arrays → tags. Toggle to raw YAML." height="lg">
+    <DocsPlayground panel="frontmatter" />
+  </ComponentPreview>
+</PreviewGrid>
+
+---
+
+## Navigation
+
+<PreviewGrid>
+  <ComponentPreview title="Explorer" description="File tree of your .agentflow/ workspace. Create, rename, delete, drag-and-drop." height="lg">
+    <DocsPlayground panel="explorer" />
+  </ComponentPreview>
+  <ComponentPreview title="Elements" description="Resources by category — capabilities, instructions, runbooks, memory, hooks." height="lg">
+    <DocsPlayground panel="elements" />
+  </ComponentPreview>
+</PreviewGrid>
+
+---
+
+## Node Detail & Skills
+
+<PreviewGrid>
+  <ComponentPreview title="Node Card" description="Selected node detail — frontmatter, references, connections, context budget." height="lg">
+    <DocsPlayground panel="none" />
+  </ComponentPreview>
+  <ComponentPreview title="Skills Library" description="Browse and install from 34k+ agent skills on skills.sh." height="lg">
+    <DocsPlayground panel="skills" />
+  </ComponentPreview>
+</PreviewGrid>
+
+---
+
+## Tools
+
+<PreviewGrid>
+  <ComponentPreview title="Validation" description="Real-time checks — missing refs, invalid frontmatter, unreachable nodes." height="md">
+    <DocsPlayground panel="validation" />
+  </ComponentPreview>
+  <ComponentPreview title="Tokens" description="Token budget per workflow. See context consumption per node." height="md">
+    <DocsPlayground panel="tokens" />
+  </ComponentPreview>
+</PreviewGrid>
+
+<PreviewGrid>
+  <ComponentPreview title="Git" description="Stage, commit, push, pull, branch — all from the studio." height="md">
+    <DocsPlayground panel="git" />
+  </ComponentPreview>
+  <ComponentPreview title="MCP" description="Model Context Protocol — connect external tool servers." height="md">
+    <DocsPlayground panel="mcp" />
+  </ComponentPreview>
+</PreviewGrid>
+
+<PreviewGrid>
+  <ComponentPreview title="Protocol" description="Agent communication protocol configuration." height="md">
+    <DocsPlayground panel="protocols" />
+  </ComponentPreview>
+  <ComponentPreview title="Command Palette" description="Fuzzy-search files, actions, workflows, resources. Press ⌘K." height="md">
+    <DocsPlayground panel="none" />
+  </ComponentPreview>
+</PreviewGrid>
+
+---
+
+## Dialogs
+
+<PreviewGrid>
+  <ComponentPreview title="Export" description="Export to Claude, LangGraph, GitHub Actions, or raw files." height="md">
+    <DocsPlayground panel="export" />
+  </ComponentPreview>
+  <ComponentPreview title="Settings" description="API keys, theme, auto-save, model selection, MCP config." height="md">
+    <DocsPlayground panel="settings" />
+  </ComponentPreview>
+</PreviewGrid>
+
+
+
+---
+
+## Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+K` | Command palette |
+| `Cmd+S` | Save |
+| `Cmd+Shift+V` | Validate |
+| `Cmd+Shift+E` | Export |
+| `Cmd+,` | Settings |
+| `Cmd+B` | Toggle sidebar |
+| `Cmd+N` | New file |
+| `Cmd+D` | Duplicate node |
+| `Del` | Delete selected |
+| `Cmd+G` | Git panel |
+
+---
+
+## What's Next?
+
+<Cards>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart" description="Build your first workflow in 5 minutes" />
+  <Card title="Concepts" href="/docs/concepts" description="Understand workspaces, nodes, edges, and references" />
+</Cards>

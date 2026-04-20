@@ -1,0 +1,259 @@
+---
+title: Context Engineering
+description: How references act as context primitives — selecting, assembling, and scoping what the agent sees.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+Context engineering is the discipline of filling an AI's context window with exactly the right information — not just a prompt, but the full assembly of instructions, knowledge, tools, memory, and prior outputs that the model sees when it generates a response.
+
+AgentFlow's `{{reference}}` syntax is how you do context engineering declaratively. Each reference is a deliberate decision about what a node should see.
+
+<Callout type="info" title="Origin of the term">
+  Andrej Karpathy [articulated the distinction](https://x.com/karpathy/status/1937902205765607626) in June 2025: "prompt engineering" understates the work. Context engineering describes the broader discipline of assembling the full input — instructions, retrieved knowledge, memory, tool descriptions, and prior outputs — structured so the model can use them effectively.
+</Callout>
+
+## Four Strategies in Practice
+
+Lance Martin at LangChain [formalized context engineering](https://blog.langchain.com/context-engineering-for-agents/) into four strategies. Here's how each maps to AgentFlow:
+
+<Steps>
+  <Step>
+    ### Write — author instructions
+
+    Create markdown files that tell the agent what to do. These become Layer 3 reference material that nodes pull in.
+
+    ```markdown
+    # instructions/code-style.md
+    ---
+    name: Code Style
+    ---
+
+    ## TypeScript Conventions
+
+    - Use strict mode
+    - Prefer functional patterns
+    - No `any` types — use `unknown` and narrow
+    - All exports must have explicit type annotations
+    ```
+
+    Each instruction file is self-contained guidance. Write it once, any node can reference it.
+  </Step>
+  <Step>
+    ### Select — choose relevant context
+
+    Use `{{refs}}` to pick exactly which resources a node sees. This is the core mechanism — you explicitly declare dependencies.
+
+    ```markdown
+    # implement/SKILL.md
+
+    Follow {{instructions/code-style}} conventions.
+    Use {{capabilities/write-file}} to create files.
+    Run {{capabilities/run-tests}} to verify.
+    ```
+
+    This node sees three resources. It does NOT see `testing-strategy.md` or any other instruction — even though they exist in the workspace. Selection is explicit.
+  </Step>
+  <Step>
+    ### Compress — reduce token waste
+
+    Token budgets prevent context bloat. Set limits, and the validator catches overruns before the agent runs.
+
+    ```yaml
+    context:
+      max_tokens: 8000
+      exclude:
+        - "*.test.*"
+      inputs:
+        - ref: output.create-design
+          scope: summary    # condensed version, not full output
+    ```
+  </Step>
+  <Step>
+    ### Isolate — keep unrelated context separate
+
+    Each node has its own context window. Node A's instructions don't leak into Node B. No shared conversation history between steps.
+
+    Three nodes, three isolated contexts. Information flows between them only through explicit `{{<< output.node}}` references.
+  </Step>
+</Steps>
+
+## References as Context Primitives
+
+AgentFlow has four reference types. Each serves a different context engineering purpose:
+
+<TypeTable type={{
+  'Resource mention': {
+    description: 'Loads a resource file into the node\'s context window',
+    type: '{{category/name}}',
+    default: '—',
+  },
+  'Unconditional edge': {
+    description: 'Declares flow to the next node (does not load content)',
+    type: '{{-> nodes/target}}',
+    default: '—',
+  },
+  'Conditional edge': {
+    description: 'Declares conditional routing via a runbook',
+    type: '{{-> nodes/target | runbooks/condition}}',
+    default: '—',
+  },
+  'Data flow': {
+    description: 'Loads another node\'s output into this node\'s context',
+    type: '{{<< output.node-name}}',
+    default: '—',
+  },
+  'Template variable': {
+    description: 'Resolves workspace-level config at export time',
+    type: '{{$variable}}',
+    default: '—',
+  },
+}} />
+
+<Accordions>
+  <Accordion title="Resource mentions load content">
+    When you write `{{instructions/code-style}}` in a SKILL.md, the runtime loads that file's content into the node's context window. The agent sees the full text as part of its instructions.
+  </Accordion>
+  <Accordion title="Data flow refs pass outputs between nodes">
+    When you write `{{<< output.create-design}}`, the runtime loads the output that the `create-design` node produced during this run. This is how working artifacts (Layer 4) flow through the workflow.
+  </Accordion>
+  <Accordion title="Edges declare flow, not context">
+    Edge references (`{{-> nodes/target}}`) don't load content — they declare execution flow. The parser uses them to build the directed graph. They tell the system "after this node, go there" rather than "load this into context."
+  </Accordion>
+</Accordions>
+
+## Every Ref is a Decision
+
+When you write a reference in a SKILL.md, you're making an architectural decision:
+
+- `{{instructions/code-style}}` → "This node needs to know about code style"
+- No `{{instructions/testing-strategy}}` → "This node does NOT need testing guidance"
+- `{{<< output.create-design}}` → "This node needs the design from the previous step"
+- No `{{<< output.gather-requirements}}` → "This node doesn't need raw requirements (the design already incorporates them)"
+
+<Callout type="warn" title="Implicit vs explicit">
+  AgentFlow never loads resources implicitly. If a file isn't referenced, it's not in the context. This means you always know exactly what a node will see — and you can verify it with the validator before running.
+</Callout>
+
+## Assembled Result
+
+A well-engineered AgentFlow workspace produces focused, efficient context at every step:
+
+```yaml
+# Node: implement — Total context: ~2,250 tokens
+
+Layer 0 (identity):     ~200 tokens  # workspace AGENTS.md
+Layer 1 (routing):      ~150 tokens  # workflow descriptor
+Layer 2 (contract):     ~400 tokens  # this SKILL.md
+Layer 3 (references):  ~700 tokens   # code-style + 2 capabilities
+Layer 4 (working):     ~800 tokens   # design output from previous node
+```
+
+Compare this to a monolithic approach where everything is loaded into a single 37,000-token prompt. The agent performs better, costs less, and produces more consistent output — because every token in its context is relevant to the current task.
+
+## Explore Context in the Studio
+
+The Elements panel below shows all resources in the build-feature workflow. Each resource listed here is a potential context primitive — it only enters a node's context when explicitly referenced via `{{category/name}}`. Click any resource to see which nodes use it.
+
+<ComponentPreview title="Resources and references in the build-feature workflow" height="lg">
+  <DocsPlayground workflow="build-feature" panel="elements" />
+</ComponentPreview>
+
+## Debugging Context Issues
+
+When a node produces poor output, the problem is almost always in its context — not in the model itself. Here are the three most common context issues and how to diagnose each.
+
+### Problem: Node Produces Irrelevant or Low-Quality Output
+
+**Symptom:** The node's output doesn't match what you expected. It ignores key requirements, uses wrong conventions, or produces generic content.
+
+**Diagnosis:** Check what's actually in the node's context. Open the SKILL.md and list every reference. Then open each referenced file and read it. The node can only work with what it sees.
+
+Common causes:
+- A critical instruction file is not referenced (the node doesn't know about a convention)
+- The referenced output from a prior node is empty or malformed (garbage in, garbage out)
+- The SKILL.md instructions are ambiguous (the model interprets them differently than you intended)
+
+**Fix:** Add the missing reference, verify prior node outputs are well-formed, or rewrite the SKILL.md instructions to be more specific.
+
+### Problem: Model Ignores Instructions
+
+**Symptom:** The node has the right instructions in its context, but the model doesn't follow them. It does something different from what the instruction file says.
+
+**Diagnosis:** This is almost always a context size problem. When the context window is large (over 8,000 tokens), key information positioned in the middle gets less attention from the model. This is the "Lost in the Middle" phenomenon documented by Liu et al.
+
+Common causes:
+- Too many resources loaded — the instruction is buried among irrelevant content
+- The instruction file is too long — the key guidance is in paragraph 5 of a 10-paragraph document
+- Conflicting guidance — two referenced files give contradictory instructions
+
+**Fix:** Reduce the number of references to only what's essential. Move critical instructions to the SKILL.md body itself (Layer 2 gets highest attention). Split long instruction files into focused, single-purpose documents. Resolve conflicts between referenced files.
+
+### Problem: High Token Costs
+
+**Symptom:** Your workflow costs more than expected. Token usage per run is 3-5x what you estimated.
+
+**Diagnosis:** Run the validator with token tracking enabled. Check which nodes exceed their budgets and which references consume the most tokens.
+
+Common causes:
+- Prior node outputs are verbose (a design doc that's 3,000 tokens when 800 would suffice)
+- Using `scope: full` when `scope: summary` would work
+- Loading capability definitions with full examples when only the signature is needed
+- No `max_tokens` budget set, so bloat goes undetected
+
+**Fix:** Set token budgets on every node. Use `scope: summary` for prior outputs you need awareness of but not full detail. Use `scope: signature` for tools the node calls but doesn't need usage guidance for. Edit verbose outputs to be more concise.
+
+## Context Assembly Pipeline
+
+Understanding the full pipeline from SKILL.md to LLM call helps you reason about what the model will see and why.
+
+<Mermaid chart={`graph TD
+    A[SKILL.md file on disk] --> B[Parse YAML frontmatter]
+    B --> C[Parse markdown body]
+    C --> D[Extract all refs via regex]
+    D --> E{For each ref}
+    E --> F[Check workflow-scoped resources first]
+    F --> G{Found?}
+    G -->|Yes| H[Load workflow-scoped file]
+    G -->|No| I[Check global resources]
+    I --> J{Found?}
+    J -->|Yes| K[Load global file]
+    J -->|No| L[Emit validation error: missing ref]
+    H --> M[Apply scope filter]
+    K --> M
+    M --> N{scope type}
+    N -->|full| O[Load entire file content]
+    N -->|summary| P[Load condensed version]
+    N -->|signature| Q[Load only type signature]
+    O --> R[Assemble final context window]
+    P --> R
+    Q --> R
+    R --> S[Check against max_tokens budget]
+    S --> T[Send to LLM]
+`} />
+
+### Pipeline Stages in Detail
+
+**Stage 1: Parse** — The SKILL.md is read from disk. YAML frontmatter is parsed for metadata (name, type, outputs, context config). The markdown body is preserved as-is for the instructions.
+
+**Stage 2: Extract References** — A regex scan of the markdown body finds all `{{...}}` patterns. Each is classified by type (resource mention, edge, data flow, template variable). Only resource mentions and data flow refs affect context assembly — edges affect graph structure, not content.
+
+**Stage 3: Resolve** — Each reference is resolved to a file path. Resolution follows scoping rules: workflow-local resources take precedence over global resources. If a workflow has its own `instructions/code-style.md`, it shadows the global one. This lets workflows customize behavior without modifying shared resources.
+
+**Stage 4: Load with Scope** — Each resolved file is loaded according to its scope setting. `full` loads the entire file. `summary` loads a condensed version (first paragraph + key metadata). `signature` loads only the structured definition (for capabilities, this means parameters and return type without examples).
+
+**Stage 5: Assemble** — All loaded content is assembled into the final context window in layer order: Layer 0 (root identity) first, then Layer 1 (workflow descriptor), then Layer 2 (this SKILL.md), then Layer 3 (referenced resources), then Layer 4 (prior outputs). This ordering ensures identity and constraints appear at the top of the context where they receive maximum attention.
+
+**Stage 6: Budget Check** — The assembled context is measured against the node's `max_tokens` budget. If it exceeds the budget, a validation warning is emitted. This check happens at authoring time in the studio, not at runtime — you catch problems before they affect output quality.
+
+**Stage 7: Send** — The final assembled context is sent to the LLM as a single prompt. The model sees a focused, well-structured input where every token is relevant to the current task.
+
+<Cards>
+  <Card title="Selective Context" href="/docs/concepts/selective-context" description="The 5-layer architecture in detail" />
+  <Card title="References" href="/docs/concepts/references" description="Complete syntax for all reference types" />
+  <Card title="Directory as Architecture" href="/docs/concepts/directory-as-architecture" description="Why folders replace frameworks" />
+</Cards>
