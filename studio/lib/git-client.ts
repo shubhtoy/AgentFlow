@@ -9,6 +9,7 @@ import LightningFS from '@isomorphic-git/lightning-fs'
 
 const fs = new LightningFS('agentflow-git')
 const dir = '/repo'
+const CORS_PROXY = 'https://cors.isomorphic-git.org'
 
 /** Clone a repo and return all files */
 export async function cloneAndList(url: string, opts?: { branch?: string; token?: string; onProgress?: (msg: string) => void }): Promise<{ files: { path: string; content: string }[] }> {
@@ -26,6 +27,7 @@ export async function cloneAndList(url: string, opts?: { branch?: string; token?
     http,
     dir,
     url: gitUrl,
+    corsProxy: CORS_PROXY,
     ref: opts?.branch || 'main',
     singleBranch: true,
     depth: 1,
@@ -70,7 +72,7 @@ export async function getStatus(): Promise<{ branch: string; files: number }> {
 export async function commitAndPush(message: string, token?: string): Promise<void> {
   await git.add({ fs, dir, filepath: '.' })
   await git.commit({ fs, dir, message, author: { name: 'AgentFlow', email: 'agentflow@local' } })
-  await git.push({
+  await git.push({ corsProxy: CORS_PROXY,
     fs, http, dir,
     onAuth: token ? () => ({ username: token, password: 'x-oauth-basic' }) : undefined,
   })
