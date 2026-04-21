@@ -8,10 +8,9 @@ import {
   Globe, Lock, Copy, Loader2,
 } from 'lucide-react'
 import { useAppStore } from '@/store'
-import type { GitRepoStatus, GitAuthInfo, GitAuthMethod, RepoMapping } from '@/lib/api'
+import type { GitRepoStatus, RepoMapping } from '@/lib/api'
 import { FeatureHint } from './onboarding/FeatureHint'
 import { RepoConfigDialog } from './RepoConfigDialog'
-import type { RepoConfigFormData } from './RepoConfigDialog'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
@@ -37,85 +36,6 @@ function SectionHeader({ title, count, open, onToggle }: { title: string; count?
   )
 }
 
-function AuthSection({ authInfo, loading, onRefresh }: { authInfo: GitAuthInfo | null; loading: boolean; onRefresh: () => void }) {
-  const [open, setOpen] = useState(true)
-  const [token, setToken] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [verifying, setVerifying] = useState(false)
-  const [user, setUser] = useState<string | null>(null)
-  const hasToken = (authInfo?.methods.length ?? 0) > 0
-
-  useEffect(() => {
-    // Check if we have a stored token and verify it
-    const stored = localStorage.getItem('af-git-token')
-    if (stored) {
-      fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${stored}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.login) setUser(d.login) })
-        .catch(() => {})
-    }
-  }, [])
-
-  const saveToken = async () => {
-    if (!token.trim()) return
-    setSaving(true); setVerifying(true)
-    try {
-      const res = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token.trim()}` } })
-      if (!res.ok) throw new Error('Invalid token')
-      const data = await res.json()
-      localStorage.setItem('af-git-token', token.trim())
-      setUser(data.login)
-      setToken('')
-      onRefresh()
-    } catch {
-      setUser(null)
-    }
-    finally { setSaving(false); setVerifying(false) }
-  }
-
-  const logout = () => {
-    localStorage.removeItem('af-git-token')
-    setUser(null)
-    onRefresh()
-  }
-
-  return (
-    <>
-      <SectionHeader title="Authentication" count={user ? 1 : 0} open={open} onToggle={() => setOpen(o => !o)} />
-      {open && (
-        <div className="px-3 pb-2">
-          {user ? (
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={12} className="text-green-500" />
-              <span className="text-xs flex-1">Signed in as <strong>{user}</strong></span>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={logout}>Sign out</Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-[11px] text-muted-foreground">
-                Enter a <a href="https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow" target="_blank" rel="noopener" className="text-primary underline">GitHub Personal Access Token</a> for private repos.
-              </p>
-              <div className="flex gap-1.5">
-                <input
-                  type="password"
-                  value={token}
-                  onChange={e => setToken(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && saveToken()}
-                  placeholder="ghp_..."
-                  className="flex-1 h-7 px-2 text-xs rounded-md border border-border bg-background placeholder:text-muted-foreground/50"
-                />
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={saveToken} disabled={saving || !token.trim()}>
-                  {saving ? <Loader2 size={12} className="animate-spin" /> : 'Save'}
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground/60">Token is stored locally in your browser. Public repos work without auth.</p>
-            </div>
-          )}
-        </div>
-      )}
-    </>
-  )
-}
 
 function RepoCard({ repo, onSync, onScan, onDisconnect }: { repo: RepoWithStatus; onSync: () => void; onScan: () => void; onDisconnect: () => void }) {
   const s = repo.status; const isRepo = s?.isRepo ?? false; const clrClass = statusColorClass(s)
@@ -167,22 +87,9 @@ function GitPanelContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [configOpen, setConfigOpen] = useState(false)
-  const [authInfo, setAuthInfo] = useState<GitAuthInfo | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
   const [reposOpen, setReposOpen] = useState(true)
   const loadedRef = useRef(false)
 
-  const refreshAuth = useCallback(() => {
-    setAuthLoading(false)
-    // Client-side git uses token auth stored in localStorage
-    const token = localStorage.getItem('af-git-token')
-    setAuthInfo({
-      methods: token ? [{ type: 'env-token', label: 'Personal Access Token', ready: true }] : [],
-      recommended: 'https',
-      sshExample: '',
-      httpsExample: 'https://github.com/user/repo.git',
-    })
-  }, [])
 
   const loadRepos = useCallback(async () => {
     setLoading(true); setError(null)
@@ -215,7 +122,7 @@ function GitPanelContent() {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadRepos(); refreshAuth() } }, [loadRepos, refreshAuth])
+  useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadRepos() } }, [loadRepos])
 
   const handleSync = useCallback(async (repoName: string) => {
     setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: true } : r))
@@ -240,16 +147,15 @@ function GitPanelContent() {
 
   // Listen for external refresh trigger (from FloatingPanel header button)
   useEffect(() => {
-    const onRefresh = () => { loadedRef.current = false; loadRepos(); refreshAuth() }
+    const onRefresh = () => { loadedRef.current = false; loadRepos() }
     window.addEventListener('agentflow:git-refresh', onRefresh)
     return () => window.removeEventListener('agentflow:git-refresh', onRefresh)
-  }, [loadRepos, refreshAuth])
+  }, [loadRepos])
 
   return (
     <div className="flex flex-col overflow-hidden h-full">
       <div className="relative flex-1 overflow-y-auto">
         <FeatureHint id="git" text="Clone repos, commit changes, and sync branches — all from within the studio." show side="bottom" />
-        <AuthSection authInfo={authInfo} loading={authLoading} onRefresh={refreshAuth} />
         <Separator />
         <SectionHeader title="Repositories" count={repoStates.length} open={reposOpen} onToggle={() => setReposOpen(o => !o)} />
         {reposOpen && (
