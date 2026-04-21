@@ -5,7 +5,7 @@ import {
   GitBranch, RefreshCw, Search, Unplug, Plus, AlertTriangle, Loader2,
   CheckCircle2, XCircle, Circle, AlertCircle, Key, ShieldCheck,
   ShieldAlert, ChevronDown, ChevronRight, Github, FolderGit2,
-  Globe, Lock, Copy,
+  Globe, Lock, Copy, Terminal,
 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import type { GitRepoStatus, RepoMapping } from '@/lib/api'
@@ -95,13 +95,24 @@ function GitPanelContent() {
   const [gitProvider, setGitProvider] = useState<string | null>(null)
   const [showPat, setShowPat] = useState(false)
   const [patInput, setPatInput] = useState('')
+  const [authConfig, setAuthConfig] = useState<{ providers: { id: string; name: string }[]; localGit: boolean; pat: { links: Record<string, string | null> } } | null>(null)
 
-  // Check session on mount
+  // Load auth config + session on mount
   useEffect(() => {
+    fetch('/api/git/config').then(r => r.json()).then(setAuthConfig).catch(() => {})
     fetch('/api/auth/session').then(r => r.json()).then(s => {
-      if (s?.user?.name) { setGitUser(s.user.name); setGitProvider((s as any).provider || 'github') }
+      if (s?.user?.name) { setGitUser(s.user.name); setGitProvider((s as any).provider || null) }
       if ((s as any).accessToken) localStorage.setItem('af-git-token', (s as any).accessToken)
-    }).catch(() => {})
+    }).catch(() => {
+      // No session — check localStorage token
+      const token = localStorage.getItem('af-git-token')
+      if (token) {
+        fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } })
+          .catch(() => {})
+      }
+    })
   }, [])
 
   const handleSignIn = (provider: string) => {
@@ -111,10 +122,11 @@ function GitPanelContent() {
   const savePat = () => {
     if (!patInput.trim()) return
     localStorage.setItem('af-git-token', patInput.trim())
+    // Try GitHub API to detect user
     fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${patInput.trim()}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } })
-      .catch(() => {})
+      .then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } else { setGitUser('authenticated'); setGitProvider('token') } })
+      .catch(() => { setGitUser('authenticated'); setGitProvider('token') })
     setPatInput(''); setShowPat(false)
   }
 
@@ -123,6 +135,8 @@ function GitPanelContent() {
     setGitUser(null); setGitProvider(null)
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
   }
+
+  const patLink = authConfig?.pat?.links?.github || 'https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow'
 
   const handleClone = async () => {
     if (!cloneUrl.trim()) return
@@ -208,7 +222,7 @@ function GitPanelContent() {
           {gitUser ? (
             <div className="flex items-center gap-2">
               <CheckCircle2 size={13} className="text-emerald-500" />
-              <span className="text-xs flex-1">Signed in as <strong>{gitUser}</strong></span>
+              <span className="text-xs flex-1">Signed in as <strong>{gitUser}</strong>{gitProvider && gitProvider !== 'token' ? ` (${gitProvider})` : ''}</span>
               <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={signOutGit}>Sign out</Button>
             </div>
           ) : showPat ? (
@@ -217,16 +231,24 @@ function GitPanelContent() {
                 <input type="password" value={patInput} onChange={e => setPatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && savePat()} placeholder="Paste token..." className="flex-1 h-7 px-2 text-xs rounded-md border border-border bg-background" />
                 <Button size="sm" className="h-7 text-xs" onClick={savePat} disabled={!patInput.trim()}>Save</Button>
               </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {Object.entries(authConfig?.pat?.links || {}).filter(([, v]) => v).map(([provider, url]) => (
+                  <a key={provider} href={url!} target="_blank" rel="noopener" className="text-[10px] text-primary underline capitalize">{provider} ↗</a>
+                ))}
+                {!authConfig && <a href="https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow" target="_blank" rel="noopener" className="text-[10px] text-primary underline">GitHub ↗</a>}
+              </div>
               <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => setShowPat(false)}>← Back</Button>
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
-              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn('github')}>
-                <Github size={13} /> GitHub
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn('gitlab')}>
-                <Globe size={13} /> GitLab
-              </Button>
+              {authConfig?.providers.map(p => (
+                <Button key={p.id} variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn(p.id)}>
+                  {p.id === 'github' ? <Github size={13} /> : <Globe size={13} />} {p.name}
+                </Button>
+              ))}
+              {authConfig?.localGit && (
+                <span className="text-[10px] text-emerald-500 flex items-center gap-1"><Terminal size={10} /> SSH</span>
+              )}
               <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => setShowPat(true)}>Token</Button>
             </div>
           )}

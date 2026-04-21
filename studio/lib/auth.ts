@@ -1,12 +1,19 @@
 import NextAuth from 'next-auth'
 import GitHub from 'next-auth/providers/github'
 import GitLab from 'next-auth/providers/gitlab'
+import Bitbucket from 'next-auth/providers/bitbucket'
+
+const providers: any[] = []
+
+if (process.env.GITHUB_CLIENT_ID)
+  providers.push(GitHub({ authorization: { params: { scope: 'repo' } } }))
+if (process.env.GITLAB_CLIENT_ID)
+  providers.push(GitLab({ authorization: { params: { scope: 'read_repository write_repository' } } }))
+if (process.env.BITBUCKET_CLIENT_ID)
+  providers.push(Bitbucket())
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    GitHub({ authorization: { params: { scope: 'repo' } } }),
-    GitLab({ authorization: { params: { scope: 'read_repository write_repository' } } }),
-  ],
+  providers,
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
