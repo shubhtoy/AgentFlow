@@ -90,82 +90,66 @@ function GitPanelContent() {
   const [cloneError, setCloneError] = useState<string | null>(null)
   const [cloneAuthNeeded, setCloneAuthNeeded] = useState(false)
 
-  // Auth state
+  // Auth
+  type ProviderInfo = { id: string; name: string; oauth: boolean; deviceFlow: boolean; tokenUrl: string; tokenHint: string }
   const [gitUser, setGitUser] = useState<string | null>(null)
   const [gitProvider, setGitProvider] = useState<string | null>(null)
-  const [showPat, setShowPat] = useState(false)
+  const [providers, setProviders] = useState<ProviderInfo[]>([])
+  const [localMode, setLocalMode] = useState(false)
+  const [authView, setAuthView] = useState<'buttons' | 'device' | 'pat'>('buttons')
   const [patInput, setPatInput] = useState('')
-  const [authConfig, setAuthConfig] = useState<{ providers: { id: string; name: string }[]; deviceFlow: boolean; localGit: boolean; pat: { links: Record<string, string | null> } } | null>(null)
+  const [deviceCode, setDeviceCode] = useState<{ user_code: string; verification_uri: string; device_code: string; interval: number } | null>(null)
+  const [devicePolling, setDevicePolling] = useState(false)
+  const pollRef2 = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Load auth config + session on mount
   useEffect(() => {
-    fetch('/api/git/config').then(r => r.json()).then(setAuthConfig).catch(() => {})
+    // Load config
+    fetch('/api/git/config').then(r => r.json()).then(d => { setProviders(d.providers || []); setLocalMode(d.localMode) }).catch(() => {})
+    // Check session
     fetch('/api/auth/session').then(r => r.json()).then(s => {
       if (s?.user?.name) { setGitUser(s.user.name); setGitProvider((s as any).provider || null) }
       if ((s as any).accessToken) localStorage.setItem('af-git-token', (s as any).accessToken)
     }).catch(() => {
       const token = localStorage.getItem('af-git-token')
-      if (token) {
-        fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })
-          .then(r => r.ok ? r.json() : null)
-          .then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } })
-          .catch(() => {})
-      }
+      if (token) fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null).then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } }).catch(() => {})
     })
+    return () => { if (pollRef2.current) clearInterval(pollRef2.current) }
   }, [])
 
-  // Device flow
-  const [deviceCode, setDeviceCode] = useState<{ user_code: string; verification_uri: string; device_code: string; interval: number } | null>(null)
-  const [devicePolling, setDevicePolling] = useState(false)
-  const pollRef2 = useRef<ReturnType<typeof setInterval> | null>(null)
+  const handleOAuth = (id: string) => { window.location.href = `/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}` }
 
-  useEffect(() => () => { if (pollRef2.current) clearInterval(pollRef2.current) }, [])
-
-  const startDeviceFlow = async () => {
-    const res = await fetch('/api/auth/device', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start' }) })
-    const data = await res.json()
-    if (data.error || !data.user_code) { setShowPat(true); return }
-    setDeviceCode(data)
-    navigator.clipboard.writeText(data.user_code).catch(() => {})
-    window.open(data.verification_uri, '_blank')
+  const handleDeviceFlow = async () => {
+    const res = await fetch('/api/auth/device', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start' }) }).then(r => r.json())
+    if (res.error || !res.user_code) { setAuthView('pat'); return }
+    setDeviceCode(res); setAuthView('device')
+    navigator.clipboard.writeText(res.user_code).catch(() => {})
+    window.open(res.verification_uri, '_blank')
     setDevicePolling(true)
     pollRef2.current = setInterval(async () => {
-      try {
-        const poll = await fetch('/api/auth/device', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'poll', device_code: data.device_code }) }).then(r => r.json())
-        if (poll.access_token) {
-          clearInterval(pollRef2.current!); pollRef2.current = null
-          localStorage.setItem('af-git-token', poll.access_token)
-          setDevicePolling(false); setDeviceCode(null)
-          const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${poll.access_token}` } }).then(r => r.json())
-          setGitUser(user.login); setGitProvider('github')
-        }
-        if (poll.error === 'expired_token') { clearInterval(pollRef2.current!); pollRef2.current = null; setDevicePolling(false); setDeviceCode(null) }
-      } catch {}
-    }, (data.interval || 5) * 1000)
-  }
-
-  const handleSignIn = (provider: string) => {
-    window.location.href = `/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`
+      const poll = await fetch('/api/auth/device', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'poll', device_code: res.device_code }) }).then(r => r.json()).catch(() => ({}))
+      if (poll.access_token) {
+        clearInterval(pollRef2.current!); pollRef2.current = null
+        localStorage.setItem('af-git-token', poll.access_token); setDevicePolling(false); setDeviceCode(null); setAuthView('buttons')
+        const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${poll.access_token}` } }).then(r => r.json()).catch(() => ({}))
+        if (user.login) { setGitUser(user.login); setGitProvider('github') }
+      }
+      if (poll.error === 'expired_token') { clearInterval(pollRef2.current!); pollRef2.current = null; setDevicePolling(false); setDeviceCode(null); setAuthView('buttons') }
+    }, (res.interval || 5) * 1000)
   }
 
   const savePat = () => {
     if (!patInput.trim()) return
     localStorage.setItem('af-git-token', patInput.trim())
-    // Try GitHub API to detect user
     fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${patInput.trim()}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } else { setGitUser('authenticated'); setGitProvider('token') } })
-      .catch(() => { setGitUser('authenticated'); setGitProvider('token') })
-    setPatInput(''); setShowPat(false)
+      .then(r => r.ok ? r.json() : null).then(d => { setGitUser(d?.login || 'authenticated'); setGitProvider(d?.login ? 'github' : 'token') }).catch(() => { setGitUser('authenticated'); setGitProvider('token') })
+    setPatInput(''); setAuthView('buttons')
   }
 
   const signOutGit = async () => {
-    localStorage.removeItem('af-git-token')
-    setGitUser(null); setGitProvider(null)
+    localStorage.removeItem('af-git-token'); setGitUser(null); setGitProvider(null)
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
   }
-
-  const patLink = authConfig?.pat?.links?.github || 'https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow'
 
   const handleClone = async () => {
     if (!cloneUrl.trim()) return
@@ -254,7 +238,7 @@ function GitPanelContent() {
               <span className="text-xs flex-1">Signed in as <strong>{gitUser}</strong>{gitProvider && gitProvider !== 'token' ? ` (${gitProvider})` : ''}</span>
               <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={signOutGit}>Sign out</Button>
             </div>
-          ) : deviceCode ? (
+          ) : authView === 'device' && deviceCode ? (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Enter this code on GitHub:</p>
               <div className="flex items-center gap-2">
@@ -265,39 +249,32 @@ function GitPanelContent() {
                 {devicePolling && <Loader2 size={11} className="animate-spin text-muted-foreground" />}
                 <span className="text-[10px] text-muted-foreground flex-1">{devicePolling ? 'Waiting…' : ''}</span>
                 <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => window.open(deviceCode.verification_uri, '_blank')}>Open GitHub</Button>
-                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => { if (pollRef2.current) clearInterval(pollRef2.current); setDeviceCode(null); setDevicePolling(false) }}>Cancel</Button>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => { if (pollRef2.current) clearInterval(pollRef2.current); setDeviceCode(null); setDevicePolling(false); setAuthView('buttons') }}>Cancel</Button>
               </div>
             </div>
-          ) : showPat ? (
+          ) : authView === 'pat' ? (
             <div className="space-y-1.5">
               <div className="flex gap-1.5">
                 <input type="password" value={patInput} onChange={e => setPatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && savePat()} placeholder="Paste token..." className="flex-1 h-7 px-2 text-xs rounded-md border border-border bg-background" />
                 <Button size="sm" className="h-7 text-xs" onClick={savePat} disabled={!patInput.trim()}>Save</Button>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {Object.entries(authConfig?.pat?.links || {}).filter(([, v]) => v).map(([provider, url]) => (
-                  <a key={provider} href={url!} target="_blank" rel="noopener" className="text-[10px] text-primary underline capitalize">{provider} ↗</a>
+                {providers.filter(p => p.tokenUrl).map(p => (
+                  <a key={p.id} href={p.tokenUrl} target="_blank" rel="noopener" className="text-[10px] text-primary underline">{p.name} ↗</a>
                 ))}
-                {!authConfig && <a href="https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow" target="_blank" rel="noopener" className="text-[10px] text-primary underline">GitHub ↗</a>}
               </div>
-              <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => setShowPat(false)}>← Back</Button>
+              <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => setAuthView('buttons')}>← Back</Button>
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
-              {authConfig?.deviceFlow && (
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={startDeviceFlow}>
-                  <Github size={13} /> Sign in with GitHub
-                </Button>
-              )}
-              {authConfig?.providers.filter(p => !(authConfig.deviceFlow && p.id === 'github')).map(p => (
-                <Button key={p.id} variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn(p.id)}>
-                  {p.id === 'github' ? <Github size={13} /> : <Globe size={13} />} {p.name}
-                </Button>
-              ))}
-              {authConfig?.localGit && (
-                <span className="text-[10px] text-emerald-500 flex items-center gap-1"><Terminal size={10} /> SSH</span>
-              )}
-              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => setShowPat(true)}>Token</Button>
+              {providers.map(p => {
+                // Priority: OAuth > Device Flow
+                if (p.oauth) return <Button key={p.id} variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleOAuth(p.id)}>{p.id === 'github' ? <Github size={13} /> : <Globe size={13} />} {p.name}</Button>
+                if (p.deviceFlow) return <Button key={p.id} variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleDeviceFlow}><Github size={13} /> {p.name}</Button>
+                return null
+              })}
+              {localMode && <span className="text-[10px] text-emerald-500 flex items-center gap-1"><Terminal size={10} /> SSH</span>}
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => setAuthView('pat')}>Token</Button>
             </div>
           )}
         </div>
