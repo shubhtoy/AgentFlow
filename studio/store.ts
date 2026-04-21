@@ -939,19 +939,23 @@ export const useAppStore = create<AppStore>()(
 
         connectRepo: async (params) => {
           try {
-            const { clone } = await import('@/lib/git-client')
-            const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
-            const dir = getDirectoryHandle()
-            if (!dir) throw new Error('No workspace directory — open a folder first')
+            const { cloneAndList } = await import('@/lib/git-client')
             const token = localStorage.getItem('af-git-token') || undefined
-            await clone({ url: params.url, dir, branch: params.branch || 'main', token })
+            const { files } = await cloneAndList(params.url, { branch: params.branch || 'main', token })
+            if (!files.length) throw new Error('Repository is empty')
+            // Write files to workspace
+            const { requireWorkspace } = await import('@/lib/workspace')
+            const ws = await requireWorkspace()
+            for (const f of files) {
+              try { await ws.write(f.path, f.content) } catch {}
+            }
             set(s => ({
               repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType, role: params.role, agentflowPath: '.agentflow' }],
             }))
-            get().showNotification(`Cloned "${params.name}"`, 'success')
+            get().showNotification(`Cloned "${params.name}" — ${files.length} files`, 'success')
             await get().reload()
           } catch (err: any) {
-            get().showNotification(err.message || 'Failed to clone repo', 'error')
+            throw err // let caller handle
           }
         },
 

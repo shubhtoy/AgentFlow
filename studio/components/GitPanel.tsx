@@ -117,30 +117,26 @@ function GitPanelContent() {
   const loadRepos = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
-      const dir = getDirectoryHandle()
-      if (!dir) { setRepoStates([]); return }
-      const { status } = await import('@/lib/git-client')
-      const gitStatus = await status(dir)
-      if (gitStatus.isRepo) {
+      const { getStatus } = await import('@/lib/git-client')
+      const status = await getStatus()
+      if (status.files > 0) {
         setRepoStates([{
-          name: gitStatus.remoteUrl?.split('/').pop()?.replace('.git', '') || 'workspace',
-          url: gitStatus.remoteUrl || '',
-          branch: gitStatus.branch,
+          name: 'workspace',
+          url: '',
+          branch: status.branch,
           localPath: '/',
           repoType: 'private',
           role: 'primary',
           agentflowPath: '.agentflow',
-          status: gitStatus,
+          status: { isRepo: true, branch: status.branch, modifiedFiles: [], untrackedFiles: [], hasRemote: false, remoteUrl: null },
           loading: false,
           syncing: false,
         }])
       } else {
         setRepoStates([])
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load git status'
-      setError(msg)
+    } catch {
+      setRepoStates([])
     }
     finally { setLoading(false) }
   }, [])
