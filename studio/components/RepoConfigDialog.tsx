@@ -8,11 +8,15 @@ export interface RepoConfigFormData {
   mapping: { url: string; name: string; branch: string; role: string; repoType: string }
 }
 
-/** Parse a GitHub URL to extract owner/repo */
-function parseGitUrl(url: string): { owner: string; repo: string; full: string } | null {
-  const m = url.match(/github\.com[/:]([^/]+)\/([^/.]+)/)
-  if (!m) return null
-  return { owner: m[1], repo: m[2], full: `${m[1]}/${m[2]}` }
+/** Parse a git URL to extract name */
+function parseGitUrl(url: string): { host: string; owner: string; repo: string; isGitHub: boolean } | null {
+  // GitHub: github.com/user/repo
+  const gh = url.match(/github\.com[/:]([^/]+)\/([^/.]+)/)
+  if (gh) return { host: 'github.com', owner: gh[1], repo: gh[2], isGitHub: true }
+  // GitLab, Bitbucket, or any host: host.com/user/repo
+  const generic = url.match(/(?:https?:\/\/|git@)([^/:]+)[/:]([^/]+)\/([^/.]+)/)
+  if (generic) return { host: generic[1], owner: generic[2], repo: generic[3], isGitHub: false }
+  return null
 }
 
 export function RepoConfigDialog({ open, onClose, onSave }: {
@@ -33,23 +37,30 @@ export function RepoConfigDialog({ open, onClose, onSave }: {
     setRepoInfo(null); setError(null); setNeedsAuth(false)
     const parsed = parseGitUrl(url)
     if (!parsed) return
-    const t = localStorage.getItem('af-git-token')
-    const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
-    if (t) headers.Authorization = `Bearer ${t}`
-    const ctrl = new AbortController()
-    fetch(`https://api.github.com/repos/${parsed.full}`, { headers, signal: ctrl.signal })
-      .then(r => {
-        if (r.status === 404) { setNeedsAuth(true); setError('Repo not found or private — add a token below'); return null }
-        if (!r.ok) { setError('Could not fetch repo info'); return null }
-        return r.json()
-      })
-      .then(d => {
-        if (!d) return
-        setRepoInfo({ name: d.name, private: d.private, description: d.description || '', default_branch: d.default_branch })
-        setBranch(d.default_branch || 'main')
-      })
-      .catch(() => {})
-    return () => ctrl.abort()
+
+    // Only auto-detect via API for GitHub
+    if (parsed.isGitHub) {
+      const t = localStorage.getItem('af-git-token')
+      const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
+      if (t) headers.Authorization = `Bearer ${t}`
+      const ctrl = new AbortController()
+      fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`, { headers, signal: ctrl.signal })
+        .then(r => {
+          if (r.status === 404) { setNeedsAuth(true); setError('Repo not found or private — add a token below'); return null }
+          if (!r.ok) { setError('Could not fetch repo info'); return null }
+          return r.json()
+        })
+        .then(d => {
+          if (!d) return
+          setRepoInfo({ name: d.name, private: d.private, description: d.description || '', default_branch: d.default_branch })
+          setBranch(d.default_branch || 'main')
+        })
+        .catch(() => {})
+      return () => ctrl.abort()
+    } else {
+      // Non-GitHub: just use parsed name, assume public
+      setRepoInfo({ name: parsed.repo, private: false, description: `${parsed.host}/${parsed.owner}/${parsed.repo}`, default_branch: 'main' })
+    }
   }, [url])
 
   const saveToken = () => {
@@ -64,7 +75,7 @@ export function RepoConfigDialog({ open, onClose, onSave }: {
 
   const handleConnect = async () => {
     const parsed = parseGitUrl(url)
-    if (!parsed) { setError('Enter a valid GitHub URL'); return }
+    if (!parsed) { setError('Enter a valid git URL'); return }
     setLoading(true); setError(null)
     try {
       await onSave({
