@@ -1,0 +1,10 @@
+AGENTS.md
+debug-issue/SKILL.md
+explain/SKILL.md
+explore-codebase/SKILL.md
+hooks/memory-on-session-end.json
+refactor-code/SKILL.md
+triage/SKILL.md
+user-review-gate/SKILL.md
+wrap-up/SKILL.md
+write-code/SKILL.md
