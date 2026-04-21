@@ -8,7 +8,6 @@ import {
   Globe, Lock, Copy, Loader2,
 } from 'lucide-react'
 import { useAppStore } from '@/store'
-import { gitApi } from '@/lib/api'
 import type { GitRepoStatus, GitAuthInfo, GitAuthMethod, RepoMapping } from '@/lib/api'
 import { FeatureHint } from './onboarding/FeatureHint'
 import { RepoConfigDialog } from './RepoConfigDialog'
@@ -40,93 +39,82 @@ function SectionHeader({ title, count, open, onToggle }: { title: string; count?
 
 function AuthSection({ authInfo, loading, onRefresh }: { authInfo: GitAuthInfo | null; loading: boolean; onRefresh: () => void }) {
   const [open, setOpen] = useState(true)
-  const [settingUp, setSettingUp] = useState(false)
-  const [setupMsg, setSetupMsg] = useState<string | null>(null)
-  const [userCode, setUserCode] = useState<string | null>(null)
-  const [verifyUrl, setVerifyUrl] = useState<string | null>(null)
-  const [polling, setPolling] = useState(false)
-  const [codeCopied, setCodeCopied] = useState(false)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const hasMethods = (authInfo?.methods.length ?? 0) > 0
-  const ghCliLoggedIn = authInfo?.methods.some(m => m.type === 'gh-cli') ?? false
+  const [token, setToken] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [user, setUser] = useState<string | null>(null)
+  const hasToken = (authInfo?.methods.length ?? 0) > 0
 
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+  useEffect(() => {
+    // Check if we have a stored token and verify it
+    const stored = localStorage.getItem('af-git-token')
+    if (stored) {
+      fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${stored}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.login) setUser(d.login) })
+        .catch(() => {})
+    }
+  }, [])
 
-  const startGitHubLogin = async () => {
-    setSettingUp(true); setSetupMsg(null); setUserCode(null)
+  const saveToken = async () => {
+    if (!token.trim()) return
+    setSaving(true); setVerifying(true)
     try {
-      const result = await gitApi.authSetup({ action: 'github-device-start' })
-      if (result.user_code && result.verification_uri) {
-        setUserCode(result.user_code); setVerifyUrl(result.verification_uri)
-        window.open(result.verification_uri, '_blank', 'noopener')
-        setPolling(true)
-        const interval = (result.interval || 5) * 1000
-        const pollFn = async () => {
-          try {
-            const poll = await gitApi.authSetup({ action: 'github-device-poll' })
-            if (poll.status === 'authorized') { if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null; setPolling(false); setUserCode(null); setSetupMsg('Authenticated with GitHub'); onRefresh() }
-          } catch { if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null; setPolling(false); setSetupMsg('Authorization failed or expired') }
-        }
-        pollRef.current = setInterval(pollFn, interval)
-      } else { setSetupMsg(result.message || 'Failed to start login') }
-    } catch (e) { setSetupMsg(e instanceof Error ? e.message : 'Failed') }
-    finally { setSettingUp(false) }
+      const res = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token.trim()}` } })
+      if (!res.ok) throw new Error('Invalid token')
+      const data = await res.json()
+      localStorage.setItem('af-git-token', token.trim())
+      setUser(data.login)
+      setToken('')
+      onRefresh()
+    } catch {
+      setUser(null)
+    }
+    finally { setSaving(false); setVerifying(false) }
   }
 
-  const cancelLogin = () => { if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null; setPolling(false); setUserCode(null); setVerifyUrl(null) }
+  const logout = () => {
+    localStorage.removeItem('af-git-token')
+    setUser(null)
+    onRefresh()
+  }
 
   return (
     <>
-      <SectionHeader title="Authentication" count={authInfo?.methods.length} open={open} onToggle={() => setOpen(o => !o)} />
+      <SectionHeader title="Authentication" count={user ? 1 : 0} open={open} onToggle={() => setOpen(o => !o)} />
       {open && (
         <div className="px-3 pb-2">
-          {loading ? (
-            <div className="flex items-center gap-2 py-1"><Loader2 size={12} className="animate-spin" /><span className="text-[11px] text-muted-foreground">Detecting…</span></div>
-          ) : hasMethods ? (
-            <div className="flex flex-col gap-1.5">
-              {authInfo!.methods.map((m, i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  <CheckCircle2 size={12} className="text-green-500" />
-                  <span className="text-[11px] flex-1">{m.label}</span>
-                </div>
-              ))}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={12} className="text-green-500" />
+              <span className="text-xs flex-1">Signed in as <strong>{user}</strong></span>
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={logout}>Sign out</Button>
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5"><ShieldAlert size={14} className="text-yellow-500" /><span className="text-[11px] text-yellow-600 font-medium">No credentials found</span></div>
-              <p className="text-[10px] text-muted-foreground">Public repos work without auth. For private repos, sign in below.</p>
-            </div>
-          )}
-          {userCode && (
-            <div className="mt-2 p-2.5 rounded-md border border-primary/15 bg-primary/5">
-              <p className="text-[10px] text-muted-foreground mb-1.5">Enter this code on GitHub:</p>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="font-mono text-lg font-bold tracking-widest text-primary">{userCode}</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(userCode); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 2000) }}>
-                  <Copy size={13} />
+            <div className="flex flex-col gap-2">
+              <p className="text-[11px] text-muted-foreground">
+                Enter a <a href="https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow" target="_blank" rel="noopener" className="text-primary underline">GitHub Personal Access Token</a> for private repos.
+              </p>
+              <div className="flex gap-1.5">
+                <input
+                  type="password"
+                  value={token}
+                  onChange={e => setToken(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && saveToken()}
+                  placeholder="ghp_..."
+                  className="flex-1 h-7 px-2 text-xs rounded-md border border-border bg-background placeholder:text-muted-foreground/50"
+                />
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={saveToken} disabled={saving || !token.trim()}>
+                  {saving ? <Loader2 size={12} className="animate-spin" /> : 'Save'}
                 </Button>
               </div>
-              <div className="flex items-center gap-2">
-                {polling && <Loader2 size={12} className="animate-spin" />}
-                <span className="text-[10px] text-muted-foreground flex-1">{polling ? 'Waiting for authorization…' : 'Opening browser…'}</span>
-                {verifyUrl && <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => window.open(verifyUrl, '_blank', 'noopener')}>Open GitHub</Button>}
-                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={cancelLogin}>Cancel</Button>
-              </div>
+              <p className="text-[10px] text-muted-foreground/60">Token is stored locally in your browser. Public repos work without auth.</p>
             </div>
           )}
-          {!userCode && (
-            <div className="flex gap-1 mt-2 flex-wrap">
-              {!ghCliLoggedIn && (
-                <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={startGitHubLogin} disabled={settingUp || polling}>
-                  {settingUp ? <Loader2 size={10} className="mr-1 animate-spin" /> : <Github size={12} className="mr-1" />} Login with GitHub
-                </Button>
-              )}
-            </div>
-          )}
-          {setupMsg && !userCode && <div className="mt-1.5 px-2 py-1 rounded text-[10px] text-muted-foreground bg-muted/50">{setupMsg}</div>}
         </div>
       )}
     </>
+  )
   )
 }
 
@@ -236,7 +224,7 @@ function GitPanelContent() {
       const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
       const { pull } = await import('@/lib/git-client')
       const dir = getDirectoryHandle()
-      if (dir) await pull(dir)
+      if (dir) await pull(dir, localStorage.getItem('af-git-token') || undefined)
       await loadRepos()
     } catch { setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: false } : r)) }
   }, [triggerSync])

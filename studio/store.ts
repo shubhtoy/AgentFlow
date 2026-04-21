@@ -943,7 +943,8 @@ export const useAppStore = create<AppStore>()(
             const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
             const dir = getDirectoryHandle()
             if (!dir) throw new Error('No workspace directory — open a folder first')
-            await clone({ url: params.url, dir, branch: params.branch || 'main' })
+            const token = localStorage.getItem('af-git-token') || undefined
+            await clone({ url: params.url, dir, branch: params.branch || 'main', token })
             set(s => ({
               repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType, role: params.role, agentflowPath: '.agentflow' }],
             }))
