@@ -939,14 +939,18 @@ export const useAppStore = create<AppStore>()(
 
         connectRepo: async (params) => {
           try {
-            const result = await gitApi.initRepo(params)
+            const { clone } = await import('@/lib/git-client')
+            const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
+            const dir = getDirectoryHandle()
+            if (!dir) throw new Error('No workspace directory — open a folder first')
+            await clone({ url: params.url, dir, branch: params.branch || 'main' })
             set(s => ({
-              repos: [...s.repos, result.mapping],
-              lastScanResult: result.scanResult,
+              repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType, role: params.role, agentflowPath: '.agentflow' }],
             }))
-            get().showNotification(`Connected repo "${params.name}"`, 'success')
-          } catch {
-            get().showNotification('Failed to connect repo', 'error')
+            get().showNotification(`Cloned "${params.name}"`, 'success')
+            await get().reload()
+          } catch (err: any) {
+            get().showNotification(err.message || 'Failed to clone repo', 'error')
           }
         },
 

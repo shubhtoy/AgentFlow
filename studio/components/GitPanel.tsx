@@ -186,27 +186,44 @@ function GitPanelContent() {
   const loadedRef = useRef(false)
 
   const refreshAuth = useCallback(() => {
-    setAuthLoading(true)
-    gitApi.getAuthInfo()
-      .then(info => setAuthInfo(info))
-      .catch(() => setAuthInfo({ methods: [], recommended: 'none', sshExample: '', httpsExample: '' }))
-      .finally(() => setAuthLoading(false))
+    setAuthLoading(false)
+    // Client-side git uses token auth stored in localStorage
+    const token = localStorage.getItem('af-git-token')
+    setAuthInfo({
+      methods: token ? [{ type: 'env-token', label: 'Personal Access Token', ready: true }] : [],
+      recommended: 'https',
+      sshExample: '',
+      httpsExample: 'https://github.com/user/repo.git',
+    })
   }, [])
 
   const loadRepos = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const config = await gitApi.getConfig(); const repos = config.repos || []
-      const mapped: RepoWithStatus[] = repos.map((r: RepoMapping) => ({ ...r, status: null, loading: true, syncing: false }))
-      setRepoStates(mapped)
-      await Promise.all(mapped.map(async (_, idx) => {
-        try { const status = await gitApi.getStatus(); setRepoStates(prev => prev.map((r, i) => i === idx ? { ...r, status, loading: false } : r)) }
-        catch { setRepoStates(prev => prev.map((r, i) => i === idx ? { ...r, loading: false } : r)) }
-      }))
+      const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
+      const dir = getDirectoryHandle()
+      if (!dir) { setRepoStates([]); return }
+      const { status } = await import('@/lib/git-client')
+      const gitStatus = await status(dir)
+      if (gitStatus.isRepo) {
+        setRepoStates([{
+          name: gitStatus.remoteUrl?.split('/').pop()?.replace('.git', '') || 'workspace',
+          url: gitStatus.remoteUrl || '',
+          branch: gitStatus.branch,
+          localPath: '/',
+          repoType: 'private',
+          role: 'primary',
+          agentflowPath: '.agentflow',
+          status: gitStatus,
+          loading: false,
+          syncing: false,
+        }])
+      } else {
+        setRepoStates([])
+      }
     } catch (err) {
-      // Git backend may not be available — show graceful message
-      const msg = err instanceof Error ? err.message : 'Failed to load repos'
-      setError(msg.includes('fetch') || msg.includes('404') ? 'Git service not available — start backend with git support' : msg)
+      const msg = err instanceof Error ? err.message : 'Failed to load git status'
+      setError(msg)
     }
     finally { setLoading(false) }
   }, [])
@@ -215,8 +232,13 @@ function GitPanelContent() {
 
   const handleSync = useCallback(async (repoName: string) => {
     setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: true } : r))
-    try { await triggerSync({ repoName }); const status = await gitApi.getStatus(); setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, status, syncing: false } : r)) }
-    catch { setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: false } : r)) }
+    try {
+      const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
+      const { pull } = await import('@/lib/git-client')
+      const dir = getDirectoryHandle()
+      if (dir) await pull(dir)
+      await loadRepos()
+    } catch { setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: false } : r)) }
   }, [triggerSync])
 
   const handleScan = useCallback(async (repo: RepoWithStatus) => {
@@ -226,7 +248,7 @@ function GitPanelContent() {
   }, [triggerScan])
 
   const handleDisconnect = useCallback(async (repoName: string) => {
-    try { await gitApi.updateConfig({ removeRepo: repoName }); setRepoStates(prev => prev.filter(r => r.name !== repoName)); await fetchGitStatus() } catch {}
+    try { setRepoStates(prev => prev.filter(r => r.name !== repoName)) } catch {}
   }, [fetchGitStatus])
 
   // Listen for external refresh trigger (from FloatingPanel header button)
