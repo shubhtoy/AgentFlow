@@ -1,4 +1,5 @@
 'use client'
+import { McpServerBadge } from './McpConnectionBadge'
 
 // ---------------------------------------------------------------------------
 // MCPPanel — MCP server management with full config, auth, metadata, test
@@ -84,7 +85,6 @@ function ServerCard({ server, onToggle, onRemove, onDiscover, onTest, onConfigur
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<any>(null)
   const isMisconfigured = server.status === 'misconfigured'
-  const transport = transportLabel(server)
   const envMissing = hasUnsetEnv(server.env || {})
   const cmdStr = server.url || `${server.command} ${(server.args || []).join(' ')}`.trim()
 
@@ -100,26 +100,10 @@ function ServerCard({ server, onToggle, onRemove, onDiscover, onTest, onConfigur
     <div className={`rounded-lg border overflow-hidden transition-all ${server.disabled ? 'opacity-60 bg-muted/30' : 'bg-card'} ${isMisconfigured ? 'border-destructive/30' : expanded ? 'border-primary/40' : 'border-border'}`}>
       {/* Header row */}
       <div onClick={() => setExpanded(e => !e)} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
-        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[0.6rem] font-medium shrink-0 ${
-          server.disabled ? 'bg-muted text-muted-foreground' :
-          isMisconfigured ? 'bg-destructive/10 text-destructive' :
-          envMissing ? 'bg-orange-500/10 text-orange-500' :
-          testResult?.ok ? 'bg-emerald-500/15 text-emerald-500' :
-          'bg-emerald-500/10 text-emerald-500'
-        }`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${
-            server.disabled ? 'bg-muted-foreground' :
-            isMisconfigured ? 'bg-destructive' :
-            envMissing ? 'bg-orange-400' :
-            testResult?.ok ? 'bg-emerald-500' :
-            'bg-emerald-500 animate-pulse'
-          }`} />
-          {server.disabled ? 'off' : isMisconfigured ? 'error' : envMissing ? 'env' : testResult?.ok ? `connected · ${testResult.latencyMs}ms` : 'ready'}
-        </div>
+        <McpServerBadge server={server} testResult={testResult} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-[0.8125rem] font-semibold truncate">{server.name}</span>
-            <Badge variant="outline" className="h-4 text-[0.55rem] px-1 shrink-0">{transport}</Badge>
           </div>
           {server.description && <p className="text-[0.65rem] text-muted-foreground truncate">{server.description}</p>}
         </div>
@@ -269,7 +253,7 @@ function RegistryCard({ entry, onAdd, alreadyAdded }: {
         {entry.description && <p className="text-[0.65rem] text-muted-foreground line-clamp-2 mt-0.5">{entry.description}</p>}
         <div className="flex gap-1 mt-1 flex-wrap items-center">
           {entry.version && <Badge variant="outline" className="h-4 text-[0.55rem] px-1">v{entry.version}</Badge>}
-          {transportType && <Badge variant="outline" className="h-4 text-[0.55rem] px-1">{transportType}</Badge>}
+          {transportType && <Badge variant="outline" className={`h-4 text-[0.55rem] px-1 ${transportType === 'stdio' ? 'border-amber-500/30 text-amber-600 dark:text-amber-400' : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400'}`}>{transportType === 'stdio' ? '⚙ stdio' : '⚡ HTTP'}</Badge>}
           {needsAuth && <Badge variant="outline" className="h-4 text-[0.55rem] px-1 text-orange-500 border-orange-300"><Key size={8} className="mr-0.5" />auth</Badge>}
         </div>
       </div>

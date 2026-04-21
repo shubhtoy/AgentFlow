@@ -4,7 +4,7 @@ import { emit } from '@/utils/events'
 import { countTokens } from '@/lib/token-counter'
 import {
   AlertCircle, AlertTriangle, CheckCircle2,
-  Cloud, HardDrive, Globe, GitBranch,
+  Cloud, HardDrive, Globe, GitBranch, Server,
 } from 'lucide-react'
 import {
   Tooltip, TooltipContent, TooltipTrigger, TooltipProvider,
@@ -73,6 +73,33 @@ function TokenIndicator({ workflowId }: { workflowId: string }) {
   )
 }
 
+function McpStatus() {
+  const [mcpInfo, setMcpInfo] = useState<{ active: number; total: number; stdioCount: number; httpCount: number } | null>(null)
+  useEffect(() => {
+    const load = () => fetch('/api/mcp?action=config').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d?.servers) return
+      const active = d.servers.filter((s: any) => !s.disabled)
+      setMcpInfo({
+        active: active.length, total: d.servers.length,
+        stdioCount: active.filter((s: any) => s.command && !s.url).length,
+        httpCount: active.filter((s: any) => s.url).length,
+      })
+    }).catch(() => {})
+    load()
+    window.addEventListener('agentflow:mcp-refresh', load)
+    return () => window.removeEventListener('agentflow:mcp-refresh', load)
+  }, [])
+  if (!mcpInfo || mcpInfo.total === 0) return null
+  return (
+    <Seg onClick={() => emit('agentflow:show-mcp')} tip={`MCP: ${mcpInfo.active} active (${mcpInfo.stdioCount} stdio, ${mcpInfo.httpCount} http)`}>
+      <Server size={12} className={mcpInfo.active > 0 ? 'text-emerald-500' : 'opacity-50'} />
+      <span className={mcpInfo.active > 0 ? 'text-foreground/70' : ''}>{mcpInfo.active}/{mcpInfo.total}</span>
+      {mcpInfo.stdioCount > 0 && <span className="text-[0.6rem] text-amber-500/80">⚙{mcpInfo.stdioCount}</span>}
+      {mcpInfo.httpCount > 0 && <span className="text-[0.6rem] text-emerald-500/80">⚡{mcpInfo.httpCount}</span>}
+    </Seg>
+  )
+}
+
 export function StatusBar() {
   const data = useAppStore(s => s.data)
   const activeWf = useAppStore(s => s.activeWf)
@@ -129,6 +156,8 @@ export function StatusBar() {
         <div className="flex-1" />
 
         {activeWf && <TokenIndicator workflowId={activeWf} />}
+
+        <McpStatus />
 
         <Seg onClick={() => emit('agentflow:show-validation')} tip="Open validation panel">
           {errorCount > 0 ? (
