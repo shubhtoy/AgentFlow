@@ -92,54 +92,20 @@ function GitPanelContent() {
 
   // Auth state
   const [gitUser, setGitUser] = useState<string | null>(null)
-  const [deviceCode, setDeviceCode] = useState<{ user_code: string; verification_uri: string; device_code: string; interval: number } | null>(null)
-  const [authPolling, setAuthPolling] = useState(false)
+  const [gitProvider, setGitProvider] = useState<string | null>(null)
   const [showPat, setShowPat] = useState(false)
   const [patInput, setPatInput] = useState('')
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Check stored token on mount
+  // Check session on mount
   useEffect(() => {
-    const token = localStorage.getItem('af-git-token')
-    if (token) {
-      fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.login) setGitUser(d.login) })
-        .catch(() => {})
-    }
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+    fetch('/api/auth/session').then(r => r.json()).then(s => {
+      if (s?.user?.name) { setGitUser(s.user.name); setGitProvider((s as any).provider || 'github') }
+      if ((s as any).accessToken) localStorage.setItem('af-git-token', (s as any).accessToken)
+    }).catch(() => {})
   }, [])
 
-  const startDeviceFlow = async () => {
-    try {
-      const res = await fetch('/api/auth/github', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start' }),
-      })
-      const data = await res.json()
-      if (data.error) { setShowPat(true); return } // fallback to PAT if device flow unavailable
-      setDeviceCode(data)
-      navigator.clipboard.writeText(data.user_code).catch(() => {})
-      window.open(data.verification_uri, '_blank')
-      setAuthPolling(true)
-      pollRef.current = setInterval(async () => {
-        try {
-          const poll = await fetch('/api/auth/github', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'poll', device_code: data.device_code }),
-          }).then(r => r.json())
-          if (poll.access_token) {
-            clearInterval(pollRef.current!); pollRef.current = null
-            localStorage.setItem('af-git-token', poll.access_token)
-            setAuthPolling(false); setDeviceCode(null)
-            // Fetch user info
-            const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${poll.access_token}` } }).then(r => r.json())
-            setGitUser(user.login)
-          }
-          if (poll.error === 'expired_token') { clearInterval(pollRef.current!); pollRef.current = null; setAuthPolling(false); setDeviceCode(null) }
-        } catch {}
-      }, (data.interval || 5) * 1000)
-    } catch { setShowPat(true) }
+  const handleSignIn = (provider: string) => {
+    window.location.href = `/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`
   }
 
   const savePat = () => {
@@ -147,12 +113,16 @@ function GitPanelContent() {
     localStorage.setItem('af-git-token', patInput.trim())
     fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${patInput.trim()}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.login) setGitUser(d.login) })
+      .then(d => { if (d?.login) { setGitUser(d.login); setGitProvider('github') } })
       .catch(() => {})
     setPatInput(''); setShowPat(false)
   }
 
-  const signOut = () => { localStorage.removeItem('af-git-token'); setGitUser(null) }
+  const signOutGit = async () => {
+    localStorage.removeItem('af-git-token')
+    setGitUser(null); setGitProvider(null)
+    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
+  }
 
   const handleClone = async () => {
     if (!cloneUrl.trim()) return
@@ -239,23 +209,7 @@ function GitPanelContent() {
             <div className="flex items-center gap-2">
               <CheckCircle2 size={13} className="text-emerald-500" />
               <span className="text-xs flex-1">Signed in as <strong>{gitUser}</strong></span>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={signOut}>Sign out</Button>
-            </div>
-          ) : deviceCode ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Enter this code on GitHub:</p>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-lg font-bold tracking-widest text-primary">{deviceCode.user_code}</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigator.clipboard.writeText(deviceCode.user_code)}>
-                  <Copy size={12} />
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                {authPolling && <Loader2 size={11} className="animate-spin text-muted-foreground" />}
-                <span className="text-[10px] text-muted-foreground flex-1">{authPolling ? 'Waiting for authorization…' : ''}</span>
-                <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => window.open(deviceCode.verification_uri, '_blank')}>Open GitHub</Button>
-                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setDeviceCode(null); setAuthPolling(false) }}>Cancel</Button>
-              </div>
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={signOutGit}>Sign out</Button>
             </div>
           ) : showPat ? (
             <div className="space-y-1.5">
@@ -263,14 +217,17 @@ function GitPanelContent() {
                 <input type="password" value={patInput} onChange={e => setPatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && savePat()} placeholder="Paste token..." className="flex-1 h-7 px-2 text-xs rounded-md border border-border bg-background" />
                 <Button size="sm" className="h-7 text-xs" onClick={savePat} disabled={!patInput.trim()}>Save</Button>
               </div>
-              <a href="https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow" target="_blank" rel="noopener" className="text-[10px] text-primary underline">Create token on GitHub ↗</a>
               <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => setShowPat(false)}>← Back</Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Github size={14} className="text-muted-foreground" />
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={startDeviceFlow}>Sign in with GitHub</Button>
-              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => setShowPat(true)}>Use token</Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn('github')}>
+                <Github size={13} /> GitHub
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn('gitlab')}>
+                <Globe size={13} /> GitLab
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => setShowPat(true)}>Token</Button>
             </div>
           )}
         </div>
