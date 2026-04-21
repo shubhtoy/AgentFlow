@@ -69,6 +69,7 @@
     "fumadocs-ui": "^16.8.0",
     "glob": "^13.0.6",
     "gray-matter": "^4.0.3",
+    "isomorphic-git": "^1.37.5",
     "js-tiktoken": "^1.0.21",
     "js-yaml": "^4.1.1",
     "jszip": "^3.10.1",

@@ -302,14 +302,11 @@ export const ElementsView = memo(function ElementsView() {
 
   const handleInstall = useCallback(async (entry: LibraryEntry) => {
     try {
-      // Fetch files from library
-      const res = await fetch('/api/library/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: entry.type, name: entry.name }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Import failed')
+      const { importResource, importWorkflow } = await import('@/lib/library-client')
+      const data = entry.type === 'workflow'
+        ? await importWorkflow(entry.name)
+        : await importResource(entry.type, entry.name)
+      if (!data.files.length) throw new Error('Not found in library')
 
       // Write files to workspace (works with both server fs and OPFS)
       const { requireWorkspace } = await import('@/lib/workspace')

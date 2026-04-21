@@ -91,7 +91,7 @@ export async function freshIDB(): Promise<WorkspaceAdapter> {
 /** List available library workflows (for the workflow dropdown) */
 export async function listLibraryWorkflows(): Promise<Array<{ id: string; name: string; description: string; builtin?: boolean }>> {
   try {
-    const res = await fetch('/api/library')
+    const res = await fetch('/library/registry.json')
     if (!res.ok) return []
     const { entries = [] } = await res.json()
     return entries

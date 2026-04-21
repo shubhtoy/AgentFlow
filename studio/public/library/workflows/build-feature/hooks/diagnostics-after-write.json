@@ -1,0 +1,20 @@
+{
+  "name": "diagnostics-after-write",
+  "version": "1.0.0",
+  "description": "Run diagnostics after any file write to catch errors early",
+  "event": "fileEdited",
+  "condition": {
+    "field": "path",
+    "operator": "matches",
+    "value": "\\.(ts|tsx|js|jsx|py|java|go|rs)$"
+  },
+  "action": {
+    "type": "trigger-workflow",
+    "target": "get-diagnostics",
+    "params": {
+      "scope": "modified"
+    }
+  },
+  "enabled": true,
+  "priority": 50
+}

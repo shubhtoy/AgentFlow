@@ -679,13 +679,9 @@ export const useAppStore = create<AppStore>()(
         },
 
         addFromLibrary: async (type: string, name: string) => {
-          const res = await fetch('/api/library/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, name }),
-          })
-          if (!res.ok) throw new Error((await res.json()).error || 'Import failed')
-          const { files } = await res.json()
+          const { importResource, importWorkflow } = await import('@/lib/library-client')
+          const { files } = type === 'workflow' ? await importWorkflow(name) : await importResource(type, name)
+          if (!files.length) throw new Error(`"${name}" not found in library`)
           const { requireWorkspace } = await import('@/lib/workspace')
           const ws = await requireWorkspace()
           // Write all files

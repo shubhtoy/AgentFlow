@@ -83,23 +83,11 @@ export const api = {
     if (missingRunbooks.length > 0) {
       console.warn(`[getData] Auto-healing ${missingRunbooks.length} missing condition runbooks...`)
       try {
-        const res = await fetch('/api/library/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'runbook', names: missingRunbooks }),
-        }).catch(() => null)
-        // Fallback: try importing each individually
+        const { importResource } = await import('./library-client')
         for (const name of missingRunbooks) {
           try {
-            const r = await fetch('/api/library/import', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: 'runbook', name }),
-            })
-            if (r.ok) {
-              const { files: libFiles } = await r.json()
-              for (const f of libFiles) await w.write(f.path, f.content)
-            }
+            const { files: libFiles } = await importResource('runbook', name)
+            for (const f of libFiles) await w.write(f.path, f.content)
           } catch {}
         }
         // Re-parse with healed files
