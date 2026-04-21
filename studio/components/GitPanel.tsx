@@ -86,27 +86,86 @@ function GitPanelContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cloneUrl, setCloneUrl] = useState('')
-  const [cloneToken, setCloneToken] = useState('')
   const [cloning, setCloning] = useState(false)
   const [cloneError, setCloneError] = useState<string | null>(null)
   const [cloneAuthNeeded, setCloneAuthNeeded] = useState(false)
 
+  // Auth state
+  const [gitUser, setGitUser] = useState<string | null>(null)
+  const [deviceCode, setDeviceCode] = useState<{ user_code: string; verification_uri: string; device_code: string; interval: number } | null>(null)
+  const [authPolling, setAuthPolling] = useState(false)
+  const [showPat, setShowPat] = useState(false)
+  const [patInput, setPatInput] = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Check stored token on mount
+  useEffect(() => {
+    const token = localStorage.getItem('af-git-token')
+    if (token) {
+      fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.login) setGitUser(d.login) })
+        .catch(() => {})
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [])
+
+  const startDeviceFlow = async () => {
+    try {
+      const res = await fetch('/api/auth/github', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' }),
+      })
+      const data = await res.json()
+      if (data.error) { setShowPat(true); return } // fallback to PAT if device flow unavailable
+      setDeviceCode(data)
+      navigator.clipboard.writeText(data.user_code).catch(() => {})
+      window.open(data.verification_uri, '_blank')
+      setAuthPolling(true)
+      pollRef.current = setInterval(async () => {
+        try {
+          const poll = await fetch('/api/auth/github', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'poll', device_code: data.device_code }),
+          }).then(r => r.json())
+          if (poll.access_token) {
+            clearInterval(pollRef.current!); pollRef.current = null
+            localStorage.setItem('af-git-token', poll.access_token)
+            setAuthPolling(false); setDeviceCode(null)
+            // Fetch user info
+            const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${poll.access_token}` } }).then(r => r.json())
+            setGitUser(user.login)
+          }
+          if (poll.error === 'expired_token') { clearInterval(pollRef.current!); pollRef.current = null; setAuthPolling(false); setDeviceCode(null) }
+        } catch {}
+      }, (data.interval || 5) * 1000)
+    } catch { setShowPat(true) }
+  }
+
+  const savePat = () => {
+    if (!patInput.trim()) return
+    localStorage.setItem('af-git-token', patInput.trim())
+    fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${patInput.trim()}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.login) setGitUser(d.login) })
+      .catch(() => {})
+    setPatInput(''); setShowPat(false)
+  }
+
+  const signOut = () => { localStorage.removeItem('af-git-token'); setGitUser(null) }
+
   const handleClone = async () => {
     if (!cloneUrl.trim()) return
     setCloning(true); setCloneError(null)
-    if (cloneAuthNeeded && cloneToken.trim()) {
-      localStorage.setItem('af-git-token', cloneToken.trim())
-      setCloneAuthNeeded(false)
-    }
     const name = cloneUrl.trim().split('/').pop()?.replace('.git', '') || 'repo'
     try {
       await connectRepo({ url: cloneUrl.trim(), name, branch: 'main', role: 'primary', repoType: 'public' })
-      setCloneUrl(''); setCloneToken('')
+      setCloneUrl('')
       loadedRef.current = false; loadRepos()
     } catch (err: any) {
       const msg = err.message || 'Clone failed'
       if (msg.includes('401') || msg.includes('auth') || msg.includes('403')) {
-        setCloneAuthNeeded(true); setCloneError('Authentication required')
+        setCloneAuthNeeded(true); setCloneError('Authentication required — sign in above')
       } else { setCloneError(msg) }
     } finally { setCloning(false) }
   }
@@ -174,8 +233,48 @@ function GitPanelContent() {
   return (
     <div className="flex flex-col overflow-hidden h-full">
       <div className="relative flex-1 overflow-y-auto">
-        <FeatureHint id="git" text="Clone repos, commit changes, and sync branches — all from within the studio." show side="bottom" />
-        <Separator />
+        {/* Auth */}
+        <div className="px-3 py-2 border-b border-border/30">
+          {gitUser ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={13} className="text-emerald-500" />
+              <span className="text-xs flex-1">Signed in as <strong>{gitUser}</strong></span>
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={signOut}>Sign out</Button>
+            </div>
+          ) : deviceCode ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Enter this code on GitHub:</p>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-lg font-bold tracking-widest text-primary">{deviceCode.user_code}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigator.clipboard.writeText(deviceCode.user_code)}>
+                  <Copy size={12} />
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                {authPolling && <Loader2 size={11} className="animate-spin text-muted-foreground" />}
+                <span className="text-[10px] text-muted-foreground flex-1">{authPolling ? 'Waiting for authorization…' : ''}</span>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => window.open(deviceCode.verification_uri, '_blank')}>Open GitHub</Button>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setDeviceCode(null); setAuthPolling(false) }}>Cancel</Button>
+              </div>
+            </div>
+          ) : showPat ? (
+            <div className="space-y-1.5">
+              <div className="flex gap-1.5">
+                <input type="password" value={patInput} onChange={e => setPatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && savePat()} placeholder="Paste token..." className="flex-1 h-7 px-2 text-xs rounded-md border border-border bg-background" />
+                <Button size="sm" className="h-7 text-xs" onClick={savePat} disabled={!patInput.trim()}>Save</Button>
+              </div>
+              <a href="https://github.com/settings/tokens/new?scopes=repo&description=AgentFlow" target="_blank" rel="noopener" className="text-[10px] text-primary underline">Create token on GitHub ↗</a>
+              <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => setShowPat(false)}>← Back</Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Github size={14} className="text-muted-foreground" />
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={startDeviceFlow}>Sign in with GitHub</Button>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => setShowPat(true)}>Use token</Button>
+            </div>
+          )}
+        </div>
+
         <SectionHeader title="Repositories" count={repoStates.length} open={reposOpen} onToggle={() => setReposOpen(o => !o)} />
         {reposOpen && (
           <>
@@ -200,20 +299,7 @@ function GitPanelContent() {
             {cloning ? <Loader2 size={12} className="animate-spin" /> : 'Clone'}
           </Button>
         </div>
-        {cloneAuthNeeded && (
-          <div className="flex gap-1.5">
-            <input
-              type="password"
-              value={cloneToken}
-              onChange={e => setCloneToken(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleClone()}
-              placeholder="Token (ghp_... or glpat-...)"
-              className="flex-1 h-7 px-2 text-xs rounded-md border border-amber-500/30 bg-amber-500/5 placeholder:text-muted-foreground/50 focus:outline-none"
-            />
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleClone}>Retry</Button>
-          </div>
-        )}
-        {cloneError && !cloneAuthNeeded && <p className="text-[10px] text-destructive px-0.5">{cloneError}</p>}
+        {cloneError && <p className="text-[10px] text-destructive px-0.5">{cloneError}</p>}
       </div>
     </div>
   )
