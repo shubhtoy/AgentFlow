@@ -115,7 +115,6 @@ function AuthSection({ authInfo, loading, onRefresh }: { authInfo: GitAuthInfo |
       )}
     </>
   )
-  )
 }
 
 function RepoCard({ repo, onSync, onScan, onDisconnect }: { repo: RepoWithStatus; onSync: () => void; onScan: () => void; onDisconnect: () => void }) {
