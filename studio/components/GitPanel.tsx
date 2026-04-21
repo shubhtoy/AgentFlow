@@ -2,15 +2,14 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
-  GitBranch, RefreshCw, Search, Unplug, Plus, AlertTriangle,
+  GitBranch, RefreshCw, Search, Unplug, Plus, AlertTriangle, Loader2,
   CheckCircle2, XCircle, Circle, AlertCircle, Key, ShieldCheck,
   ShieldAlert, ChevronDown, ChevronRight, Github, FolderGit2,
-  Globe, Lock, Copy, Loader2,
+  Globe, Lock, Copy,
 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import type { GitRepoStatus, RepoMapping } from '@/lib/api'
 import { FeatureHint } from './onboarding/FeatureHint'
-import { RepoConfigDialog } from './RepoConfigDialog'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
@@ -86,7 +85,31 @@ function GitPanelContent() {
   const [repoStates, setRepoStates] = useState<RepoWithStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [configOpen, setConfigOpen] = useState(false)
+  const [cloneUrl, setCloneUrl] = useState('')
+  const [cloneToken, setCloneToken] = useState('')
+  const [cloning, setCloning] = useState(false)
+  const [cloneError, setCloneError] = useState<string | null>(null)
+  const [cloneAuthNeeded, setCloneAuthNeeded] = useState(false)
+
+  const handleClone = async () => {
+    if (!cloneUrl.trim()) return
+    setCloning(true); setCloneError(null)
+    if (cloneAuthNeeded && cloneToken.trim()) {
+      localStorage.setItem('af-git-token', cloneToken.trim())
+      setCloneAuthNeeded(false)
+    }
+    const name = cloneUrl.trim().split('/').pop()?.replace('.git', '') || 'repo'
+    try {
+      await connectRepo({ url: cloneUrl.trim(), name, branch: 'main', role: 'primary', repoType: 'public' })
+      setCloneUrl(''); setCloneToken('')
+      loadedRef.current = false; loadRepos()
+    } catch (err: any) {
+      const msg = err.message || 'Clone failed'
+      if (msg.includes('401') || msg.includes('auth') || msg.includes('403')) {
+        setCloneAuthNeeded(true); setCloneError('Authentication required')
+      } else { setCloneError(msg) }
+    } finally { setCloning(false) }
+  }
   const [reposOpen, setReposOpen] = useState(true)
   const loadedRef = useRef(false)
 
@@ -168,8 +191,34 @@ function GitPanelContent() {
         )}
       </div>
       <Separator />
-      <div className="p-2"><Button variant="outline" size="sm" className="w-full" onClick={() => setConfigOpen(true)}><Plus size={13} className="mr-1" /> Connect Repo</Button></div>
-      <RepoConfigDialog open={configOpen} onClose={() => setConfigOpen(false)} onSave={async (data: RepoConfigFormData) => { setConfigOpen(false); await connectRepo({ url: data.mapping.url, name: data.mapping.name, role: data.mapping.role, branch: data.mapping.branch, repoType: data.mapping.repoType }); loadedRef.current = false; loadRepos() }} />
+      <div className="p-2 space-y-2">
+        <div className="flex gap-1.5">
+          <input
+            value={cloneUrl}
+            onChange={e => { setCloneUrl(e.target.value); setCloneError(null); setCloneAuthNeeded(false) }}
+            onKeyDown={e => e.key === 'Enter' && handleClone()}
+            placeholder="Paste repo URL to clone..."
+            className="flex-1 h-8 px-2.5 text-xs rounded-md border border-border bg-background placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <Button size="sm" className="h-8 text-xs px-3" onClick={handleClone} disabled={cloning || !cloneUrl.trim()}>
+            {cloning ? <Loader2 size={12} className="animate-spin" /> : 'Clone'}
+          </Button>
+        </div>
+        {cloneAuthNeeded && (
+          <div className="flex gap-1.5">
+            <input
+              type="password"
+              value={cloneToken}
+              onChange={e => setCloneToken(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleClone()}
+              placeholder="Token (ghp_... or glpat-...)"
+              className="flex-1 h-7 px-2 text-xs rounded-md border border-amber-500/30 bg-amber-500/5 placeholder:text-muted-foreground/50 focus:outline-none"
+            />
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleClone}>Retry</Button>
+          </div>
+        )}
+        {cloneError && !cloneAuthNeeded && <p className="text-[10px] text-destructive px-0.5">{cloneError}</p>}
+      </div>
     </div>
   )
 }
