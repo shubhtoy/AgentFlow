@@ -95,7 +95,7 @@ function GitPanelContent() {
   const [gitProvider, setGitProvider] = useState<string | null>(null)
   const [showPat, setShowPat] = useState(false)
   const [patInput, setPatInput] = useState('')
-  const [authConfig, setAuthConfig] = useState<{ providers: { id: string; name: string }[]; localGit: boolean; pat: { links: Record<string, string | null> } } | null>(null)
+  const [authConfig, setAuthConfig] = useState<{ providers: { id: string; name: string }[]; deviceFlow: boolean; localGit: boolean; pat: { links: Record<string, string | null> } } | null>(null)
 
   // Load auth config + session on mount
   useEffect(() => {
@@ -104,7 +104,6 @@ function GitPanelContent() {
       if (s?.user?.name) { setGitUser(s.user.name); setGitProvider((s as any).provider || null) }
       if ((s as any).accessToken) localStorage.setItem('af-git-token', (s as any).accessToken)
     }).catch(() => {
-      // No session — check localStorage token
       const token = localStorage.getItem('af-git-token')
       if (token) {
         fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })
@@ -114,6 +113,36 @@ function GitPanelContent() {
       }
     })
   }, [])
+
+  // Device flow
+  const [deviceCode, setDeviceCode] = useState<{ user_code: string; verification_uri: string; device_code: string; interval: number } | null>(null)
+  const [devicePolling, setDevicePolling] = useState(false)
+  const pollRef2 = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => () => { if (pollRef2.current) clearInterval(pollRef2.current) }, [])
+
+  const startDeviceFlow = async () => {
+    const res = await fetch('/api/auth/device', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start' }) })
+    const data = await res.json()
+    if (data.error || !data.user_code) { setShowPat(true); return }
+    setDeviceCode(data)
+    navigator.clipboard.writeText(data.user_code).catch(() => {})
+    window.open(data.verification_uri, '_blank')
+    setDevicePolling(true)
+    pollRef2.current = setInterval(async () => {
+      try {
+        const poll = await fetch('/api/auth/device', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'poll', device_code: data.device_code }) }).then(r => r.json())
+        if (poll.access_token) {
+          clearInterval(pollRef2.current!); pollRef2.current = null
+          localStorage.setItem('af-git-token', poll.access_token)
+          setDevicePolling(false); setDeviceCode(null)
+          const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${poll.access_token}` } }).then(r => r.json())
+          setGitUser(user.login); setGitProvider('github')
+        }
+        if (poll.error === 'expired_token') { clearInterval(pollRef2.current!); pollRef2.current = null; setDevicePolling(false); setDeviceCode(null) }
+      } catch {}
+    }, (data.interval || 5) * 1000)
+  }
 
   const handleSignIn = (provider: string) => {
     window.location.href = `/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`
@@ -225,6 +254,20 @@ function GitPanelContent() {
               <span className="text-xs flex-1">Signed in as <strong>{gitUser}</strong>{gitProvider && gitProvider !== 'token' ? ` (${gitProvider})` : ''}</span>
               <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground" onClick={signOutGit}>Sign out</Button>
             </div>
+          ) : deviceCode ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Enter this code on GitHub:</p>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-lg font-bold tracking-widest text-primary">{deviceCode.user_code}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigator.clipboard.writeText(deviceCode.user_code)}><Copy size={12} /></Button>
+              </div>
+              <div className="flex items-center gap-2">
+                {devicePolling && <Loader2 size={11} className="animate-spin text-muted-foreground" />}
+                <span className="text-[10px] text-muted-foreground flex-1">{devicePolling ? 'Waiting…' : ''}</span>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => window.open(deviceCode.verification_uri, '_blank')}>Open GitHub</Button>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px] text-muted-foreground" onClick={() => { if (pollRef2.current) clearInterval(pollRef2.current); setDeviceCode(null); setDevicePolling(false) }}>Cancel</Button>
+              </div>
+            </div>
           ) : showPat ? (
             <div className="space-y-1.5">
               <div className="flex gap-1.5">
@@ -241,7 +284,12 @@ function GitPanelContent() {
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
-              {authConfig?.providers.map(p => (
+              {authConfig?.deviceFlow && (
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={startDeviceFlow}>
+                  <Github size={13} /> Sign in with GitHub
+                </Button>
+              )}
+              {authConfig?.providers.filter(p => !(authConfig.deviceFlow && p.id === 'github')).map(p => (
                 <Button key={p.id} variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleSignIn(p.id)}>
                   {p.id === 'github' ? <Github size={13} /> : <Globe size={13} />} {p.name}
                 </Button>

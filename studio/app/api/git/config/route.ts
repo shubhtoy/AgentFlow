@@ -21,8 +21,12 @@ export async function GET() {
   const isCloud = !!(process.env.VERCEL || process.env.RAILWAY_ENVIRONMENT || process.env.RENDER)
   const localGit = process.env.AF_LOCAL_GIT !== 'false' && !isCloud
 
+  // Device flow — only needs client ID (no secret), best UX for GitHub
+  const deviceFlow = !!process.env.GITHUB_CLIENT_ID
+
   return Response.json({
     providers,
+    deviceFlow,
     localGit,
     pat: {
       links: {
