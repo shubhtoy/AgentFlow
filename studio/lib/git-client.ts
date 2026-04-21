@@ -12,6 +12,11 @@ const dir = '/repo'
 
 /** Clone a repo and return all files */
 export async function cloneAndList(url: string, opts?: { branch?: string; token?: string; onProgress?: (msg: string) => void }): Promise<{ files: { path: string; content: string }[] }> {
+  // Normalize URL
+  let gitUrl = url.trim()
+  if (!gitUrl.endsWith('.git') && gitUrl.includes('github.com')) gitUrl += '.git'
+  if (gitUrl.startsWith('git@')) gitUrl = gitUrl.replace('git@', 'https://').replace(':', '/')
+  if (!gitUrl.startsWith('http')) gitUrl = 'https://' + gitUrl
   // Clean previous clone
   try { await fs.promises.rmdir(dir, { recursive: true } as any) } catch {}
   await fs.promises.mkdir(dir)
@@ -20,7 +25,7 @@ export async function cloneAndList(url: string, opts?: { branch?: string; token?
     fs,
     http,
     dir,
-    url,
+    url: gitUrl,
     ref: opts?.branch || 'main',
     singleBranch: true,
     depth: 1,
