@@ -10,7 +10,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
 if (process.env.GITLAB_CLIENT_ID && process.env.GITLAB_CLIENT_SECRET)
   providers.push(GitLab({ authorization: { params: { scope: 'read_repository write_repository' } } }))
 if (process.env.BITBUCKET_CLIENT_ID && process.env.BITBUCKET_CLIENT_SECRET)
-  providers.push(Bitbucket())
+  providers.push(Bitbucket({}))
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,

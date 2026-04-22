@@ -6,6 +6,8 @@
 @import "@fontsource/roboto-mono/500.css";
 
 @import "tailwindcss";
+@import "fumadocs-ui/css/shadcn.css";
+@import "fumadocs-ui/css/preset.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -19,86 +21,86 @@
 }
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-success: hsl(var(--success));
-  --color-warning: hsl(var(--warning));
-  --color-node-step: hsl(var(--node-step));
-  --color-node-router: hsl(var(--node-router));
-  --color-node-sub-workflow: hsl(var(--node-sub-workflow));
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-node-step: var(--node-step);
+  --color-node-router: var(--node-router);
+  --color-node-sub-workflow: var(--node-sub-workflow);
 }
 
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 240 10% 10%;
-    --card: 40 15% 96%;
-    --card-foreground: 240 10% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
-    --muted: 40 10% 93%;
-    --muted-foreground: 240 5% 45%;
-    --border: 40 10% 90%;
-    --input: 40 10% 90%;
-    --ring: 220 90% 56%;
-    --primary: 220 90% 56%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 40 10% 93%;
-    --secondary-foreground: 240 5.9% 10%;
-    --accent: 40 10% 93%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --success: 142 76% 36%;
-    --warning: 38 92% 50%;
-    --node-step: 217 91% 60%;
-    --node-router: 271 91% 65%;
-    --node-sub-workflow: 172 66% 50%;
+    --background: hsl(40 20% 98%);
+    --foreground: hsl(240 10% 10%);
+    --card: hsl(40 15% 96%);
+    --card-foreground: hsl(240 10% 10%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(240 10% 10%);
+    --muted: hsl(40 10% 93%);
+    --muted-foreground: hsl(240 5% 45%);
+    --border: hsl(40 10% 90%);
+    --input: hsl(40 10% 90%);
+    --ring: hsl(220 90% 56%);
+    --primary: hsl(220 90% 56%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(40 10% 93%);
+    --secondary-foreground: hsl(240 5.9% 10%);
+    --accent: hsl(40 10% 93%);
+    --accent-foreground: hsl(240 5.9% 10%);
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --success: hsl(142 76% 36%);
+    --warning: hsl(38 92% 50%);
+    --node-step: hsl(217 91% 60%);
+    --node-router: hsl(271 91% 65%);
+    --node-sub-workflow: hsl(172 66% 50%);
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 220 10% 7%;
-    --foreground: 0 0% 95%;
-    --card: 220 8% 11%;
-    --card-foreground: 0 0% 95%;
-    --popover: 220 8% 11%;
-    --popover-foreground: 0 0% 95%;
-    --muted: 220 7% 14%;
-    --muted-foreground: 220 5% 55%;
-    --border: 220 7% 15%;
-    --input: 220 7% 15%;
-    --ring: 220 90% 62%;
-    --primary: 220 90% 62%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 230 10% 18%;
-    --secondary-foreground: 0 0% 95%;
-    --accent: 230 10% 18%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --success: 142 76% 42%;
-    --warning: 38 92% 55%;
-    --node-step: 217 91% 65%;
-    --node-router: 271 91% 70%;
-    --node-sub-workflow: 172 66% 55%;
+    --background: hsl(220 10% 7%);
+    --foreground: hsl(0 0% 95%);
+    --card: hsl(220 8% 11%);
+    --card-foreground: hsl(0 0% 95%);
+    --popover: hsl(220 8% 11%);
+    --popover-foreground: hsl(0 0% 95%);
+    --muted: hsl(220 7% 14%);
+    --muted-foreground: hsl(220 5% 55%);
+    --border: hsl(220 7% 15%);
+    --input: hsl(220 7% 15%);
+    --ring: hsl(220 90% 62%);
+    --primary: hsl(220 90% 62%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(230 10% 18%);
+    --secondary-foreground: hsl(0 0% 95%);
+    --accent: hsl(230 10% 18%);
+    --accent-foreground: hsl(0 0% 95%);
+    --destructive: hsl(0 72% 51%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --success: hsl(142 76% 42%);
+    --warning: hsl(38 92% 55%);
+    --node-step: hsl(217 91% 65%);
+    --node-router: hsl(271 91% 70%);
+    --node-sub-workflow: hsl(172 66% 55%);
   }
 }
 
@@ -107,8 +109,8 @@
  * Scoped to body:not(:has(#nd-docs-layout)) so they don't affect docs pages.
  */
 body:not(:has(#nd-docs-layout)) {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: 'Roboto', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -117,7 +119,7 @@ body:not(:has(#nd-docs-layout)) {
 /* Subtle scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
+  scrollbar-color: var(--border) transparent;
 }
 
 @layer base {
@@ -125,7 +127,7 @@ body:not(:has(#nd-docs-layout)) {
   ::after,
   ::before,
   ::backdrop {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
   }
 
   code, pre, kbd {
@@ -135,7 +137,7 @@ body:not(:has(#nd-docs-layout)) {
 
 /* ── React Flow overrides ─────────────────────────────────── */
 .react-flow {
-  background: hsl(var(--background));
+  background: var(--background);
 }
 .react-flow__node { cursor: pointer !important; }
 .react-flow__edge-path { transition: stroke 0.2s; }
@@ -473,12 +475,12 @@ div[data-sidebar-chat] .cpk\:\[div\[data-sidebar-chat\]_\&\]\:px-8,
 #react-doc-viewer #csv-renderer td,
 #react-doc-viewer #csv-renderer th {
   padding: 6px 12px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   font-size: 12px;
   white-space: nowrap;
 }
 #react-doc-viewer #csv-renderer th {
-  background: hsl(var(--muted));
+  background: var(--muted);
   font-weight: 600;
   position: sticky;
   top: 0;

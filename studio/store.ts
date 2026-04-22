@@ -950,7 +950,7 @@ export const useAppStore = create<AppStore>()(
               try { await ws.write(f.path, f.content) } catch {}
             }
             set(s => ({
-              repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType, role: params.role, agentflowPath: '.agentflow' }],
+              repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType as 'public' | 'private' | 'custom', role: params.role, agentflowPath: '.agentflow' }],
             }))
             get().showNotification(`Cloned "${params.name}" — ${files.length} files`, 'success')
             await get().reload()

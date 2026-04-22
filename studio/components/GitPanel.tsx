@@ -184,7 +184,7 @@ function GitPanelContent() {
           repoType: 'private',
           role: 'primary',
           agentflowPath: '.agentflow',
-          status: { isRepo: true, branch: status.branch, modifiedFiles: [], untrackedFiles: [], hasRemote: false, remoteUrl: null },
+          status: { isRepo: true, branch: status.branch, isClean: true, ahead: 0, behind: 0, modifiedFiles: [], untrackedFiles: [], hasRemote: false, remoteUrl: null },
           loading: false,
           syncing: false,
         }])
@@ -202,10 +202,6 @@ function GitPanelContent() {
   const handleSync = useCallback(async (repoName: string) => {
     setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: true } : r))
     try {
-      const { getDirectoryHandle } = await import('@/lib/workspace/browser-adapter')
-      const { pull } = await import('@/lib/git-client')
-      const dir = getDirectoryHandle()
-      if (dir) await pull(dir, localStorage.getItem('af-git-token') || undefined)
       await loadRepos()
     } catch { setRepoStates(prev => prev.map(r => r.name === repoName ? { ...r, syncing: false } : r)) }
   }, [triggerSync])

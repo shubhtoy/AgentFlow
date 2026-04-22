@@ -704,7 +704,7 @@ export function Canvas() {
             return getNodeTypeColor('step', resolvedTheme, primaryColor)
           }}
           maskColor={isDark ? 'rgba(0,0,0,0.3)' : 'rgba(240,240,240,0.6)'}
-          style={{ background: isDark ? 'hsl(240, 10%, 8%)' : 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid hsl(var(--border) / 0.3)', marginRight: 12, marginBottom: 32, width: 240, height: 160 }} />
+          style={{ background: isDark ? 'hsl(240, 10%, 8%)' : 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid color-mix(in srgb, var(--border) 30%, transparent)', marginRight: 12, marginBottom: 32, width: 240, height: 160 }} />
       </ReactFlow>
 
       {/* Empty state — welcome screen */}

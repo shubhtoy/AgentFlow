@@ -400,8 +400,8 @@ export const ElementsView = memo(function ElementsView() {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="flex items-center gap-1.5 w-full px-1 py-1.5 hover:bg-accent/40 rounded-md transition-colors group/trigger">
                     <ChevronRight size={12} className="text-muted-foreground/50 shrink-0 transition-transform duration-150 group-data-[state=open]/trigger:rotate-90" />
-                    <span className="flex items-center justify-center size-4 rounded" style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}>
-                      <Workflow size={10} style={{ color: 'hsl(var(--primary))' }} />
+                    <span className="flex items-center justify-center size-4 rounded" style={{ backgroundColor: 'color-mix(in srgb, var(--primary) 10%, transparent)' }}>
+                      <Workflow size={10} style={{ color: 'var(--primary)' }} />
                     </span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex-1 text-left">Workflows</span>
                     <span className="text-[9px] text-muted-foreground/50">{filtered.workflows.length}</span>
@@ -409,7 +409,7 @@ export const ElementsView = memo(function ElementsView() {
                   <CollapsibleContent>
                     <div className="grid grid-cols-3 gap-1.5 pt-1 pb-2">
                       {filtered.workflows.map(item => (
-                        <BlockCard key={`lib-wf-${item.name}`} item={item} icon={Workflow} color="hsl(var(--primary))"
+                        <BlockCard key={`lib-wf-${item.name}`} item={item} icon={Workflow} color="var(--primary)"
                           onInstall={handleInstall} installed={false} />
                       ))}
                     </div>
@@ -471,9 +471,9 @@ export const ElementsView = memo(function ElementsView() {
                 )
               })}
               {filtered.workflows.length > 0 && (
-                <SectionGroup label="Workflows" count={filtered.workflows.length} icon={Workflow} color="hsl(var(--primary))">
+                <SectionGroup label="Workflows" count={filtered.workflows.length} icon={Workflow} color="var(--primary)">
                   {filtered.workflows.map(item => (
-                    <ItemRow key={`lib-wf-${item.name}`} item={item} icon={Workflow} color="hsl(var(--primary))"
+                    <ItemRow key={`lib-wf-${item.name}`} item={item} icon={Workflow} color="var(--primary)"
                       onInstall={handleInstall} installed={false} />
                   ))}
                 </SectionGroup>

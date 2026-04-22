@@ -44,7 +44,8 @@ const PRECONFIGURED_MCPS = [
 
 const runtime = new CopilotRuntime({
   mcpApps: { servers: [...PRECONFIGURED_MCPS, ...getMcpServers()] },
-})
+  intelligence: undefined,
+} as any)
 
 const app = createCopilotEndpoint({ runtime, basePath: '/api/copilotkit' })
 export const GET = handle(app)
