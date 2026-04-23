@@ -18,7 +18,8 @@
     "./services/*": "./src/services/*.js",
     "./svc-utils/*": "./src/svc-utils/*.js",
     "./utils/*": "./src/utils/*.js",
-    "./transport/*": "./src/transport/*.js"
+    "./transport/*": "./src/transport/*.js",
+    "./export": "./src/export/index.js"
   },
   "dependencies": {
     "@agentflow/core": "*",
