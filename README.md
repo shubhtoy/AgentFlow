@@ -27,7 +27,7 @@ Open `http://localhost:3000`.
     step-2/SKILL.md
   instructions/       # Reusable instructions
   capabilities/       # Tool definitions
-  runbooks/           # Conditions & interactions
+  skills/           # Conditions & interactions
   memory/             # Persistent context
   hooks/              # Event triggers
 

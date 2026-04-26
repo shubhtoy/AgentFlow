@@ -1,7 +1,6 @@
 {
   "name": "diagnostics-after-write",
-  "version": "1.0.0",
-  "description": "Run diagnostics after any file write to catch errors early",
+  "description": "Run type checking and diagnostics after any source file edit to catch errors early",
   "event": "fileEdited",
   "condition": {
     "field": "path",

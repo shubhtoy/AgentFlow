@@ -24,7 +24,7 @@ tags:
   mcp.json               ← MCP server configuration           (optional)
   capabilities/          ← Tool definitions: builtin, script, MCP
   instructions/          ← Reusable instruction modules (workflow + global)
-  runbooks/              ← Routing conditions + human touchpoints
+  skills/              ← Routing conditions + human touchpoints
   memory/                ← Persistent state across sessions
   hooks/                 ← Event-driven automation (JSON)
   <workflow>/
@@ -42,7 +42,7 @@ tags:
 |----------|-----------|--------|---------------|---------|
 | **instructions** | `instructions/` | `workflow`, `global` | `workflow` | How to do things — reusable instruction modules |
 | **capabilities** | `capabilities/` | `descriptor`, `config` | `descriptor` | What the agent can do — tool definitions |
-| **runbooks** | `runbooks/` | `interaction`, `condition` | `interaction` | Routing conditions + human touchpoints |
+| **skills** | `skills/` | `interaction`, `condition` | `interaction` | Routing conditions + human touchpoints |
 | **memory** | `memory/` | — | `null` | Persistent state across sessions |
 | **hooks** | `hooks/` | — | `null` | Event-driven automation (JSON files) |
 | **identity** | `AGENTS.md` | — | N/A | Who the agent is (singular file) |
@@ -55,8 +55,8 @@ tags:
 | instructions | Otherwise | `workflow` |
 | capabilities | `type` is `builtin`/`script`/`mcp`/`package` | `descriptor` |
 | capabilities | Otherwise | `config` |
-| runbooks | `type` is `condition` | `condition` |
-| runbooks | Otherwise | `interaction` |
+| skills | `type` is `condition` | `condition` |
+| skills | Otherwise | `interaction` |
 
 ---
 
@@ -80,7 +80,7 @@ tags:
 {{capabilities/read-code}}                            → mention: load resource / wire tool
 {{instructions/code-search}}                          → mention: load instruction
 {{-> nodes/create-design}}                            → edge: go here next
-{{-> nodes/plan-tasks | runbooks/design-approved}}    → conditional edge: go here IF
+{{-> nodes/plan-tasks | skills/design-approved}}    → conditional edge: go here IF
 {{<< output.gather-requirements}}                     → data flow: read previous output
 ```
 
@@ -241,7 +241,7 @@ description: Project-wide coding conventions
 
 ---
 
-## Runbook Frontmatter (2 scopes)
+## Skill Frontmatter (2 scopes)
 
 **Condition** (used in conditional edges):
 ```yaml
@@ -380,7 +380,7 @@ Split a node if total > 8k tokens.
 
 **Instructions (12):** `requirements-elicitation`, `technical-design`, `task-decomposition`, `implementation-discipline`, `code-search`, `security-review`, `api-design`, `test-analysis`, `coding-standards`, `debugging`, `refactoring`, `prompt-engineering`
 
-**Runbooks (29):** 17 conditions (`design-approved`, `design-rejected`, `requirements-approved`, `requirements-rejected`, `tasks-approved`, `tasks-rejected`, `tests-pass`, `tests-fail`, `all-tasks-done`, `more-tasks-remain`, `task-complete`, `task-failed`, `implementation-ready`, `retry-with-feedback`, `code-needed`, `debug-needed`, `explore-needed`) + 12 interactions (`review-design`, `review-requirements`, `review-tasks`, `checkpoint`, `collect-feedback`, `show-diff`, `escalate-to-human`, `confirm-destructive`, `explain-needed`, `refactor-needed`, `new-request`, `session-ending`)
+**Skills (29):** 17 conditions (`design-approved`, `design-rejected`, `requirements-approved`, `requirements-rejected`, `tasks-approved`, `tasks-rejected`, `tests-pass`, `tests-fail`, `all-tasks-done`, `more-tasks-remain`, `task-complete`, `task-failed`, `implementation-ready`, `retry-with-feedback`, `code-needed`, `debug-needed`, `explore-needed`) + 12 interactions (`review-design`, `review-requirements`, `review-tasks`, `checkpoint`, `collect-feedback`, `show-diff`, `escalate-to-human`, `confirm-destructive`, `explain-needed`, `refactor-needed`, `new-request`, `session-ending`)
 
 **Hooks (5):** `diagnostics-after-write`, `lint-on-save`, `test-on-change` *(off)*, `security-scan-on-commit` *(off)*, `memory-on-session-end`
 

@@ -104,18 +104,6 @@
   }
 }
 
-/*
- * Studio body/border styles — unlayered to override fumadocs' @layer base resets.
- * Scoped to body:not(:has(#nd-docs-layout)) so they don't affect docs pages.
- */
-body:not(:has(#nd-docs-layout)) {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 /* Subtle scrollbars */
 * {
   scrollbar-width: thin;

@@ -53,7 +53,7 @@ export function SettingsDialogContent({ onClose }: { onClose?: () => void }) {
     if (!open) return
     setDirty(false)
     setKeyValues({})
-    fetch('/api/copilot/keys').then(r => r.json()).then(d => setKeyStatus(d.keys || {})).catch(() => {})
+    fetch('/api/copilot?action=keys').then(r => r.json()).then(d => setKeyStatus(d.keys || {})).catch(() => {})
     fetch('/api/config/mode').then(r => r.json()).then(d => setServerMode(d.mode === 'multi-user' ? 'multi-user' : 'default')).catch(() => {})
     setGitToken(localStorage.getItem(LS_GIT_TOKEN) || '')
   }, [open])
@@ -73,10 +73,10 @@ export function SettingsDialogContent({ onClose }: { onClose?: () => void }) {
     setSaving(true)
     try {
       if (Object.keys(toSave).length > 0) {
-        const res = await fetch('/api/copilot/keys', {
+        const res = await fetch('/api/copilot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toSave),
+          body: JSON.stringify({ action: 'keys', ...toSave }),
         })
         if (!res.ok) throw new Error('Failed to save')
       }

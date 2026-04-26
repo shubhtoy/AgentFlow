@@ -1,0 +1,52 @@
+id: agent-spec
+name: Open Agent Spec
+website: https://openagentspec.dev
+version: '26.1.0'
+serializer: tsagentspec
+
+mapping:
+  identity:
+    transform: to-agent-system-prompt
+
+  instructions:
+    transform: to-system-prompt-chunk
+
+  skills:
+    transform: to-agent-specialization
+
+  capabilities:
+    builtin:
+      transform: to-builtin-tool
+    script:
+      transform: to-server-tool
+    mcp:
+      transform: to-mcp-tool
+    package:
+      transform: to-client-tool
+
+  nodes:
+    step:
+      transform: to-agent-node
+    sub-workflow:
+      transform: to-flow-node
+
+  edges:
+    unconditional:
+      transform: to-control-flow-edge
+    conditional:
+      transform: to-branching-node
+
+  memory:
+    transform: null
+
+  hooks:
+    transform: null
+
+mcp:
+  format: agent-spec-mcp
+  components:
+    - MCPTool
+    - MCPToolBox
+    - StdioTransport
+    - SSETransport
+    - StreamableHTTPTransport

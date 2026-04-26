@@ -27,7 +27,7 @@ Processes a single node directory. Parses the `SKILL.md` file, extracts frontmat
 
 ### extractRefs
 
-Scans parsed node content for references to resources — instructions, capabilities, runbooks, and other nodes. Returns a list of unresolved reference tokens.
+Scans parsed node content for references to resources — instructions, capabilities, skills, and other nodes. Returns a list of unresolved reference tokens.
 
 ### resolveEdgeTarget
 
@@ -35,7 +35,7 @@ Takes edge declarations (from frontmatter or inline links) and resolves them to 
 
 ## Adding a Validation Rule
 
-The validator lives in `src/validator.js`. The `validate()` function runs 13 check categories against a parsed workspace AST.
+The validator lives in `packages/core/src/validator.js`. The `validate()` function runs 13 check categories against a parsed workspace AST.
 
 ### Check categories
 
@@ -101,7 +101,7 @@ Different platforms and authors use varying names for the same concept. `resolve
 ```js
 resolveSchemaKey("tool")       // -> "capability"
 resolveSchemaKey("prompt")     // -> "instruction"
-resolveSchemaKey("condition")  // -> "runbook"
+resolveSchemaKey("condition")  // -> "skill"
 resolveSchemaKey("capability") // -> "capability"
 ```
 

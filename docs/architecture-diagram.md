@@ -39,7 +39,7 @@ graph TB
         direction TB
         Parser["Parser<br/>(parser.js)<br/>Frontmatter + Ref Extraction<br/>+ Graph Construction"]
         Validator["Validator<br/>(validator.js)<br/>Schema + Refs + Cycles<br/>+ Unreachable Nodes"]
-        Taxonomy["Taxonomy Registry<br/>(taxonomy.js)<br/>instructions | capabilities<br/>runbooks | memory | hooks"]
+        Taxonomy["Taxonomy Registry<br/>(taxonomy.js)<br/>instructions | capabilities<br/>skills | memory | hooks"]
         TokenCalc["Token Calculator<br/>(token-calculator.js)"]
         DryRunner["Dry Runner<br/>(dry-runner.js)<br/>Simulated Workflow Execution"]
         Exporter["Exporter<br/>(exporter.js + structured-exporter.js)"]
@@ -92,7 +92,7 @@ graph TB
         subgraph "Reserved Dirs (Layer 3 — References)"
             Instructions["instructions/<br/>(skills, steering)"]
             Capabilities["capabilities/<br/>(tools: builtin, script, MCP)"]
-            Runbooks["runbooks/<br/>(conditions, interactions)"]
+            Skills["skills/<br/>(conditions, interactions)"]
             Memory["memory/<br/>(persistent state)"]
             Hooks["hooks/<br/>(event-driven JSON)"]
         end
@@ -189,7 +189,7 @@ graph TB
     Parser -->|"reads"| Node3
     Parser -->|"classifies"| Instructions
     Parser -->|"classifies"| Capabilities
-    Parser -->|"classifies"| Runbooks
+    Parser -->|"classifies"| Skills
     Parser -->|"classifies"| Memory
     Parser -->|"classifies"| Hooks
     McpConfigMgr -->|"reads"| McpJson
@@ -213,7 +213,7 @@ graph TB
     classDef transport fill:#2d4059,stroke:#ea5455,color:#fff
     classDef user fill:#222831,stroke:#00adb5,color:#fff
 
-    class RootAgents,WfAgents,Node1,Node2,Node3,Output,Instructions,Capabilities,Runbooks,Memory,Hooks,McpJson workspace
+    class RootAgents,WfAgents,Node1,Node2,Node3,Output,Instructions,Capabilities,Skills,Memory,Hooks,McpJson workspace
     class Parser,Validator,Taxonomy,TokenCalc,DryRunner,Exporter,PrettyPrint,Library core
     class WorkflowSvc,ValidationSvc,ExportSvc,ImportSvc,HookRegistry,EventHookEngine,InstructionMgr,TemplateSvc,ScaffoldGen,GitSvc,McpBridge service
     class McpConfigMgr,ToolProvider,ServerLifecycle,ToolScaffolder,RegistryClient,UnifiedSearch,Builtin,ScriptTool,McpTool mcp
@@ -223,7 +223,7 @@ graph TB
 
 ## How It Fits Together
 
-The `.agentflow/` workspace is the source of truth — markdown files in directories, parsed by the Parser into a typed graph (nodes, edges, resources, refs). The Taxonomy Registry defines the five resource categories (instructions, capabilities, runbooks, memory, hooks). The five-layer context model (Identity → Routing → Contract → References → Artifacts) controls what gets loaded into the LLM context window at each stage.
+The `.agentflow/` workspace is the source of truth — markdown files in directories, parsed by the Parser into a typed graph (nodes, edges, resources, refs). The Taxonomy Registry defines the five resource categories (instructions, capabilities, skills, memory, hooks). The five-layer context model (Identity → Routing → Contract → References → Artifacts) controls what gets loaded into the LLM context window at each stage.
 
 The Parser extracts four ref types from markdown (`{{mention}}`, `{{-> edge}}`, `{{-> edge | condition}}`, `{{<< data_flow}}`) and builds the workflow graph. The Validator checks schemas, broken refs, cycles, and unreachable nodes. The Dry Runner simulates execution without an LLM.
 

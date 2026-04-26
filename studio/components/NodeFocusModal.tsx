@@ -210,9 +210,9 @@ export function NodeFocusModal({ open, onClose, target }: {
   if (isNodeTarget && (!wf || !node)) return null
   if (!isNodeTarget && !resourceFile) return null
 
-  const color = isNodeTarget && node ? getNodeTypeColor(node.nodeType, theme) : 'hsl(238, 76%, 67%)'
+  const color = isNodeTarget && node ? getNodeTypeColor(node.nodeType, theme) : 'var(--node-step)'
   const typeLabel = isNodeTarget && node
-    ? (node.nodeType === 'sub-workflow' ? 'Workflow' : node.nodeType === 'router' ? 'Gateway' : 'Agent')
+    ? (node.nodeType === 'sub-workflow' ? 'Sub-workflow' : node.nodeType === 'router' ? 'Gateway' : 'Step')
     : (target.type === 'resource' ? target.category.replace(/s$/, '') : '')
   const displayName = isNodeTarget && node ? node.name : (resourceFile?.title || resourceFile?.name || (target.type === 'resource' ? target.key : ''))
 

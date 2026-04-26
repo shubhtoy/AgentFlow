@@ -42,7 +42,7 @@ Shared, reusable components that nodes reference:
 |----------|-----------|-----------------|
 | **capabilities** | `capabilities/` | Tool definitions — what the agent can do (builtin, script, MCP) |
 | **instructions** | `instructions/` | Reusable instruction modules — how to do things |
-| **runbooks** | `runbooks/` | Conditions for routing + human touchpoints (approvals, confirmations) |
+| **skills** | `skills/` | Conditions for routing + human touchpoints (approvals, confirmations) |
 | **memory** | `memory/` | Persistent state across sessions |
 | **hooks** | `hooks/` | Event-driven automation (JSON files) |
 
@@ -54,7 +54,7 @@ The `{{ref}}` syntax connects everything together. Four types:
 |--------|------|---------|
 | `{{capabilities/read-code}}` | Mention | Load this resource as context |
 | `{{-> nodes/create-design}}` | Edge | Transition to this node next |
-| `{{-> nodes/plan-tasks \| runbooks/design-approved}}` | Conditional edge | Transition IF condition is met |
+| `{{-> nodes/plan-tasks \| skills/design-approved}}` | Conditional edge | Transition IF condition is met |
 | `{{<< output.gather-requirements}}` | Data flow | Read output from a previous node |
 
 ## Context Budgets

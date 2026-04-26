@@ -3,10 +3,6 @@ title: Library
 description: Browse, import, and customize pre-built workflows and resources.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 AgentFlow ships with a library of production-ready workflows, resources, and hooks. Import what you need, customize it for your team, and start running.
 
@@ -30,7 +26,7 @@ AgentFlow ships with a library of production-ready workflows, resources, and hoo
       interactive-assistant Conversational agent (8 nodes)
 
     Resources:
-      7 capabilities, 7 instructions, 7 runbooks, 4 memory, 11 hooks
+      7 capabilities, 7 instructions, 7 skills, 4 memory, 11 hooks
     ```
 
     Or use the Skills panel in the studio to browse with previews.
@@ -46,7 +42,7 @@ AgentFlow ships with a library of production-ready workflows, resources, and hoo
     ✓ Copied build-feature/ (9 nodes, 3 gates)
     ✓ Copied 7 capabilities
     ✓ Copied 4 instructions
-    ✓ Copied 5 runbooks
+    ✓ Copied 5 skills
     ✓ Copied 4 memory files
     ✓ Copied 3 hooks
     ```
@@ -62,7 +58,7 @@ AgentFlow ships with a library of production-ready workflows, resources, and hoo
     - Adjust `context.max_tokens` in node frontmatter
     - Modify instruction content to match your team's conventions
     - Add or remove approval gates
-    - Change runbook conditions to match your criteria
+    - Change skill conditions to match your criteria
     - Enable/disable hooks
   </Step>
 </Steps>
@@ -80,7 +76,7 @@ Beyond the built-in library, AgentFlow integrates with [skills.sh](https://skill
   <Step>
     ### Preview
 
-    Click any skill to preview it. AgentFlow downloads the skill to a temporary directory, parses its SKILL.md, and auto-classifies it into the right resource category (capabilities, instructions, or runbooks) based on content analysis.
+    Click any skill to preview it. AgentFlow downloads the skill to a temporary directory, parses its SKILL.md, and auto-classifies it into the right resource category (capabilities, instructions, or skills) based on content analysis.
   </Step>
   <Step>
     ### Install
@@ -105,7 +101,7 @@ You don't have to import entire workflows. Pick individual resources:
 agentflow import capability write-file
 agentflow import instruction code-style
 agentflow import hook lint-on-save
-agentflow import runbook is-approved
+agentflow import skill is-approved
 agentflow import memory decisions
 ```
 
@@ -162,7 +158,7 @@ Each command copies the file into the corresponding directory in your workspace.
 
 ### Resources
 
-<Tabs items={['Capabilities', 'Instructions', 'Runbooks', 'Hooks']}>
+<Tabs items={['Capabilities', 'Instructions', 'Skills', 'Hooks']}>
   <Tab value="Capabilities">
     | Name | Type | Description |
     |------|------|-------------|
@@ -185,7 +181,7 @@ Each command copies the file into the corresponding directory in your workspace.
     | `task-decomposition` | workflow | Breaking work into tasks |
     | `prompt-engineering` | global | Writing effective prompts |
   </Tab>
-  <Tab value="Runbooks">
+  <Tab value="Skills">
     | Name | Type | Description |
     |------|------|-------------|
     | `is-approved` | condition | Generic approval check |

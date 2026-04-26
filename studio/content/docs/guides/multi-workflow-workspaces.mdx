@@ -3,23 +3,19 @@ title: Multi-Workflow Workspaces
 description: Organize multiple workflows with shared resources, sub-workflows, and clear separation of concerns.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Mermaid } from '@/components/docs/mdx-components';
 
 A workspace can contain any number of workflows. They share global resources but are otherwise independent — each has its own `AGENTS.md`, nodes, and optionally its own scoped resources.
 
 ## Workspace architecture
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
   subgraph ".agentflow/"
     ROOT["AGENTS.md<br/>(workspace identity)"]
     subgraph "Global Resources"
       GI["instructions/"]
       GC["capabilities/"]
-      GR["runbooks/"]
+      GR["skills/"]
     end
     subgraph "build-feature"
       BF["AGENTS.md"] --> BN1["gather-reqs/"]
@@ -35,7 +31,7 @@ A workspace can contain any number of workflows. They share global resources but
   ROOT --> FB
   GI -.->|shared| BN2
   GC -.->|shared| FN2
-`} />
+```
 
 ## What you will build
 
@@ -164,14 +160,15 @@ If both global and workflow-scoped directories have a file with the same name, t
 <Step>
 ## When to split vs combine
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
   A{"Same trigger?"} -->|Yes| B{"Same approval chain?"}
   A -->|No| SPLIT["Separate workflows"]
   B -->|Yes| C{"More than 10 nodes?"}
   B -->|No| SPLIT
   C -->|Yes| SPLIT
   C -->|No| COMBINE["Single workflow"]
-`} />
+```
 
 | Signal | Action |
 |--------|--------|
@@ -235,7 +232,8 @@ workflow: deploy
 ---
 ```
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   subgraph "build-feature"
     V[implement] --> D["deploy<br/>(sub-workflow)"]
   end
@@ -244,7 +242,7 @@ workflow: deploy
     S --> ST[smoke-test]
     ST -.->|returns| D
   end
-`} />
+```
 
 The `workflow: deploy` field tells the runtime to execute the entire `deploy` workflow. After completion, execution returns to the parent.
 </Step>
@@ -269,13 +267,14 @@ The validator checks all workflows at once, confirming sub-workflow references r
 
 ## Resource resolution order
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
   A["Node references<br/>{{instructions/code-style}}"] --> B{"Exists in<br/>workflow/instructions/?"}
   B -->|Yes| C["Use workflow-scoped version"]
   B -->|No| D{"Exists in<br/>global instructions/?"}
   D -->|Yes| E["Use global version"]
   D -->|No| F["Emit broken_ref error"]
-`} />
+```
 
 ## Sub-workflow reuse
 

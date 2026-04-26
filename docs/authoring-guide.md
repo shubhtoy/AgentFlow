@@ -11,7 +11,7 @@ Every token loaded is a token the model can't use for reasoning. Your folder str
   AGENTS.md                    ← Identity + discovery (~200-800 tok)
   instructions/                ← Reusable instruction sets + steering (was: skills/ + steering/)
   capabilities/                ← Tool definitions: builtin, script, MCP (was: tools/)
-  runbooks/                    ← Conditions + human touchpoints (was: templates/ + interactions/)
+  skills/                    ← Conditions + human touchpoints (was: templates/ + interactions/)
   memory/                      ← Persistent state across sessions
   hooks/                       ← Event-driven automation
   <workflow>/
@@ -43,7 +43,7 @@ Every token loaded is a token the model can't use for reasoning. Your folder str
 {{capabilities/read-code}}                              → mention (load this resource)
 {{instructions/code-search}}                            → mention (load instruction)
 {{-> nodes/create-design}}                              → edge (go here next)
-{{-> nodes/plan-tasks | runbooks/design-approved}}      → conditional edge (go here IF)
+{{-> nodes/plan-tasks | skills/design-approved}}      → conditional edge (go here IF)
 {{<< output.gather-requirements}}                       → data flow (read previous output)
 ```
 
@@ -182,11 +182,11 @@ type: router
 ```markdown
 # Review Design Gate
 
-Present design via {{runbooks/review-design}}.
+Present design via {{skills/review-design}}.
 
 ## Routing
-- Approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
-- Rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+- Approved → {{-> nodes/plan-tasks | skills/design-approved}}
+- Rejected → {{-> nodes/create-design | skills/design-rejected}}
 ```
 
 Budget: ~400-500 tokens. If your router needs capabilities, it's not a router — it's a step.
@@ -255,7 +255,7 @@ description: Project-wide coding conventions
 ---
 ```
 
-### Runbooks — Conditions (was: Templates)
+### Skills — Conditions (was: Templates)
 
 Used in conditional edges. The `check` field must be unambiguous.
 
@@ -267,7 +267,7 @@ check: The user explicitly approved the design with no outstanding concerns
 ---
 ```
 
-### Runbooks — Interactions
+### Skills — Interactions
 
 Human touchpoints. Document what to show and what the user can do.
 
@@ -441,7 +441,7 @@ Checks: ref resolution, frontmatter schemas, context budgets, output declaration
 - [ ] Router nodes have zero capabilities and zero instructions
 - [ ] Entry node marked `entry: true`
 - [ ] Every `{{ref}}` resolves to an existing file
-- [ ] Every conditional edge has a matching runbook (condition)
+- [ ] Every conditional edge has a matching skill (condition)
 - [ ] Data flow refs point to nodes that produce output
 - [ ] `output/` dirs exist for nodes that declare outputs
 - [ ] Review gates between every major phase
@@ -453,7 +453,7 @@ Checks: ref resolution, frontmatter schemas, context budgets, output declaration
 - [ ] Hook conditions use valid operators (equals, contains, matches, startsWith, endsWith)
 - [ ] MCP config exists for every MCP capability referenced
 - [ ] Global instructions use `inclusion: auto` in frontmatter
-- [ ] All refs use new taxonomy: `capabilities/`, `instructions/`, `runbooks/` (not `tools/`, `skills/`, `templates/`, `interactions/`)
+- [ ] All refs use new taxonomy: `capabilities/`, `instructions/`, `skills/` (not `tools/`, `skills/`, `templates/`, `interactions/`)
 
 ---
 
@@ -467,7 +467,7 @@ The library ships with ready-to-use resources across all categories:
 ### Instructions (12)
 `requirements-elicitation`, `technical-design`, `task-decomposition`, `implementation-discipline`, `code-search`, `security-review`, `api-design`, `test-analysis`, `coding-standards` (global/auto), `debugging`, `refactoring`, `prompt-engineering`
 
-### Runbooks (22)
+### Skills (22)
 Conditions: `design-approved`, `design-rejected`, `requirements-approved`, `requirements-rejected`, `tasks-approved`, `tasks-rejected`, `tests-pass`, `tests-fail`, `all-tasks-done`, `more-tasks-remain`, `task-complete`, `task-failed`, `implementation-ready`, `retry-with-feedback`
 Interactions: `review-design`, `review-requirements`, `review-tasks`, `checkpoint`, `collect-feedback`, `show-diff`, `escalate-to-human`, `confirm-destructive`
 

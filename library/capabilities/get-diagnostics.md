@@ -1,11 +1,11 @@
 ---
 name: get-diagnostics
 type: builtin
-builtin_mapping: getDiagnostics
+description: Check code files for compile errors, lint violations, type errors, and semantic issues. Preferred over running build commands for validation.
 parameters:
   paths:
     type: array
-    description: Array of file paths to check for compile, lint, type, and semantic issues
+    description: Array of file paths to check
     required: true
 outputs:
   - diagnostics
@@ -18,4 +18,10 @@ narrativeTemplate:
 
 # Get Diagnostics
 
-Check code files for compile errors, lint violations, type errors, and other semantic issues. This is the preferred way to validate code correctness — use this instead of running build commands.
+Check code files for compile errors, lint violations, type errors, and other semantic issues.
+
+## When to use
+
+- After writing or modifying code to catch errors immediately
+- Before committing to ensure code compiles cleanly
+- To validate generated code without a full build

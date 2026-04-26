@@ -1,7 +1,6 @@
 {
   "name": "security-scan-on-commit",
-  "version": "1.0.0",
-  "description": "Run a security scan before tool invocations that modify code",
+  "description": "Run a security audit before any commit to catch vulnerable dependencies early",
   "event": "preToolUse",
   "condition": {
     "field": "toolName",
@@ -10,8 +9,7 @@
   },
   "action": {
     "type": "run-script",
-    "target": "npm audit --production",
-    "params": {}
+    "target": "npm audit --production"
   },
   "enabled": false,
   "priority": 300

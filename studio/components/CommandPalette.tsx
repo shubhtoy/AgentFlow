@@ -92,7 +92,7 @@ function buildSearchIndex(
   const resourceCategories: { key: ResourceCategory; items: Record<string, ParsedFile> }[] = [
     { key: 'instructions', items: data.instructions },
     { key: 'capabilities', items: data.capabilities },
-    { key: 'runbooks', items: data.runbooks },
+    { key: 'skills', items: data.skills },
     { key: 'memory', items: data.memory },
     { key: 'hooks', items: data.hooks as Record<string, ParsedFile> },
     { key: 'customFiles', items: data.customFiles ?? {} },
@@ -146,7 +146,7 @@ function buildActionCommands(actions: {
 // Category display
 // ---------------------------------------------------------------------------
 
-const CATEGORY_ORDER = ['nodes', 'workflows', 'instructions', 'capabilities', 'runbooks', 'memory', 'hooks', 'customFiles']
+const CATEGORY_ORDER = ['nodes', 'workflows', 'instructions', 'capabilities', 'skills', 'memory', 'hooks', 'customFiles']
 
 function getCategoryLabel(cat: string): string {
   if (cat === 'nodes') return 'Nodes'

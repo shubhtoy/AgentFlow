@@ -9,7 +9,7 @@ graph TD
     AF --> IDENTITY["AGENTS.md"]
     AF --> INSTRUCTIONS["instructions/"]
     AF --> CAPABILITIES["capabilities/"]
-    AF --> RUNBOOKS["runbooks/"]
+    AF --> RUNBOOKS["skills/"]
     AF --> MEMORY["memory/"]
     AF --> HOOKS["hooks/"]
     AF --> WORKFLOWS["workflows"]
@@ -29,7 +29,7 @@ graph TD
 | Identity | `AGENTS.md` | Who the agent is — name, role, personality, constraints | Singular file |
 | Instructions | `instructions/` | Reusable how-to modules the agent follows | `workflow`, `global` |
 | Capabilities | `capabilities/` | Tool declarations — what the agent can do | `descriptor`, `config` |
-| Runbooks | `runbooks/` | Human touchpoints and routing conditions | `interaction`, `condition` |
+| Skills | `skills/` | Human touchpoints and routing conditions | `interaction`, `condition` |
 | Memory | `memory/` | Persistent state across sessions | None |
 | Hooks | `hooks/` | Event-driven automation (JSON files) | None |
 
@@ -106,13 +106,13 @@ graph TD
 
 ---
 
-## 4. Runbooks
+## 4. Skills
 
 Two distinct purposes merged into one category:
 
 ```mermaid
 graph TD
-    RUN["runbooks/"]
+    RUN["skills/"]
 
     RUN --> INTERACTIONS["Interactions"]
     RUN --> CONDITIONS["Conditions"]
@@ -165,7 +165,7 @@ flowchart TD
     HAS_TYPE -->|Yes| DESCRIPTOR["scope: descriptor"]
     HAS_TYPE -->|No| CONFIG["scope: config"]
 
-    WHICH -->|runbooks| IS_COND{type is condition?}
+    WHICH -->|skills| IS_COND{type is condition?}
     IS_COND -->|Yes| CONDITION["scope: condition"]
     IS_COND -->|No| INTERACTION["scope: interaction"]
 
@@ -240,7 +240,7 @@ flowchart LR
 |------|--------|-------------|
 | Mention | `{{capabilities/read-code}}` | Load this resource as context |
 | Edge | `{{-> nodes/create-design}}` | Go to this node next |
-| Conditional Edge | `{{-> nodes/plan-tasks \| runbooks/design-approved}}` | Go to this node if condition is met |
+| Conditional Edge | `{{-> nodes/plan-tasks \| skills/design-approved}}` | Go to this node if condition is met |
 | Data Flow | `{{<< output.gather-requirements}}` | Read output from a previous node |
 
 ---
@@ -319,7 +319,7 @@ graph TD
     ROOT --> MCPJSON["mcp.json"]
     ROOT --> INST_DIR["instructions/"]
     ROOT --> CAPS_DIR["capabilities/"]
-    ROOT --> RUN_DIR["runbooks/"]
+    ROOT --> RUN_DIR["skills/"]
     ROOT --> MEM_DIR["memory/"]
     ROOT --> HOOKS_DIR["hooks/"]
     ROOT --> BF["build-feature/"]

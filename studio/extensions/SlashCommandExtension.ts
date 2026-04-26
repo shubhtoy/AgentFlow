@@ -20,7 +20,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
   // Reference category
   { id: 'ref-capabilities',  title: 'Capability',  description: 'Insert a capability reference',  category: 'reference' },
   { id: 'ref-instructions',  title: 'Instruction', description: 'Insert an instruction reference', category: 'reference' },
-  { id: 'ref-runbooks',      title: 'Runbook',     description: 'Insert a runbook reference',     category: 'reference' },
+  { id: 'ref-skills',      title: 'Skill',     description: 'Insert a skill reference',     category: 'reference' },
   { id: 'ref-memory',        title: 'Memory',      description: 'Insert a memory reference',      category: 'reference' },
   { id: 'ref-nodes',         title: 'Node',         description: 'Insert a node reference',        category: 'reference' },
   // Edge category
@@ -34,7 +34,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
 const COMMAND_TO_CATEGORY: Record<string, string> = {
   'ref-capabilities':  'capabilities',
   'ref-instructions':  'instructions',
-  'ref-runbooks':      'runbooks',
+  'ref-skills':      'skills',
   'ref-memory':        'memory',
   'ref-nodes':         'nodes',
   'edge-ref':          'nodes',
@@ -47,7 +47,7 @@ function commandIcon(cmd: SlashCommand): LucideIcon {
   switch (cmd.id) {
     case 'ref-capabilities':  return Wrench
     case 'ref-instructions':  return Brain
-    case 'ref-runbooks':      return Zap
+    case 'ref-skills':      return Zap
     case 'ref-memory':        return Database
     case 'ref-nodes':         return Box
     case 'edge-ref':          return ArrowRight
@@ -104,8 +104,8 @@ export function getResourceItems(data: WorkflowGraph | null, activeWf: string, c
     case 'ref-instructions':
       addResources('instructions', data.instructions)
       break
-    case 'ref-runbooks':
-      addResources('runbooks', data.runbooks)
+    case 'ref-skills':
+      addResources('skills', data.skills)
       break
     case 'ref-memory':
       addResources('memory', data.memory)

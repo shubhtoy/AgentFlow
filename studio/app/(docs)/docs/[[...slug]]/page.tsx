@@ -5,16 +5,29 @@ import {
 } from 'fumadocs-ui/layouts/docs/page'
 import { notFound } from 'next/navigation'
 import defaultMdxComponents from 'fumadocs-ui/mdx'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { File, Folder, Files } from 'fumadocs-ui/components/files'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import { InlineTOC } from 'fumadocs-ui/components/inline-toc'
+import { Banner } from 'fumadocs-ui/components/banner'
 import {
   ComponentPreview, PreviewGrid, DocsShowcase,
-  DocsPlayground, Mermaid,
+  DocsPlayground,
 } from '@/components/docs/mdx-components'
+import { Mermaid } from '@/components/docs/Mermaid'
 import { MarkdownCopyButton, ViewOptionsPopover } from '@/components/ai/page-actions'
 
 const customComponents = {
   ...defaultMdxComponents,
-  ComponentPreview, PreviewGrid, DocsShowcase,
-  DocsPlayground, Mermaid,
+  // defaultMdxComponents already includes: Card, Cards, Callout, Heading, CodeBlock, Link, img
+  Step, Steps, Tab, Tabs,
+  File, Folder, Files,
+  Accordion, Accordions,
+  TypeTable, ImageZoom, InlineTOC, Banner, Mermaid,
+  ComponentPreview, PreviewGrid, DocsShowcase, DocsPlayground,
 }
 
 export default async function Page(props: { params: Promise<{ slug?: string[] }> }) {

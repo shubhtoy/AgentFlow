@@ -1,0 +1,42 @@
+id: qwen
+name: Qwen Code
+website: https://qwen.ai
+
+paths:
+  root: .qwen
+  agents: .qwen/agents/
+
+mapping:
+  identity:
+    target: .qwen/agents/identity.md
+    transform: copy
+
+  instructions:
+    target: .qwen/agents/{name}.md
+    transform: copy
+
+  skills:
+    target: .qwen/agents/{name}.md
+    transform: flatten-skill
+
+  capabilities:
+    mcp:
+      target: .qwen/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .qwen/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'

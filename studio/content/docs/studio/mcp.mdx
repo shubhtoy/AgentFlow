@@ -3,9 +3,6 @@ title: MCP
 description: Manage MCP servers, browse the registry, test connections.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 The MCP panel lets you manage Model Context Protocol servers directly from the studio. Connect external tools, browse the official registry, and test connections without switching contexts.
 
@@ -30,7 +27,7 @@ Click the **Registry** tab at the top of the MCP panel. The registry loads the f
 <Step>
 ### Search for a server
 
-Type keywords in the search field to filter by name, description, or category. Results update as you type with fuzzy matching. Each result shows the server name, description, tool count, and transport type (stdio or HTTP/SSE).
+Type keywords in the search field to filter by name, description, or category. Results update as you type with fuzzy matching. Each result shows the server name, description, and tool count.
 </Step>
 <Step>
 ### Add to workspace
@@ -52,16 +49,11 @@ The server appears in your Servers tab and immediately begins a connection test.
 Click the **+ Add Server** button at the top of the Servers tab. A configuration dialog appears.
 </Step>
 <Step>
-### Choose transport type
-
-Select **stdio** for servers that run as a local process, or **HTTP/SSE** for servers accessible over the network.
-</Step>
-<Step>
 ### Configure the connection
 
-For stdio: enter the command to start the server (e.g., `npx @modelcontextprotocol/server-filesystem`).
+For stdio servers: enter the command to start the server (e.g., `npx @modelcontextprotocol/server-filesystem`).
 
-For HTTP/SSE: enter the server URL (e.g., `http://localhost:3001/sse`).
+For HTTP/SSE servers: enter the server URL (e.g., `http://localhost:3001/sse`).
 </Step>
 <Step>
 ### Add environment variables
@@ -98,7 +90,7 @@ This is useful when you want to temporarily disconnect from a server without rem
 
 Click the **Test** button on any server to run a connectivity check. The test performs:
 
-1. **Transport handshake** -- Verifies the server is reachable via its configured transport (stdio process starts, or HTTP endpoint responds).
+1. **Connection handshake** -- Verifies the server is reachable and responsive.
 2. **Protocol initialization** -- Sends the MCP initialization message and waits for the server's capability declaration.
 3. **Tool listing** -- Requests the list of available tools to confirm the server is fully operational.
 
@@ -207,6 +199,6 @@ The MCP protocol has versioning. If your studio expects a newer protocol version
 - The registry search supports fuzzy matching, so typing "fs" finds "filesystem" servers.
 
 <Cards>
-  <Card title="Capabilities" href="/docs/resources/capabilities" description="Define tool capabilities for your workflows" />
+  <Card title="Writing Resources" href="/docs/authoring/writing-resources" description="Define tool capabilities for your workflows" />
   <Card title="Git" href="/docs/studio/git" description="Stage, commit, and sync from the studio" />
 </Cards>

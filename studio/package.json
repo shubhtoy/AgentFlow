@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node ../scripts/build-library-index.js",
+    "prebuild": "node ../scripts/build-library-index.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

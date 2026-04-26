@@ -12,7 +12,7 @@ export interface Ref {
   line: number
 }
 
-export type ResourceType = 'instruction' | 'capability' | 'runbook' | 'memory' | 'hook' | 'node' | 'agents' | 'untyped' | null
+export type ResourceType = 'instruction' | 'capability' | 'skill' | 'memory' | 'hook' | 'node' | 'agents' | 'untyped' | null
 
 // --- Parsed File ---
 
@@ -68,7 +68,7 @@ export interface WorkflowGraph {
   descriptorFile?: ParsedFile
   instructions: Record<string, ParsedFile & { scope: string }>
   capabilities: Record<string, ParsedFile & { scope: string }>
-  runbooks: Record<string, ParsedFile & { scope: string }>
+  skills: Record<string, ParsedFile & { scope: string }>
   memory: Record<string, ParsedFile>
   hooks: Record<string, unknown>
   customFiles: Record<string, ParsedFile>
@@ -122,7 +122,7 @@ export interface ExportBundle {
 
 // --- Shared ---
 
-export type ResourceCategory = 'instructions' | 'capabilities' | 'runbooks' | 'memory' | 'hooks' | 'customFiles'
+export type ResourceCategory = 'instructions' | 'capabilities' | 'skills' | 'memory' | 'hooks' | 'customFiles'
 
 // --- Library ---
 
@@ -141,6 +141,7 @@ export type ExportFormat = 'raw' | 'parsed' | 'platform'
 export interface ExportOptions {
   workflow: string
   format: ExportFormat
+  platform?: string
   preview?: boolean
 }
 

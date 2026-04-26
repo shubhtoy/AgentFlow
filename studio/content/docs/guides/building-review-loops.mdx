@@ -3,21 +3,21 @@ title: Building Review Loops
 description: Build the implement-gate-loop pattern with a 3-node workflow that iterates until approval.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Mermaid } from '@/components/docs/mdx-components';
 
 The most common AgentFlow pattern is the review loop: a step does work, a gate asks for approval, and rejection loops back with feedback. This guide builds a complete 3-node workflow implementing this pattern.
 
+<Callout type="info">
+💡 Review gates are just nodes with conditional edges. The pattern is: present output → ask for approval → route based on response.
+</Callout>
+
 ## The pattern
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   implement[Implement] --> gate{Completion Gate}
   gate -->|approved| verify[Verify]
   gate -->|rejected| implement
-`} />
+```
 
 Conditional edges are allowed to point backward. The validator permits this since a human controls whether the loop continues — there is always a conditional exit.
 
@@ -36,10 +36,6 @@ Conditional edges are allowed to point backward. The validator permits this sinc
       <Folder name="verify">
         <File name="SKILL.md" />
       </Folder>
-    </Folder>
-    <Folder name="runbooks" defaultOpen>
-      <File name="implementation-approved.md" />
-      <File name="needs-changes.md" />
     </Folder>
   </Folder>
 </Files>
@@ -114,13 +110,13 @@ Create `.agentflow/review-loop/completion-gate/SKILL.md`:
 ```yaml
 ---
 name: completion-gate
-type: router
+type: step
 ---
 
 # Completion Gate
 
 Present the implementation from {{<< output.implement}} to the user
-for review via {{runbooks/implementation-approved}}.
+for review.
 
 ## What to show
 
@@ -130,43 +126,26 @@ for review via {{runbooks/implementation-approved}}.
 
 ## Routing
 
-- If approved: {{-> nodes/verify | runbooks/implementation-approved}}
-- If rejected: {{-> nodes/implement | runbooks/needs-changes}}
+- If approved: {{-> nodes/verify | The user explicitly approves the implementation}}
+- If rejected: {{-> nodes/implement | The user requests changes to the implementation}}
 ```
 
-<Callout type="warn">
-Router nodes should not reference capabilities or instructions. The validator emits `router_has_capabilities` if you attach tools to a router.
+<Callout type="info">
+💡 You don't need to declare `type: router`. Add conditional edges and the node automatically becomes a gateway.
 </Callout>
 </Step>
 
 <Step>
-## Create the runbook conditions
+## Understand inline conditions
 
-Create `.agentflow/runbooks/implementation-approved.md`:
+Conditions are written directly in the edge syntax after the `|` separator — no separate skill files needed:
 
-```yaml
----
-type: condition
-name: implementation-approved
-check: The user explicitly approves the implementation
----
-
-**True when:** The user says the implementation looks good.
-**False when:** The user requests changes or raises concerns.
+```
+{{-> nodes/verify | The user explicitly approves the implementation}}
+{{-> nodes/implement | The user requests changes to the implementation}}
 ```
 
-Create `.agentflow/runbooks/needs-changes.md`:
-
-```yaml
----
-type: condition
-name: needs-changes
-check: The user requests changes to the implementation
----
-
-**True when:** The user provides feedback requesting modifications.
-**False when:** The user approves or has not yet responded.
-```
+The condition text should be an unambiguous true/false check that the agent evaluates based on the conversation context.
 </Step>
 
 <Step>
@@ -206,7 +185,8 @@ review-loop: 0 errors, 0 warnings
 
 ## How the loop executes
 
-<Mermaid chart={`sequenceDiagram
+```mermaid
+sequenceDiagram
   participant R as Runtime
   participant I as implement
   participant G as completion-gate
@@ -218,16 +198,16 @@ review-loop: 0 errors, 0 warnings
   R->>G: Execute gate
   G->>U: Present implementation
   U->>G: "Change the error handling"
-  G->>R: Route: needs-changes
+  G->>R: Route: rejected (needs changes)
   R->>I: Execute (with feedback)
   I->>R: Output: revised implementation
   R->>G: Execute gate
   G->>U: Present revised implementation
   U->>G: "Looks good"
-  G->>R: Route: implementation-approved
+  G->>R: Route: approved
   R->>V: Execute verify
   V->>R: Output: tests pass
-`} />
+```
 
 ## Extending the pattern
 
@@ -237,23 +217,24 @@ Add a third condition for implementation failures:
 
 ```yaml
 # completion-gate/SKILL.md (extended routing)
-- Approved: {{-> nodes/verify | runbooks/implementation-approved}}
-- Needs changes: {{-> nodes/implement | runbooks/needs-changes}}
-- Failed: {{-> nodes/implement | runbooks/implementation-failed}}
+- Approved: {{-> nodes/verify | The user explicitly approves the implementation}}
+- Needs changes: {{-> nodes/implement | The user requests changes}}
+- Failed: {{-> nodes/implement | The implementation failed with errors}}
 ```
 
 ### Nested gates
 
 Chain multiple gates for multi-stage review:
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   design[Design] --> dg{Design Gate}
   dg -->|approved| implement[Implement]
   dg -->|rejected| design
   implement --> cg{Code Gate}
   cg -->|approved| verify[Verify]
   cg -->|rejected| implement
-`} />
+```
 
 ### Loop with memory
 
@@ -272,9 +253,7 @@ After completing this iteration, append to {{memory/iteration-log}}:
 
 | Mistake | Symptom | Fix |
 |---------|---------|-----|
-| Router with capabilities | `router_has_capabilities` warning | Remove `{{capabilities/...}}` from the gate |
-| Missing runbook | `missing_condition` error | Create the `.md` file in `runbooks/` |
-| Unconditional loop | `unconditional_cycle` error | Use conditional edges with runbook references |
+| Unconditional loop | `unconditional_cycle` error | Use conditional edges with inline condition text |
 | Data flow to future node | `data_flow_forward` error | `{{<< output.x}}` can only reference prior nodes |
 | No entry point | `no_entry_point` error | Add `entry: true` to the first node |
 

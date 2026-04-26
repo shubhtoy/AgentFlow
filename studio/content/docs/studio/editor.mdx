@@ -3,9 +3,6 @@ title: Editor
 description: Markdown editor with reference badges, syntax highlighting, and live preview.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 The editor is a Monaco-based markdown editor purpose-built for authoring agent workflow nodes. It provides syntax highlighting, inline reference badges, and a live preview so you can see rendered output as you type.
 
@@ -54,7 +51,7 @@ In the editor, each `[[...]]` token renders as a colored badge:
 | `edge:` | Green | The edge on the canvas |
 | `data:` | Purple | The data-flow variable source |
 | `instruction:` | Orange | The instruction file |
-| `runbook:` | Teal | The runbook file |
+| `skill:` | Teal | The skill file |
 
 Click any badge to jump to that resource definition. Hover over a badge to see a tooltip with the resource description and token cost.
 

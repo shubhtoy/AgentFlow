@@ -3,11 +3,6 @@ title: Directory Layout
 description: File structure, naming conventions, and what goes where in an AgentFlow workspace.
 ---
 
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Callout } from 'fumadocs-ui/components/callout'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Full Workspace Tree
 
@@ -42,7 +37,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
       <File name="run-tests.md" />
       <File name="create-issue.md" />
     </Folder>
-    <Folder name="runbooks">
+    <Folder name="skills">
       <File name="design-approved.md" />
       <File name="tests-pass.md" />
     </Folder>
@@ -70,9 +65,9 @@ Five directory names have special meaning. The parser treats them as resource ca
     type: 'capability',
     default: 'Global scope',
   },
-  'runbooks/': {
+  'skills/': {
     description: 'Conditions for routing, interactions for human-in-loop',
-    type: 'runbook',
+    type: 'skill',
     default: 'Global scope',
   },
   'memory/': {
@@ -132,7 +127,7 @@ Any subdirectory of `.agentflow/` that isn't a reserved directory is treated as 
     build-feature/
       instructions/
         requirements-elicitation.md   ← only build-feature nodes see this
-      runbooks/
+      skills/
         design-approved.md            ← only build-feature nodes see this
     ```
 

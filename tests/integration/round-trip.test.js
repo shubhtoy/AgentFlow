@@ -1,109 +1,48 @@
-'use strict';
-
-const path = require('path');
-const { TransportRegistry } = require('../../packages/core/src/transport/transport-registry');
-const { AdapterFactory } = require('../../packages/core/src/transport/adapter-factory');
-const { exportToPlatform } = require('../../packages/core/src/transport/export-pipeline');
-const { importFromPlatform } = require('../../packages/cli/src/transport/import-pipeline');
-const { defaultExport, resolveRefs } = require('../../packages/core/src/transport/default-export');
-
-const platformsDir = path.join(__dirname, '..', '..', 'packages', 'core', 'src', 'transport', 'platforms');
+import { describe, it, expect } from 'vitest';
+import { parseFromFiles } from '../../packages/core/src/parser-core.js';
+import { exportForPlatform, listPlatforms } from '../../packages/cli/src/export/engine.js';
 
 function createMockGraph() {
-  return {
-    rootDir: '/mock',
-    descriptorFile: {
-      rawContent: '---\nname: test-agent\n---\n# Test Agent\nPick a workflow.',
-      frontmatter: { name: 'test-agent' },
-      refs: [],
-    },
-    identity: { name: 'test-agent' },
-    instructions: {
-      'code-style': {
-        rawContent: '---\ninclusion: auto\nscope: global\n---\n# Code Style\nUse consistent formatting.',
-        frontmatter: { inclusion: 'auto', scope: 'global' },
-        scope: 'global',
-      },
-    },
-    capabilities: {
-      'search': {
-        rawContent: '---\nname: search\nscope: descriptor\n---\n# Search\nSearch the codebase.',
-        frontmatter: { name: 'search', scope: 'descriptor' },
-      },
-    },
-    runbooks: {},
-    memory: {
-      'prefs': { rawContent: '# User Preferences\nDark mode.' },
-    },
-    hooks: {
-      'pre-commit': { name: 'pre-commit', event: 'FileEdited', action: { type: 'command', target: 'npm test' }, enabled: true },
-    },
-    protocols: { mcp: { mcpServers: { github: { command: 'npx', args: ['@github/mcp'] } } } },
-    workflows: {
-      'build-feature': {
-        name: 'Build Feature',
-        descriptorFile: { rawContent: '# Build Feature\nA workflow.', refs: [] },
-        nodes: {
-          'plan': { rawContent: 'Plan the feature using {{instructions/code-style}}', name: 'plan', nodeType: 'step', allRefs: [] },
-          'implement': { rawContent: 'Implement it', name: 'implement', nodeType: 'step', allRefs: [] },
-        },
-        edges: [{ from: 'plan', to: 'implement' }],
-        entryPoints: ['plan'],
-      },
-    },
-    customFiles: {},
-    allFiles: [],
-  };
+  return parseFromFiles({
+    'AGENTS.md': '---\ntype: agents\nname: test-agent\n---\n# Test Agent\nPick a workflow.',
+    'instructions/code-style.md': '---\nname: code-style\n---\n# Code Style\nUse consistent formatting.',
+    'capabilities/search.md': '---\nname: search\ntype: mcp\nmcp: search-server\n---\n# Search',
+    'skills/deploy/SKILL.md': '---\nname: deploy\ndescription: Deploy stuff\n---\n# Deploy',
+    'memory/prefs.md': '---\nname: prefs\n---\n# Preferences',
+    'build-feature/AGENTS.md': '---\ntype: agents\nname: Build Feature\n---\n# Build Feature',
+    'build-feature/plan/SKILL.md': '---\nname: plan\n---\n# Plan\n\nPlan the feature.',
+    'build-feature/implement/SKILL.md': '---\nname: implement\n---\n# Implement',
+  });
 }
 
-let registry;
-
-beforeAll(() => {
-  registry = new TransportRegistry();
-  const factory = new AdapterFactory(platformsDir);
-  factory.registerAll(registry);
-});
-
-describe('Default Export', () => {
-  it('produces all expected files', () => {
-    const graph = createMockGraph();
-    const result = defaultExport(graph);
-    expect(result.ok).toBe(true);
-    const files = Object.keys(result.data.files);
-    expect(files).toContain('AGENTS.md');
-    expect(files).toContain('instructions/code-style.md');
-    expect(files).toContain('capabilities/search.md');
-    expect(files).toContain('memory/prefs.md');
-    expect(files).toContain('mcp.json');
-    expect(files.some(f => f.includes('build-feature'))).toBe(true);
+describe('export engine', () => {
+  it('listPlatforms returns available platforms', () => {
+    const platforms = listPlatforms();
+    expect(platforms.length).toBeGreaterThan(0);
+    expect(platforms).toContain('claude-code');
   });
 
-  it('resolves {{ref}} in SKILL.md', () => {
+  it('exports to claude-code without error', () => {
     const graph = createMockGraph();
-    const result = defaultExport(graph);
-    const skillContent = result.data.files['build-feature/plan/SKILL.md'];
-    expect(skillContent).toContain('instructions/code-style.md');
-    expect(skillContent).not.toContain('{{instructions/code-style}}');
+    const files = exportForPlatform(graph, 'claude-code');
+    expect(Object.keys(files).length).toBeGreaterThan(0);
+    expect(files['CLAUDE.md']).toBeDefined();
   });
-});
 
-describe('Platform round-trip', () => {
-  const tier1Platforms = ['kiro', 'cursor', 'claude-code', 'vscode-copilot', 'windsurf'];
-
-  for (const platform of tier1Platforms) {
-    it(`exports to ${platform} without error`, async () => {
-      const graph = createMockGraph();
-      const result = await exportToPlatform(platform, graph, {}, registry);
-      expect(result.ok).toBe(true);
-      expect(Object.keys(result.data.files).length).toBeGreaterThan(0);
-    });
-  }
-
-  it('exports to agent-spec without error', async () => {
+  it('exports to kiro without error', () => {
     const graph = createMockGraph();
-    const adapter = registry.get('agent-spec');
-    // agent-spec only supports export, call adapter directly to avoid getMappingInfo issue with missing importRules
-    const result = await adapter.exportWorkspace(graph, { workflowId: 'build-feature' });
-    expect(Object.keys(result.files).length).toBeGreaterThan(0);
+    const files = exportForPlatform(graph, 'kiro');
+    expect(Object.keys(files).length).toBeGreaterThan(0);
+  });
+
+  it('exports to cursor without error', () => {
+    const graph = createMockGraph();
+    const files = exportForPlatform(graph, 'cursor');
+    expect(Object.keys(files).length).toBeGreaterThan(0);
+  });
+
+  it('throws for unknown platform', () => {
+    const graph = createMockGraph();
+    expect(() => exportForPlatform(graph, 'nonexistent')).toThrow(/Unknown platform/);
   });
 });

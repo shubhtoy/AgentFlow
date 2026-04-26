@@ -10,10 +10,26 @@
   "scripts": {
     "dev": "npm run dev --prefix studio",
     "build": "npm run build --prefix studio",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "lint": "eslint packages/*/src/**/*.{js,ts} --max-warnings 0",
+    "lint:fix": "eslint packages/*/src/**/*.{js,ts} --fix",
+    "format": "prettier --write 'packages/*/src/**/*.{js,ts,json}'",
+    "format:check": "prettier --check 'packages/*/src/**/*.{js,ts,json}'"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.5",
     "fast-check": "^3.23.2",
+    "globals": "^17.5.0",
+    "prettier": "^3.8.3",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.1"
   },
   "license": "MIT"

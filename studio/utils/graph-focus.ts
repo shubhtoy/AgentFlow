@@ -149,7 +149,7 @@ export function computeClusterPositions(
   const corners: Record<string, { x: number; y: number }> = {
     instructions: { x: graphBounds.minX - pad, y: graphBounds.minY - pad * 0.6 },
     capabilities: { x: graphBounds.maxX + pad * 0.5, y: graphBounds.minY - pad * 0.6 },
-    runbooks:     { x: graphBounds.minX - pad, y: graphBounds.maxY + pad * 0.4 },
+    skills:     { x: graphBounds.minX - pad, y: graphBounds.maxY + pad * 0.4 },
     memory:       { x: graphBounds.maxX + pad * 0.5, y: graphBounds.maxY + pad * 0.4 },
   }
 

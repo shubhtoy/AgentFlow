@@ -1,22 +1,22 @@
 ---
 title: Nodes
-description: Steps, routers, and sub-workflows — the three node types in AgentFlow.
+description: Steps and sub-workflows — the two node types in AgentFlow.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 A node is a single step in a workflow. Each node lives in its own directory and contains a `SKILL.md` file that defines what the agent does at that step.
 
-AgentFlow has three node types: **steps**, **routers**, and **sub-workflows**.
+AgentFlow has two node types: **steps** and **sub-workflows**. Nodes with conditional edges are automatically rendered as routers (diamond-shaped gateways) on the canvas.
 
-## Three Types
+<Callout type="info" title="💡 Router inference">
+  Router nodes are inferred automatically. Any node with conditional edges renders as a gateway on the canvas. You don't need to declare a router type — just add conditional edges to a step.
+</Callout>
 
-<Tabs items={['Step', 'Router', 'Sub-workflow']}>
+## Two Types
+
+<Tabs items={['Step', 'Sub-workflow']}>
   <Tab value="Step">
-    A step does work — it produces output. This is the most common node type.
+    A step does work — it produces output. This is the default and most common node type.
 
     ```yaml
     # gather-requirements/SKILL.md
@@ -38,28 +38,26 @@ AgentFlow has three node types: **steps**, **routers**, and **sub-workflows**.
     {{-> nodes/review-requirements-gate}}
     ```
 
-    Steps can reference resources, declare outputs, and have edges to other nodes.
-  </Tab>
-  <Tab value="Router">
-    A router makes decisions — it evaluates conditions and routes to different nodes. Routers don't produce output; they direct flow.
+    Steps can reference resources, declare outputs, and have edges to other nodes. Steps with conditional edges act as decision points — routing to different nodes based on conditions:
 
     ```yaml
     # review-design-gate/SKILL.md
     ---
     name: review-design-gate
-    type: router
+    type: step
     ---
 
     # Review Design Gate
 
-    Present the design from {{<< output.create-design}} to the user
-    via {{runbooks/review-design}}.
+    Present the design from {{<< output.create-design}} to the user.
 
     ## Routing
 
-    - If approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
-    - If rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+    - If approved → {{-> nodes/plan-tasks | design approved by user}}
+    - If rejected → {{-> nodes/create-design | design rejected or changes requested}}
     ```
+
+    This node has conditional edges, so it renders as a diamond-shaped gateway on the canvas.
   </Tab>
   <Tab value="Sub-workflow">
     A sub-workflow delegates to another workflow. When the agent reaches this node, it steps into the referenced workflow, executes it to completion, then returns to the parent workflow and continues along the outgoing edge.
@@ -110,7 +108,7 @@ Every node's SKILL.md has two parts: frontmatter (YAML) and body (markdown). The
   },
   type: {
     description: 'Node type',
-    type: '"step" | "router" | "sub-workflow"',
+    type: '"step" | "sub-workflow"',
     required: true,
   },
   entry: {
@@ -185,7 +183,7 @@ Click any node on the canvas to see its type, frontmatter fields, and connection
 
 When the runtime reaches a node, it follows a fixed sequence to assemble context, invoke the LLM, and determine the next step.
 
-<Mermaid chart={`
+```mermaid
 graph TD
     A[Load context layers] --> B[Assemble references]
     B --> C[Send prompt to LLM]
@@ -198,7 +196,7 @@ graph TD
     H --> J[Route to matching target]
     I --> J
     J --> K[Next node]
-`} />
+```
 
 ### Load context layers
 
@@ -207,7 +205,7 @@ The runtime assembles the node's context from five layers (see [Selective Contex
 1. Workspace identity (root AGENTS.md)
 2. Workflow descriptor (workflow AGENTS.md)
 3. Node instructions (SKILL.md body)
-4. Referenced resources (instructions, capabilities, runbooks)
+4. Referenced resources (instructions, capabilities, skills)
 5. Prior node outputs (data flow refs)
 
 ### Assemble references
@@ -224,34 +222,27 @@ The LLM response is stored in the node's output slot. Other nodes can access it 
 
 ### Evaluate edges and route
 
-The runtime checks all outgoing edges. For unconditional edges, it proceeds immediately. For conditional edges, it evaluates each condition (via the referenced runbook) and follows the first matching path.
+The runtime checks all outgoing edges. For unconditional edges, it proceeds immediately. For conditional edges, it evaluates each condition and follows the first matching path.
 
 ## Choosing the Right Node Type
 
 Use this decision process to determine which node type fits your use case:
 
-<Mermaid chart={`
+```mermaid
 graph TD
-    Q1{"Does it produce output?"}
-    Q1 -->|Yes| Q2{"Does it also route?"}
-    Q1 -->|No| Q3{"Does it delegate to another workflow?"}
-    Q2 -->|No| STEP[Use: step]
-    Q2 -->|Yes| STEP2[Use: step with conditional edges]
-    Q3 -->|Yes| SUB[Use: sub-workflow]
-    Q3 -->|No| ROUTER[Use: router]
-`} />
+    Q1{"Does it produce output or make decisions?"}
+    Q1 -->|Yes| Q2{"Does it delegate to another workflow?"}
+    Q1 -->|No| STEP[Use: step]
+    Q2 -->|No| STEP2["Use: step\n(add conditional edges for routing)"]
+    Q2 -->|Yes| SUB[Use: sub-workflow]
+```
 
 ### Step
 
 The default choice. Use a step when the node needs to do work and produce output — write code, generate a document, analyze data, gather information from the user.
 
-Steps can have conditional outgoing edges, making them capable of light routing decisions alongside their primary work. However, if the node's sole purpose is to decide where to go next, use a router instead.
+Steps with conditional outgoing edges automatically render as diamond-shaped gateways on the canvas. This makes them capable of routing decisions alongside their primary work. Common patterns:
 
-### Router
-
-Use a router when the node's only job is to evaluate a condition and direct flow. Routers do not produce output — they present information to the user (or evaluate state) and route based on the result.
-
-Common router patterns:
 - Approval gates (present work, ask for approval, route based on response)
 - Completion checks (are all tasks done? route to finish or loop back)
 - Triage decisions (classify input, route to the appropriate handler)

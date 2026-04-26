@@ -7,9 +7,9 @@ import type { LibraryEntry } from '@/lib/types'
 /* ── Shared constants ─────────────────────────────────────────────── */
 
 export const NODE_TYPE_LABELS: Record<string, string> = {
-  step: 'Agent',
+  step: 'Step',
   router: 'Gateway',
-  'sub-workflow': 'Workflow',
+  'sub-workflow': 'Sub-workflow',
 }
 
 export interface NodeTypeOption {
@@ -20,24 +20,20 @@ export interface NodeTypeOption {
 }
 
 export const NODE_OPTIONS: NodeTypeOption[] = [
-  { type: 'step', label: 'Agent', description: 'Autonomous step that runs tools and logic', icon: Footprints },
-  { type: 'router', label: 'Gateway', description: 'Conditional branch based on rules', icon: GitBranch },
-  { type: 'sub-workflow', label: 'Workflow', description: 'Link to another workflow', icon: Layers },
+  { type: 'step', label: 'Step', description: 'A node that executes instructions and uses tools', icon: Footprints },
+  { type: 'sub-workflow', label: 'Sub-workflow', description: 'Delegates to another workflow', icon: Layers },
 ]
 
 /** Map node type → relevant library entry types */
 export const NODE_LIBRARY_MAP: Record<string, string[]> = {
   step: ['instruction', 'skill'],
-  router: ['runbook', 'template'],
   'sub-workflow': ['workflow'],
 }
 
 /** Map singular library type → plural directory name for refs */
 const TYPE_TO_DIR: Record<string, string> = {
   instruction: 'instructions', instructions: 'instructions',
-  skill: 'instructions',
-  runbook: 'runbooks', runbooks: 'runbooks',
-  template: 'runbooks',
+  skill: 'skills', skills: 'skills',
   capability: 'capabilities', capabilities: 'capabilities',
   memory: 'memory',
   workflow: 'workflows',
@@ -46,7 +42,7 @@ const TYPE_TO_DIR: Record<string, string> = {
 /** Map node type → workspace category keys */
 const NODE_WORKSPACE_MAP: Record<string, string> = {
   step: 'instructions',
-  router: 'runbooks',
+  router: 'skills',
 }
 
 /* ── Hooks ────────────────────────────────────────────────────────── */

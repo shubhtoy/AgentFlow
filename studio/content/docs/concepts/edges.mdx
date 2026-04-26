@@ -3,11 +3,6 @@ title: Edges
 description: Flow control between nodes — unconditional, conditional, and data flow.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 Edges connect nodes in a workflow. They're declared as `{{references}}` inside SKILL.md files — the parser reads them and builds the directed graph.
 
@@ -22,12 +17,20 @@ Edges connect nodes in a workflow. They're declared as `{{references}}` inside S
     ```
   </Tab>
   <Tab value="Conditional">
-    Go to the target node only if a condition is met. The condition is defined in a runbook file.
+    Go to the target node only if a condition is met. The condition is defined inline after the pipe.
 
     ```markdown
-    {{-> nodes/plan-tasks | runbooks/design-approved}}
-    {{-> nodes/create-design | runbooks/design-rejected}}
+    {{-> nodes/plan-tasks | design approved by user}}
+    {{-> nodes/create-design | design rejected or changes requested}}
     ```
+
+    Conditions can also reference instruction files for reusable criteria:
+
+    ```markdown
+    {{-> nodes/plan-tasks | instructions/approval-criteria}}
+    ```
+
+    When referencing an instruction, the instruction content (with narrativeTemplate wrapping) becomes the condition description.
   </Tab>
   <Tab value="Data flow">
     Load another node's output into this node's context. Not a flow edge — it controls context assembly, not execution order.
@@ -40,6 +43,10 @@ Edges connect nodes in a workflow. They're declared as `{{references}}` inside S
   </Tab>
 </Tabs>
 
+<Callout type="info" title="💡 Instruction references in conditions">
+  Conditions can reference instructions: `{{-> target | instructions/approval-criteria}}`. The instruction content (with narrativeTemplate wrapping) becomes the condition description.
+</Callout>
+
 ## Control Flow vs Data Flow
 
 <TypeTable type={{
@@ -49,8 +56,8 @@ Edges connect nodes in a workflow. They're declared as `{{references}}` inside S
     default: 'Forward direction',
   },
   'Conditional control flow': {
-    description: 'Conditional routing via a runbook',
-    type: '{{-> nodes/target | runbooks/condition}}',
+    description: 'Conditional routing via inline condition text or instruction reference',
+    type: '{{-> nodes/target | condition text}}',
     default: 'Forward direction',
   },
   'Data flow': {
@@ -72,28 +79,19 @@ Using the design from {{<< output.create-design}}, implement the feature.
 
 This node loads the design output (data flow) AND declares that `verify-feature` runs next (control flow).
 
-## Conditional Routing with Runbooks
+## Conditional Routing with Inline Conditions
 
-Conditional edges require a runbook with `type: condition`:
+Conditional edges use inline condition text after the pipe `|` to describe when the edge should be followed:
 
-```yaml
-# runbooks/all-tasks-done.md
----
-type: condition
-name: all-tasks-done
-check: Every task has been completed, all tests pass, no diagnostics errors remain
----
-
-# All Tasks Done
-
-**True when:** All tasks are marked done, all tests pass, and no diagnostics errors exist.
-**False when:** Any task is incomplete, tests are failing, or diagnostics errors exist.
+```markdown
+{{-> nodes/plan-tasks | all tasks completed and tests pass}}
+{{-> nodes/create-design | design needs revision}}
 ```
 
-Router nodes typically have multiple conditional edges — one for each possible outcome.
+Any node with conditional edges is automatically rendered as a diamond-shaped gateway (router) on the canvas. You don't need a special node type — just add conditional edges to a step.
 
 <Callout type="warn" title="Validation">
-  The validator emits `missing_condition` if a conditional edge references a runbook that doesn't exist. It emits `router_non_conditional` if a router node has unconditional edges (routers should always use conditions to decide).
+  The validator emits `missing_condition` if a conditional edge references an instruction that doesn't exist. It emits `unresolved_edge` if the target node doesn't exist.
 </Callout>
 
 <Accordions>
@@ -102,8 +100,8 @@ Router nodes typically have multiple conditional edges — one for each possible
 
     ```markdown
     # review-design-gate/SKILL.md
-    {{-> nodes/plan-tasks | runbooks/design-approved}}
-    {{-> nodes/create-design | runbooks/design-rejected}}  ← loops back
+    {{-> nodes/plan-tasks | design approved by user}}
+    {{-> nodes/create-design | design rejected or changes requested}}  ← loops back
     ```
 
     This is valid because a human decides whether to loop. The validator only flags cycles that have no conditional exit.
@@ -114,19 +112,19 @@ Router nodes typically have multiple conditional edges — one for each possible
 
 When an edge leads into a sub-workflow node, the agent enters the referenced workflow and executes it from its entry point. Once the sub-workflow completes, control returns to the parent workflow and follows the sub-workflow node's outgoing edge to the next step.
 
-<Mermaid chart={`
+```mermaid
 graph LR
     A["implement"] -->|"edge into"| B["deploy\n(sub-workflow)"]
     B -->|"step into"| C["ci-cd workflow\n(entry → ... → end)"]
     C -->|"returns"| B
     B -->|"edge out"| D["verify-deployment"]
-`} />
+```
 
 The parent workflow does not need to know the internal structure of the sub-workflow. It only sees the sub-workflow node as a single step with an incoming edge and an outgoing edge.
 
 ## Explore Edges in the Studio
 
-The canvas below shows the build-feature workflow with all its edges. Notice the diamond-shaped router nodes (review gates) with multiple conditional exits. Click any edge to see its label — conditional edges show the runbook name.
+The canvas below shows the build-feature workflow with all its edges. Notice the diamond-shaped nodes (steps with conditional edges) rendered as gateways. Click any edge to see its label — conditional edges show the condition text.
 
 <ComponentPreview title="build-feature edges and routing" height="lg">
   <DocsPlayground workflow="build-feature" />
@@ -137,7 +135,7 @@ The canvas below shows the build-feature workflow with all its edges. Notice the
 
 When the parser processes a workflow, it scans every SKILL.md body for edge references, resolves them against known node IDs, and assembles the directed graph.
 
-<Mermaid chart={`
+```mermaid
 graph TD
     A[Read SKILL.md body] --> B[Scan for edge patterns]
     B --> C{"Match found?"}
@@ -148,15 +146,15 @@ graph TD
     G -->|Yes| H[Add edge to graph]
     G -->|No| I[Emit unresolved_edge error]
     H --> J{"Has condition?"}
-    J -->|Yes| K[Resolve runbook reference]
+    J -->|Yes| K[Resolve condition text or instruction ref]
     J -->|No| L[Mark as unconditional]
-    K --> M{"Runbook exists?"}
+    K --> M{"Condition valid?"}
     M -->|Yes| N[Attach condition to edge]
     M -->|No| O[Emit missing_condition error]
     N --> B
     L --> B
     E --> P[Return directed graph]
-`} />
+```
 
 The parser performs three passes:
 
@@ -170,7 +168,7 @@ For each SKILL.md body, find all `{{-> ...}}` and `{{<< ...}}` patterns. Parse t
 
 ### Pass 3 — Graph assembly
 
-Create directed edges between source and target nodes. Validate that all targets exist, all conditions reference real runbooks, and no unconditional cycles exist.
+Create directed edges between source and target nodes. Validate that all targets exist, all condition references resolve, and no unconditional cycles exist.
 
 ## Edge Validation Rules
 
@@ -179,8 +177,7 @@ The validator enforces these rules on edges during the validation phase:
 | Rule ID | Severity | Condition | Example |
 |---------|----------|-----------|---------|
 | `unresolved_edge` | error | Target node ID does not exist in the workflow | `{{-> nodes/nonexistent}}` references a node that has no directory |
-| `missing_condition` | error | Conditional edge references a runbook that does not exist | `{{-> nodes/x \| runbooks/missing}}` where `runbooks/missing.md` is absent |
-| `router_non_conditional` | warning | A router node has an unconditional edge | Router with `{{-> nodes/x}}` instead of `{{-> nodes/x \| runbooks/check}}` |
+| `missing_condition` | error | Conditional edge references an instruction that does not exist | `{{-> nodes/x \| instructions/missing}}` where `instructions/missing.md` is absent |
 | `unconditional_cycle` | error | An unconditional edge creates a cycle with no conditional exit | `A -> B -> A` where both edges are unconditional |
 | `data_flow_forward` | error | A data flow ref points to a node that executes after the current one | `{{<< output.later-node}}` where `later-node` has not yet executed |
 | `orphan_node` | warning | A node has no incoming edges and is not the entry point | Node exists but nothing routes to it |
@@ -188,8 +185,8 @@ The validator enforces these rules on edges during the validation phase:
 | `self_referencing_edge` | error | A node has an edge pointing to itself | `{{-> nodes/self}}` inside `self/SKILL.md` |
 
 <Cards>
-  <Card title="Nodes" href="/docs/concepts/nodes" description="The three node types" />
-  <Card title="Resources" href="/docs/concepts/resources" description="Runbooks and other resource categories" />
+  <Card title="Nodes" href="/docs/concepts/nodes" description="Steps and sub-workflows" />
+  <Card title="Resources" href="/docs/concepts/resources" description="The five resource categories" />
   <Card title="Validation Rules" href="/docs/reference/validation-rules" description="All edge-related validation rules" />
   <Card title="Ref Syntax" href="/docs/reference/ref-syntax" description="Complete reference syntax" />
 </Cards>

@@ -3,11 +3,6 @@ title: Writing Workflows
 description: Build a complete workflow from scratch — descriptor, nodes, edges, resources, and validation.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 This page walks through building a real workflow — a 4-node bug-fix pipeline with a review gate, data flow between nodes, and resource references. By the end you'll have a working workflow you can validate and export.
 
@@ -173,45 +168,33 @@ A linear flow with one approval gate. The reproduce step produces a bug report, 
   <Step>
     ### Add the review gate
 
-    A router node that asks the user to approve the fix before running tests:
+    A step node with conditional edges that asks the user to approve the fix before running tests:
 
     ```yaml
     # .agentflow/fix-bug/review-gate/SKILL.md
     ---
     name: review-gate
-    type: router
+    type: step
     ---
 
     # Review Fix
 
-    Present the fix to the user via {{runbooks/fix-approved}}.
+    Present the fix to the user.
 
     Show what changed and why, referencing the bug report
     from {{<< output.reproduce}}.
 
     ## Routing
 
-    - If approved → {{-> nodes/verify | runbooks/fix-approved}}
-    - If rejected → {{-> nodes/fix | runbooks/fix-rejected}}
+    - If approved → {{-> nodes/verify | The user explicitly approves the fix}}
+    - If rejected → {{-> nodes/fix | The user requests changes to the fix}}
     ```
 
-    <Callout type="warn" title="Routers are lightweight">
-      Router nodes should not reference capabilities or instructions — they only evaluate conditions and route. The validator warns about `router_has_capabilities`.
+    <Callout type="info" title="Conditional edges create gateways">
+      💡 You don't need to declare `type: router`. Add conditional edges and the node automatically becomes a gateway.
     </Callout>
 
-    You'll also need the runbook files. Create them in `.agentflow/runbooks/`:
-
-    ```yaml
-    # .agentflow/runbooks/fix-approved.md
-    ---
-    type: condition
-    name: fix-approved
-    check: The user explicitly approves the fix
-    ---
-
-    **True when:** The user says the fix looks good.
-    **False when:** The user requests changes or raises concerns.
-    ```
+    Conditions are written inline in the edge syntax after the `|` separator — no separate skill files needed.
   </Step>
   <Step>
     ### Write the verify node
@@ -248,22 +231,21 @@ A linear flow with one approval gate. The reproduce step produces a bug report, 
     ✓ fix-bug: 0 errors, 0 warnings
     ```
 
-    The validator checks: entry point exists, all refs resolve, no cycles without conditional exits, runbooks exist for conditional edges, and token budgets aren't exceeded.
+    The validator checks: entry point exists, all refs resolve, no cycles without conditional exits, and token budgets aren't exceeded.
 
     If you see errors, the most common fixes:
     - `broken_ref` — check the filename spelling in your `{{...}}` references
     - `no_entry_point` — add `entry: true` to your first node
-    - `missing_condition` — create the runbook file referenced in conditional edges
   </Step>
 </Steps>
 
 ## What You Built
 
 Your workflow has:
-- **4 nodes** — reproduce (entry), fix, review-gate (router), verify
+- **4 nodes** — reproduce (entry), fix, review-gate (step with conditional edges), verify
 - **Data flow** — reproduce's output flows into fix and review-gate via `{{<< output.reproduce}}`
-- **Resource references** — capabilities (read-code, write-file, run-tests), instructions (code-style), runbooks (fix-approved)
-- **Conditional routing** — review-gate approves or rejects, verify can loop back to fix
+- **Resource references** — capabilities (read-code, write-file, run-tests), instructions (code-style)
+- **Conditional routing** — review-gate approves or rejects via inline conditions, verify can loop back to fix
 - **Context scoping** — each node declares what it needs via `context.inputs`
 
 ## What Exports Look Like

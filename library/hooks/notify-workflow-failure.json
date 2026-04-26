@@ -1,13 +1,12 @@
 {
   "name": "notify-workflow-failure",
-  "version": "1.0.0",
-  "description": "Notify the user when a workflow fails",
+  "description": "Alert the user immediately when a workflow fails so they can decide to retry or escalate",
   "event": "workflowFailed",
   "action": {
     "type": "notify",
     "target": "user",
     "params": {
-      "message": "Workflow failed. Check the error and decide whether to retry or escalate."
+      "message": "Workflow failed. Check the error output and decide whether to retry, debug, or escalate."
     }
   },
   "enabled": true,

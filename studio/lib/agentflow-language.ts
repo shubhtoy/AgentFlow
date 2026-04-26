@@ -8,7 +8,7 @@ const TEMPLATE_VARS: Record<string, string> = {
   $execution: 'Replaced with execution instructions at export time',
 }
 
-const REF_CATEGORIES = ['instructions', 'capabilities', 'runbooks', 'memory'] as const
+const REF_CATEGORIES = ['instructions', 'capabilities', 'skills', 'memory'] as const
 
 let _registered = false
 let _getRefNames: (() => string[]) | null = null

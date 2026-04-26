@@ -3,7 +3,6 @@ title: Studio Tour
 description: A visual walkthrough of every panel in the AgentFlow Studio.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
 
 A quick look at every panel in the studio, rendered live with the **build-feature** workflow.
 
@@ -17,7 +16,7 @@ A quick look at every panel in the studio, rendered live with the **build-featur
 
 ## Canvas
 
-The workflow graph. Nodes are steps (▪) or routers (◇). Green border marks entry points. Edges show execution flow — conditional edges are labeled with their runbook.
+The workflow graph. Nodes are steps (▪) or routers (◇). Green border marks entry points. Edges show execution flow — conditional edges are labeled with their skill.
 
 <ComponentPreview height="lg">
   <DocsPlayground panel="none" />
@@ -46,7 +45,7 @@ Drag to reposition • Scroll to zoom • Click to select • Double-click to ed
   <ComponentPreview title="Explorer" description="File tree of your .agentflow/ workspace. Create, rename, delete, drag-and-drop." height="lg">
     <DocsPlayground panel="explorer" />
   </ComponentPreview>
-  <ComponentPreview title="Elements" description="Resources by category — capabilities, instructions, runbooks, memory, hooks." height="lg">
+  <ComponentPreview title="Elements" description="Resources by category — capabilities, instructions, skills, memory, hooks." height="lg">
     <DocsPlayground panel="elements" />
   </ComponentPreview>
 </PreviewGrid>

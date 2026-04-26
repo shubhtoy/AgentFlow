@@ -1,15 +1,10 @@
 ---
 title: Validation
-description: What AgentFlow checks and why — 23 rules that catch problems before the agent runs.
+description: What AgentFlow checks and why — rules that catch problems before the agent runs.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Mermaid } from '@/components/docs/mdx-components'
 
-AgentFlow validates your workspace structure, references, and configuration before the agent ever runs. The validator checks 23 rules and reports errors (must fix) and warnings (should fix).
+AgentFlow validates your workspace structure, references, and configuration before the agent ever runs. The validator checks rules across five categories and reports errors (must fix) and warnings (should fix).
 
 This means you catch broken references, missing conditions, cycles, and context budget overruns at authoring time — not in production.
 
@@ -25,7 +20,6 @@ This means you catch broken references, missing conditions, cycles, and context 
     | `no_entry_point` | error | Workflow has no node with `entry: true` |
     | `multiple_entry_points` | warning | More than one entry node |
     | `unreachable` | warning | Node not reachable from the entry point |
-    | `router_single_exit` | warning | Router with only one outgoing edge |
     | `orphaned_sub_workflow` | warning | Sub-workflow directory exists but no node references it |
     | `infinite_sub_workflow` | error | Sub-workflow chain creates an infinite recursion |
   </Tab>
@@ -35,12 +29,9 @@ This means you catch broken references, missing conditions, cycles, and context 
     | Rule | Severity | What it catches |
     |------|----------|-----------------|
     | `broken_ref` | error | Reference to non-existent resource |
-    | `missing_condition` | error | Conditional edge without a runbook |
+    | `missing_condition` | error | Conditional edge references an instruction that doesn't exist |
     | `broken_data_flow` | error | Data flow ref to non-existent node |
     | `ambiguous_ref` | warning | Reference matches multiple files |
-    | `router_non_conditional` | warning | Router with unconditional edges |
-    | `router_has_capabilities` | warning | Router shouldn't have capabilities |
-    | `router_has_instructions` | warning | Router shouldn't have instructions |
     | `missing_sub_workflow_target` | warning | Workflow ref points to a non-existent workflow directory |
     | `unresolved_workflow_ref` | warning | Workflow ref cannot resolve the target AGENTS.md |
   </Tab>
@@ -132,21 +123,16 @@ This means you catch broken references, missing conditions, cycles, and context 
 
     The validator checks both global and workflow-scoped directories. If neither has the file, this error fires.
   </Accordion>
-  <Accordion title="missing_condition — conditional edge without a runbook">
+  <Accordion title="missing_condition — conditional edge references missing instruction">
     ```
-    ✗ missing_condition: Conditional edge references "runbooks/approved"
-      but no such runbook exists
+    ✗ missing_condition: Conditional edge references "instructions/approval-criteria"
+      but no such instruction exists
     ```
 
-    **Fix:** Create the runbook file:
+    **Fix:** Create the instruction file, or use inline condition text instead:
 
-    ```yaml
-    # runbooks/approved.md
-    ---
-    type: condition
-    name: approved
-    check: The user explicitly approves
-    ---
+    ```markdown
+    {{-> nodes/plan-tasks | design approved by user}}
     ```
   </Accordion>
   <Accordion title="no_entry_point — workflow has no entry node">
@@ -169,7 +155,7 @@ This means you catch broken references, missing conditions, cycles, and context 
     ⚠ context_budget: Node "implement" context is 9,240 tokens (budget: 8,000)
     ```
 
-    **Fix:** Either increase the budget, remove unnecessary references, or use `scope: summary` for data flow inputs:
+    **Fix:** Either increase the budget or remove unnecessary references:
 
     ```yaml
     context:
@@ -204,7 +190,7 @@ The Validation panel below shows real-time results for the build-feature workflo
 </ComponentPreview>
 
 <Cards>
-  <Card title="Validation Rules Reference" href="/docs/reference/validation-rules" description="Complete list of all 23 rules" />
+  <Card title="Validation Rules Reference" href="/docs/reference/validation-rules" description="Complete list of all validation rules" />
   <Card title="Common Errors" href="/docs/troubleshooting/common-errors" description="Top errors with detailed fixes" />
   <Card title="CI/CD Integration" href="/docs/guides/ci-cd" description="Run validation in your pipeline" />
 </Cards>

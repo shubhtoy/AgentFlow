@@ -1,0 +1,36 @@
+id: antigravity
+name: Antigravity
+website: https://antigravity.dev
+
+paths:
+  root: .antigravity
+  skills: .antigravity/skills/
+
+mapping:
+  identity:
+    target: .antigravity/AGENTS.md
+    transform: copy
+
+  instructions:
+    target: .antigravity/skills/{name}/SKILL.md
+    transform: to-skill-dir
+
+  skills:
+    target: .antigravity/skills/{name}/
+    transform: copy-dir
+
+  capabilities:
+    mcp:
+      target: null
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: null
+  format: null

@@ -3,17 +3,13 @@ title: Debugging Workflows
 description: Use the validation panel, token calculator, and common error patterns to diagnose and fix broken workflows.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Mermaid } from '@/components/docs/mdx-components';
 
 When a workflow does not validate, export, or behave as expected, the studio and CLI provide tools to diagnose the problem. This guide walks through the debugging process — from reading validation errors to fixing the most common mistakes.
 
 ## Debugging flow
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
   A["Workflow not working"] --> B["Run validation"]
   B --> C{"Errors?"}
   C -->|Yes| D["Fix errors in priority order"]
@@ -28,7 +24,7 @@ When a workflow does not validate, export, or behave as expected, the studio and
   J -->|Yes| K["Optimize references"]
   J -->|No| L["Check edge conditions"]
   L --> M["Test export"]
-`} />
+```
 
 ## The validation panel
 
@@ -60,14 +56,10 @@ agentflow validate
 ```
 
 ```
-build-feature: 4 errors, 2 warnings
+build-feature: 3 errors, 2 warnings
 
   [error] broken_ref: Reference "instructions/codestyle" not found
     in build-feature/implement/SKILL.md
-
-  [error] missing_condition: Conditional edge references "runbooks/approved"
-    but no such runbook exists
-    in build-feature/review-gate/SKILL.md
 
   [error] no_entry_point: Workflow "build-feature" has no entry node
 
@@ -80,7 +72,7 @@ build-feature: 4 errors, 2 warnings
   [warn] context_budget_high: Node "implement" at 7,200/8,000 tokens (90%)
 ```
 
-Four errors block export. Fix them in this order: broken references first (they often cause cascading issues), then structural problems.
+Three errors block export. Fix them in this order: broken references first (they often cause cascading issues), then structural problems.
 </Step>
 
 <Step>
@@ -109,34 +101,6 @@ Follow {{instructions/code-style}} conventions.
 <Callout type="info">
 The most common cause of `broken_ref` is a filename mismatch — hyphens vs no hyphens, singular vs plural, or a renamed file. Always check the actual filename on disk.
 </Callout>
-</Step>
-
-<Step>
-### Fix missing_condition — create the runbook
-
-The gate references `runbooks/approved` but the file does not exist. Either the file was deleted or never created.
-
-Create `.agentflow/runbooks/approved.md`:
-
-```yaml
----
-type: condition
-name: approved
-check: The user explicitly approves the work
----
-
-# Approved
-
-**True when:** The user says the work is acceptable.
-**False when:** The user requests changes or has not responded.
-```
-
-Alternatively, if the runbook exists under a different name (like `design-approved`), update the edge reference in the gate's SKILL.md to match:
-
-```markdown
-# Fix the reference to match the actual filename
-{{-> nodes/implement | runbooks/design-approved}}
-```
 </Step>
 
 <Step>
@@ -235,17 +199,16 @@ Quick reference for the most frequent errors and their fixes:
     | Error | Cause | Fix |
     |-------|-------|-----|
     | `broken_ref` | File does not exist at the referenced path | Check filename spelling, hyphens, and directory |
-    | `missing_condition` | Conditional edge references a missing runbook | Create the runbook file or fix the reference |
     | `broken_data_flow` | `{{<< output.x}}` references a non-existent node | Check the node directory name |
     | `ambiguous_ref` | Reference matches multiple files | Use the full path to disambiguate |
-    | `unknown_category` | Reference uses a non-standard directory | Use one of: instructions, capabilities, runbooks, memory, hooks |
+    | `unknown_category` | Reference uses a non-standard directory | Use one of: instructions, capabilities, skills, memory, hooks |
   </Tab>
   <Tab value="Graph">
     | Error | Cause | Fix |
     |-------|-------|-----|
     | `no_entry_point` | No node has `entry: true` | Add `entry: true` to the first node |
     | `multiple_entry_points` | More than one node has `entry: true` | Remove `entry: true` from all but one |
-    | `unconditional_cycle` | Loop with no conditional exit | Add a condition runbook to at least one edge in the cycle |
+    | `unconditional_cycle` | Loop with no conditional exit | Add a condition skill to at least one edge in the cycle |
     | `unreachable` | Node has no incoming edges | Connect it to the graph or remove it |
     | `self_referencing_edge` | Node points to itself | Remove the self-referencing edge |
   </Tab>
@@ -269,21 +232,22 @@ Quick reference for the most frequent errors and their fixes:
 
 The Tokens panel shows per-node token consumption broken into five layers:
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   subgraph "Token Budget Breakdown"
     I["Identity<br/>(fixed)"] --> R["Routing<br/>(edges)"]
     R --> C["Contract<br/>(SKILL.md)"]
     C --> REF["References<br/>(resources)"]
     REF --> W["Working<br/>(runtime)"]
   end
-`} />
+```
 
 | Layer | What it includes |
 |-------|-----------------|
 | Identity | Root and workflow AGENTS.md |
 | Routing | Edge conditions, graph navigation |
 | Contract | SKILL.md body content |
-| References | Capabilities, instructions, runbooks, memory |
+| References | Capabilities, instructions, skills, memory |
 | Working | Conversation history, tool results (estimated) |
 
 The References layer is usually the largest optimization target. Use `scope: signature` (capabilities) or `scope: summary` (any resource) to reduce it.
@@ -292,7 +256,7 @@ The References layer is usually the largest optimization target. Use `scope: sig
 
 1. **Run `agentflow validate`** — fix all errors first.
 2. **Check the Tokens panel** — over-budget nodes silently drop low-priority references.
-3. **Verify edge conditions** — confirm each conditional edge has a matching runbook.
+3. **Verify edge conditions** — confirm each conditional edge has clear inline condition text.
 4. **Check data flow direction** — `{{<< output.x}}` can only reference prior nodes.
 5. **Test MCP connections** — `agentflow mcp test server-name`.
 6. **Export with `--dry-run`** — confirm output before writing files.

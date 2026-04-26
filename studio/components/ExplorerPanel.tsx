@@ -439,14 +439,14 @@ function SectionGroup({
 function getCategoryKey(node: TreeNodeType): string | null {
   if (node.resourceType) {
     const map: Record<string, string> = {
-      instruction: 'instructions', capability: 'capabilities', runbook: 'runbooks',
+      instruction: 'instructions', capability: 'capabilities', skill: 'skills',
       memory: 'memory', hook: 'hooks', node: 'nodes', agents: 'workflows',
     }
     return map[node.resourceType] ?? null
   }
   // Fallback: match folder name
   const nameMap: Record<string, string> = {
-    instructions: 'instructions', capabilities: 'capabilities', runbooks: 'runbooks',
+    instructions: 'instructions', capabilities: 'capabilities', skills: 'skills',
     memory: 'memory', hooks: 'hooks', workflows: 'workflows',
   }
   return nameMap[node.name] ?? null

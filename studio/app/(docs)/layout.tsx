@@ -9,7 +9,7 @@ export default function DocsRootLayout({ children }: { children: ReactNode }) {
     <RootProvider
       search={{
         options: {
-          type: 'static' as const,
+          type: process.env.NODE_ENV === 'production' ? 'static' : 'fetch',
         },
       }}
     >

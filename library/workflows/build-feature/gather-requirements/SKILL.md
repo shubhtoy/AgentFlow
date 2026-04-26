@@ -1,96 +1,59 @@
 ---
 name: gather-requirements
-description: Understand the feature request and produce a structured requirements document
-type: step
+description: Elicit and document feature requirements through structured interview
 entry: true
-primary: true
-agent: requirements-analyst
-model: claude-sonnet
 context:
-  max_tokens: 3000
-  inputs:
-    - ref: instructions/requirements-elicitation
-      scope: full
-    - ref: capabilities/source-agent
-      scope: full
-    - ref: capabilities/read-code
-      scope: signature
-    - ref: capabilities/write-file
-      scope: signature
-    - ref: memory/user
-      scope: full
-    - ref: memory/decisions
-      scope: full
-    - ref: memory/facts
-      scope: summary
-  exclude:
-    - instructions/technical-design
-    - instructions/task-decomposition
-    - instructions/implementation-discipline
+  max_tokens: 4000
 outputs:
-  - name: requirements-doc
+  - name: requirements
     format: markdown
-    description: Structured requirements document with numbered requirements and WHEN/THEN acceptance criteria
+    description: Structured requirements document
 ---
 
 # Gather Requirements
 
-You are starting the spec-driven workflow. Your job is to transform the user's feature request into a precise, testable requirements document.
+Interview the user to understand what they want to build. Use {{skills/context-engineering}} to manage context efficiently — keep the conversation focused and avoid token waste.
 
-## Resources
+## Preparation
 
-- Apply {{instructions/requirements-elicitation}} to structure the requirements
-- Query {{capabilities/source-agent}} to understand the codebase architecture
-- Use {{capabilities/read-code}} to examine the source files
-- Use {{capabilities/write-file}} to create or modify the file
-- {{memory/user}}
-- {{memory/decisions}}
-- {{memory/facts}}
+Before interviewing, use available tools to understand the existing system:
+- {{capabilities/codebase-explorer}} — understand project structure, tech stack, conventions
+- {{capabilities/read-code}} — read relevant existing code the feature will touch
+- {{capabilities/grep-search}} — find related functionality that already exists
+- {{capabilities/file-search}} — locate configuration, schemas, or docs that provide context
 
-**Do not resolve** {{instructions/technical-design}}, {{instructions/task-decomposition}}, or {{instructions/implementation-discipline}} — they belong to later nodes.
+This preparation means you ask informed questions, not generic ones.
 
-## Instructions
+## Interview Process
 
-### Step 1: Understand the Context
+Read the interview-template.md context file for the question framework. Follow {{instructions/requirements-elicitation}} for structured elicitation.
 
-Query {{capabilities/source-agent}} to understand the existing architecture relevant to this feature:
-- "What components exist in the area this feature touches?"
-- "What are the current data models and API contracts?"
-- "Are there similar features already implemented?"
+### 1. Problem Space (ask first, always)
 
-Use {{capabilities/read-code}} to examine specific files identified by the source agent. Keep reads focused — request only the files you need, not entire directories.
+- What problem are you solving?
+- Who is affected and how?
+- What does success look like?
+- What happens if we don't build this?
 
-Read {{memory/user}} to recall the user's preferences and conventions.
-Read {{memory/decisions}} to check for relevant past decisions.
+### 2. Solution Space (only after problem is clear)
 
-### Step 2: Elicit Requirements
+- What should the user experience be?
+- What are the inputs and outputs?
+- What existing systems does this integrate with?
+- What constraints exist (performance, security, compatibility)?
 
-Apply {{instructions/requirements-elicitation}} to structure the requirements:
+### 3. Edge Cases and Boundaries
 
-1. Write an **Introduction** paragraph explaining what this feature is and why it matters
-2. Write a **Glossary** defining any domain-specific terms
-3. For each distinct capability, write a **Requirement** with:
-   - A numbered heading (Requirement 1, Requirement 2, ...)
-   - A **User Story** in "As a [role], I want [capability], so that [benefit]" format
-   - Numbered **Acceptance Criteria** using WHEN/THEN format
+- What happens when things go wrong?
+- What are the limits (max users, max data, timeout)?
+- What's explicitly out of scope?
 
-### Step 3: Write the Document
+### 4. Acceptance Criteria
 
-Use {{capabilities/write-file}} to create the requirements document at `specs/<feature>/requirements.md`.
+For each requirement, define how to verify it's met. Use {{skills/brainstorming}} if the user is unsure about criteria — help them think through what "done" looks like.
 
-### Step 4: Record What You Learned
+## Output
 
-Write any useful facts to {{memory/facts}}.
-Write any decisions made to {{memory/decisions}}.
+Produce a structured requirements document as `output.requirements` following {{instructions/requirements-format}}. The document must be complete enough that someone unfamiliar with the conversation could implement from it.
 
-## Deliverable
-
-A complete requirements document with numbered requirements, user stories, and testable acceptance criteria.
-
-## Next
-
-Present the requirements to the user for review, then proceed to the review gate.
-
-→ {{-> nodes/review-requirements-gate}}
-
-{{<< output.gather-requirements}}
+{{-> review-requirements | requirements document is complete}}

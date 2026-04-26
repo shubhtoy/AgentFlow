@@ -3,11 +3,6 @@ title: Context Engineering
 description: How references act as context primitives — selecting, assembling, and scoping what the agent sees.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 Context engineering is the discipline of filling an AI's context window with exactly the right information — not just a prompt, but the full assembly of instructions, knowledge, tools, memory, and prior outputs that the model sees when it generates a response.
 
@@ -98,8 +93,8 @@ AgentFlow has four reference types. Each serves a different context engineering 
     default: '—',
   },
   'Conditional edge': {
-    description: 'Declares conditional routing via a runbook',
-    type: '{{-> nodes/target | runbooks/condition}}',
+    description: 'Declares conditional routing via a skill',
+    type: '{{-> nodes/target | skills/condition}}',
     default: '—',
   },
   'Data flow': {
@@ -211,7 +206,8 @@ Common causes:
 
 Understanding the full pipeline from SKILL.md to LLM call helps you reason about what the model will see and why.
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
     A[SKILL.md file on disk] --> B[Parse YAML frontmatter]
     B --> C[Parse markdown body]
     C --> D[Extract all refs via regex]
@@ -234,7 +230,7 @@ Understanding the full pipeline from SKILL.md to LLM call helps you reason about
     Q --> R
     R --> S[Check against max_tokens budget]
     S --> T[Send to LLM]
-`} />
+```
 
 ### Pipeline Stages in Detail
 

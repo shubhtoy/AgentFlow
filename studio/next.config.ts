@@ -3,6 +3,7 @@ import { createMDX } from 'fumadocs-mdx/next'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  transpilePackages: ['@agentflow/core', '@agentflow/cli'],
   serverExternalPackages: [
     'simple-git',
     '@modelcontextprotocol/sdk',

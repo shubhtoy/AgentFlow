@@ -1,88 +1,72 @@
 ---
 name: plan-tasks
-description: Break the approved design into ordered, atomic implementation tasks
-type: step
-agent: project-planner
-model: claude-sonnet
+description: Break approved design into ordered, atomic implementation tasks
 context:
-  max_tokens: 3000
-  inputs:
-    - ref: instructions/task-decomposition
-      scope: full
-    - ref: capabilities/source-agent
-      scope: full
-    - ref: capabilities/write-file
-      scope: signature
-    - ref: memory/decisions
-      scope: summary
-  exclude:
-    - instructions/requirements-elicitation
-    - instructions/technical-design
-    - instructions/implementation-discipline
-    - instructions/api-design
-    - instructions/security-review
+  max_tokens: 6000
+  inputs: [output.create-design]
 outputs:
   - name: task-list
     format: markdown
-    description: Ordered implementation plan with tasks, subtasks, file lists, and requirement traceability
+    description: Ordered list of implementation tasks with dependencies and estimates
 ---
 
-# Plan Implementation Tasks
+# Plan Tasks
 
-The design has been approved. Now break it into a concrete, ordered list of implementation tasks.
+Break the approved technical design into a concrete, ordered list of implementation tasks. Consume the design document from {{<< output.create-design}} and produce a task list that can be executed sequentially.
 
-## Resources
+## Decomposition Methodology
 
-- Apply {{instructions/task-decomposition}} to break the design into tasks
-- Query {{capabilities/source-agent}} to understand the codebase architecture
-- Use {{capabilities/write-file}} to create or modify the file
-- {{memory/decisions}}
+Follow {{instructions/task-decomposition}} for breaking complex work into manageable pieces. Use {{skills/executing-plans}} for task ordering and dependency management.
 
-**Do not resolve** {{instructions/requirements-elicitation}}, {{instructions/technical-design}}, {{instructions/implementation-discipline}}, {{instructions/api-design}}, or {{instructions/security-review}} — they belong to other nodes.
+## Process
 
-## Inputs
+### 1. Identify Work Units
 
-- Requirements from {{<< output.gather-requirements}}
-- Design from {{<< output.create-design}}
+Walk through the design and extract every piece of implementation work:
+- Data model creation or modification
+- API endpoint implementation
+- Business logic modules
+- Integration code
+- Configuration and infrastructure
+- Test suites
 
-## Instructions
+### 2. Make Tasks Atomic
 
-### Step 1: Analyze the Design
+Each task must be:
+- **Completable in one session** — if it takes more than a few hours, break it down further
+- **Independently verifiable** — has clear acceptance criteria you can check
+- **Self-contained** — produces a working increment, not a half-finished state
 
-Read the design document from {{<< output.create-design}}. Identify every concrete change:
-- Types/interfaces to define
-- Modules/files to create or modify
-- API endpoints to implement
-- Tests to write
+### 3. Define Each Task
 
-Query {{capabilities/source-agent}} to understand the codebase architecture and verify which files already exist.
+For every task, specify:
+- **Summary**: one-line description of what to do
+- **Acceptance criteria**: how to know it's done
+- **Dependencies**: which tasks must complete first
+- **Estimated effort**: small (< 1hr), medium (1-3hr), large (3+ hr — consider splitting)
+- **Files likely touched**: helps with planning and conflict avoidance
 
-### Step 2: Decompose into Tasks
+### 4. Order by Dependency Graph
 
-Apply {{instructions/task-decomposition}} to break the design into tasks:
+Arrange tasks so that:
+- Dependencies come before dependents
+- Foundation work (models, interfaces) comes first
+- Integration work comes after the pieces it connects
+- Tests are written alongside or before implementation, not after
 
-1. **Foundation tasks** — types, models, configuration
-2. **Core logic tasks** — business rules, algorithms
-3. **Integration tasks** — API wiring, UI components
-4. **Verification tasks** — integration tests, full suite run
-5. **Checkpoint tasks** — pause after each phase, verify with user via {{runbooks/checkpoint}}
+### 5. Identify Critical Path
 
-### Step 3: Write the Task List
+Mark which tasks are on the critical path — the longest chain of dependent tasks that determines minimum total time. Flag any tasks that could be parallelized.
 
-Use {{capabilities/write-file}} to create the implementation plan at `specs/<feature>/tasks.md`.
+## Output
 
-### Step 4: Record Decisions
+Produce a numbered task list as `output.task-list` with the structure:
+```
+## Task N: [Summary]
+- Acceptance criteria: [list]
+- Dependencies: [task numbers or "none"]
+- Effort: [small/medium/large]
+- Files: [expected files]
+```
 
-Write task ordering rationale to {{memory/decisions}}.
-
-## Deliverable
-
-A complete, ordered implementation plan with requirements traceability.
-
-## Next
-
-Present the task list to the user for review, then proceed to the review gate.
-
-→ {{-> nodes/review-tasks-gate}}
-
-{{<< output.plan-tasks}}
+{{-> review-plan | task list is complete}}

@@ -1,13 +1,13 @@
 ---
 name: resource-authoring
 scope: workflow
-description: "Part 9: Authoring resources — capabilities, instructions, runbooks, memory"
+description: "Part 9: Authoring resources — capabilities, instructions, skills, memory"
 tags:
   - guide
   - resources
   - capabilities
   - instructions
-  - runbooks
+  - skills
   - memory
   - tools
 ---
@@ -215,9 +215,9 @@ When no explicit `scope` is set:
 | Frontmatter has `inclusion` field | `global` |
 | Otherwise | `workflow` |
 
-## 9.3 — Runbooks (Conditions & Interactions)
+## 9.3 — Skills (Conditions & Interactions)
 
-Runbooks serve two purposes: defining routing conditions and defining human touchpoints.
+Skills serve two purposes: defining routing conditions and defining human touchpoints.
 
 ### Conditions — used in conditional edges
 
@@ -240,7 +240,7 @@ The `check` field must be **unambiguous and evaluable**. The executor reads this
 More examples:
 
 ```yaml
-# runbooks/all-tasks-done.md
+# skills/all-tasks-done.md
 ---
 name: all-tasks-done
 type: condition
@@ -248,7 +248,7 @@ check: Every task in the implementation plan has been completed and marked
        as done, all tests pass, and no diagnostics errors remain
 ---
 
-# runbooks/tests-pass.md
+# skills/tests-pass.md
 ---
 name: tests-pass
 type: condition

@@ -3,16 +3,10 @@ title: Workspaces
 description: The .agentflow/ directory — the container for all workflows, resources, and configuration.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 A workspace is a `.agentflow/` directory at the root of your project. It contains everything an agent needs — workflows, resources, identity, and configuration. One workspace per project.
 
-<Mermaid chart={`
+```mermaid
 graph TD
     ROOT["Root AGENTS.md"] --> WF1["Workflow A"]
     ROOT --> WF2["Workflow B"]
@@ -22,7 +16,7 @@ graph TD
     N1 -->|references| RES["Resources"]
     N2 -->|references| RES
     N3 -->|references| RES
-`} />
+```
 
 ## Layout
 
@@ -49,15 +43,16 @@ graph TD
       <File name="write-file.md" />
       <File name="run-tests.md" />
     </Folder>
-    <Folder name="runbooks">
-      <File name="tests-pass.md" />
-      <File name="design-approved.md" />
+    <Folder name="skills">
+      <Folder name="review-design">
+        <File name="SKILL.md" />
+      </Folder>
     </Folder>
     <Folder name="memory">
       <File name="decisions.md" />
     </Folder>
     <Folder name="hooks">
-      <File name="on-commit.md" />
+      <File name="on-commit.json" />
     </Folder>
   </Folder>
 </Files>
@@ -85,13 +80,13 @@ identity:
 
 <Accordions>
   <Accordion title="instructions/ — guidance and conventions">
-    Style guides, coding conventions, strategy documents. The agent treats these as constraints to follow. Scoped globally or per-workflow.
+    Style guides, coding conventions, strategy documents. The agent treats these as constraints to follow. Scoped by position in the directory tree — global or per-workflow.
   </Accordion>
   <Accordion title="capabilities/ — tool definitions">
     What the agent can do — builtin tools, scripts, MCP servers, packages. Types: `builtin`, `script`, `mcp`, `package`.
   </Accordion>
-  <Accordion title="runbooks/ — conditions and interactions">
-    Decision criteria for routers (`type: condition`) and human-in-the-loop patterns (`type: interaction`).
+  <Accordion title="skills/ — directory-based reusable components">
+    Each skill lives in `skills/name/SKILL.md` with optional `references/`, `scripts/`, and `assets/` subdirectories. Skills use progressive disclosure: metadata → body → references.
   </Accordion>
   <Accordion title="memory/ — persistent state">
     Decisions, preferences, and context that persists across workflow runs. The only resource category the agent can write to during execution.
@@ -145,7 +140,7 @@ Resources can live at two levels:
     ### Manual
 
     ```bash
-    mkdir -p .agentflow/{instructions,capabilities,runbooks,memory,hooks}
+    mkdir -p .agentflow/{instructions,capabilities,skills,memory,hooks}
     touch .agentflow/AGENTS.md
     ```
 

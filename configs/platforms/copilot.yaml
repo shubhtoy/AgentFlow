@@ -1,0 +1,43 @@
+id: copilot
+name: GitHub Copilot
+website: https://github.com/features/copilot
+
+paths:
+  root: .github
+  agents: .github/agents/
+  mcp: .github/copilot/mcp.json
+
+mapping:
+  identity:
+    target: .github/agents/identity.md
+    transform: copy
+
+  instructions:
+    target: .github/agents/{name}.md
+    transform: copy
+
+  skills:
+    target: .github/agents/{name}.md
+    transform: flatten-skill
+
+  capabilities:
+    mcp:
+      target: .github/copilot/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .github/copilot/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'

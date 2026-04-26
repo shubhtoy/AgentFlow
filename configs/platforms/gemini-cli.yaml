@@ -1,0 +1,44 @@
+id: gemini-cli
+name: Gemini CLI
+website: https://github.com/google-gemini/gemini-cli
+
+paths:
+  root: .gemini
+  skills: .gemini/skills/
+  settings: .gemini/settings.json
+
+mapping:
+  identity:
+    target: GEMINI.md
+    transform: rename
+
+  instructions:
+    target: .gemini/skills/{name}/SKILL.md
+    transform: to-skill-dir
+
+  skills:
+    target: .gemini/skills/{name}/
+    transform: copy-dir
+
+  capabilities:
+    mcp:
+      target: .gemini/settings.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .gemini/settings.json
+  format: gemini-settings
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'
+        env: '{env}'

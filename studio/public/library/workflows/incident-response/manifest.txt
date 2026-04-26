@@ -1,9 +1,0 @@
-AGENTS.md
-detect/SKILL.md
-hooks/diagnostics-after-write.json
-hooks/security-scan-on-commit.json
-investigate/SKILL.md
-mitigate/SKILL.md
-postmortem/SKILL.md
-review-gate/SKILL.md
-triage/SKILL.md

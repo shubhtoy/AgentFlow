@@ -243,7 +243,7 @@ export function Editor({ filePath, content }: { filePath: string; content: strin
                 const d = useAppStore.getState().data
                 if (!d) return []
                 const names: string[] = []
-                for (const cat of ['instructions', 'capabilities', 'runbooks', 'memory'] as const) {
+                for (const cat of ['instructions', 'capabilities', 'skills', 'memory'] as const) {
                   for (const key of Object.keys(d[cat])) names.push(`${cat}/${key}`)
                 }
                 return names

@@ -145,7 +145,7 @@ export function NodeCard() {
   if (isNode && node && wf) {
     headerColor = getNodeTypeColor(node.nodeType, theme)
     headerLabel = node.nodeType === 'sub-workflow' ? 'Workflow'
-      : node.nodeType === 'router' ? 'Gateway' : 'Agent'
+      : node.nodeType === 'router' ? 'Gateway' : 'Step'
     incoming = wf.edges.filter(e => e.to === node.id)
     outgoing = wf.edges.filter(e => e.from === node.id)
     showConnections = incoming.length > 0 || outgoing.length > 0
@@ -162,7 +162,7 @@ export function NodeCard() {
   }
   if (isIdentity) {
     const key = useAppStore.getState().selection?.key || ''
-    headerColor = isDark ? 'hsl(238, 76%, 67%)' : 'hsl(238, 76%, 67%)'
+    headerColor = isDark ? 'var(--node-step)' : 'var(--node-step)'
     headerLabel = key.includes('/') ? 'Workflow Identity' : 'Workspace Identity'
   }
 

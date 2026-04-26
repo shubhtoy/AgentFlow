@@ -1,0 +1,44 @@
+id: windsurf
+name: Windsurf
+website: https://windsurf.com
+agentsmd: true
+
+paths:
+  root: .
+  identity: AGENTS.md
+  rules: .windsurf/rules/
+
+mapping:
+  identity:
+    target: AGENTS.md
+    transform: copy
+
+  instructions:
+    target: .windsurf/rules/{name}.md
+    transform: copy
+
+  skills:
+    target: .windsurf/rules/{name}.md
+    transform: flatten-skill
+
+  capabilities:
+    mcp:
+      target: .windsurf/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .windsurf/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'

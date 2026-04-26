@@ -3,11 +3,6 @@ title: AGENTS.md Standard
 description: The open standard for agent identity that AgentFlow builds on.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 AgentFlow is built on [AGENTS.md](https://agents.md) — an open format for guiding coding agents, used by over 60,000 open-source projects and stewarded by the Agentic AI Foundation under the Linux Foundation.
 
@@ -77,7 +72,7 @@ The base AGENTS.md standard is intentionally minimal — just markdown with what
     default: 'Base standard only has AGENTS.md',
   },
   'Resource categories': {
-    description: 'instructions/, capabilities/, runbooks/, memory/, hooks/',
+    description: 'instructions/, capabilities/, skills/, memory/, hooks/',
     type: 'AgentFlow extension',
     default: 'Base standard is freeform',
   },
@@ -196,7 +191,8 @@ AGENTS.md is not just a file format — it is a universal interface between huma
 
 This works because the standard is intentionally minimal at its base layer. Every platform reads the same markdown and extracts what it needs. AgentFlow's extensions (typed frontmatter, references, resource categories) are additive — platforms that don't understand them simply ignore the YAML fields and treat the body as plain instructions.
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
     A[AGENTS.md file in your repo] --> B[Claude Code]
     A --> C[Cursor]
     A --> D[Windsurf]
@@ -210,7 +206,7 @@ This works because the standard is intentionally minimal at its base layer. Ever
     C --> L[Reads as rule file]
     D --> M[Reads as agent config]
     H --> N[Reads typed structure + refs + graph]
-`} />
+```
 
 ### How Each Platform Interprets the File
 
@@ -264,13 +260,13 @@ This is analogous to how a function signature tells you what a function does wit
 
 ### Resource Categories (Why Five)
 
-AgentFlow defines five resource categories: instructions, capabilities, runbooks, memory, and hooks.
+AgentFlow defines five resource categories: instructions, capabilities, skills, memory, and hooks.
 
 **Why exactly five?** The categories map to distinct roles in the context window:
 
 - **instructions** — behavioral guidance the agent follows (how to write code, how to communicate)
 - **capabilities** — tool definitions the agent can invoke (what actions are available)
-- **runbooks** — conditional logic and decision criteria (when to route, when to approve)
+- **skills** — conditional logic and decision criteria (when to route, when to approve)
 - **memory** — persistent state across runs (learned preferences, accumulated knowledge)
 - **hooks** — event triggers that fire on workflow events (on-complete, on-error)
 

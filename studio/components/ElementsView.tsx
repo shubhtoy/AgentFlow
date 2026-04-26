@@ -209,7 +209,7 @@ export const ElementsView = memo(function ElementsView() {
       const cat = ref.category as string
       const name = ref.name as string
       if (cat && name && result[cat]) result[cat].add(name)
-      // Conditional edge conditions: "runbooks/design-approved"
+      // Conditional edge conditions
       if (ref.condition && ref.condition.includes('/')) {
         const [condCat, condName] = ref.condition.split('/', 2)
         if (condCat && condName && result[condCat]) result[condCat].add(condName)
@@ -249,9 +249,8 @@ export const ElementsView = memo(function ElementsView() {
         continue
       }
       const TYPE_TO_CATEGORY: Record<string, string> = {
-        skill: 'instructions', instruction: 'instructions',
+        skill: 'skills', instruction: 'instructions',
         tool: 'capabilities', capability: 'capabilities',
-        interaction: 'runbooks', runbook: 'runbooks', template: 'runbooks',
         memory: 'memory',
         hook: 'hooks',
       }
@@ -423,42 +422,6 @@ export const ElementsView = memo(function ElementsView() {
                 const items = filtered.resources[cat] ?? []
                 if (items.length === 0) return null
                 const cfg = categoryConfig[cat]
-
-                // Split runbooks into Conditions and Interactions
-                if (cat === 'runbooks') {
-                  const conditions = items.filter(i => {
-                    const fm = i.file?.frontmatter
-                    const scope = (i.file as any)?.scope
-                    return scope === 'condition' || fm?.type === 'condition'
-                  })
-                  const interactions = items.filter(i => {
-                    const fm = i.file?.frontmatter
-                    const scope = (i.file as any)?.scope
-                    return scope !== 'condition' && fm?.type !== 'condition'
-                  })
-                  return (
-                    <div key={cat}>
-                      {conditions.length > 0 && (
-                        <SectionGroup label="Conditions" count={conditions.length} icon={cfg?.icon} color={cfg?.primaryColor}>
-                          {conditions.map(item => (
-                            <ItemRow key={`${item.source}-${item.name}`} item={item}
-                              icon={cfg?.icon} color={cfg?.primaryColor}
-                              onInstall={handleInstall} installed={wsNames[cat]?.has(item.name)} />
-                          ))}
-                        </SectionGroup>
-                      )}
-                      {interactions.length > 0 && (
-                        <SectionGroup label="Interactions" count={interactions.length} icon={cfg?.icon} color={cfg?.primaryColor}>
-                          {interactions.map(item => (
-                            <ItemRow key={`${item.source}-${item.name}`} item={item}
-                              icon={cfg?.icon} color={cfg?.primaryColor}
-                              onInstall={handleInstall} installed={wsNames[cat]?.has(item.name)} />
-                          ))}
-                        </SectionGroup>
-                      )}
-                    </div>
-                  )
-                }
 
                 return (
                   <SectionGroup key={cat} label={cfg?.label || cat} count={items.length} icon={cfg?.icon} color={cfg?.primaryColor}>

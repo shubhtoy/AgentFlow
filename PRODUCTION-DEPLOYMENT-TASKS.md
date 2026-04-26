@@ -197,3 +197,28 @@
 **Total: 26 tasks across 3 phases.**
 
 All 3 phases can run in parallel. Phase 3 is the most impactful — it's a CSS variable format migration that affects `globals.css` (50 variable definitions + 25 theme mappings + 7 usage sites), 2 component files, and enables the entire fumadocs docs route.
+
+---
+
+## Future Work (Noted, Not Scoped)
+
+### Skills Discover Redesign
+- Current `SkillsDiscoverView.tsx` is bare — search-only, no categories, no featured/popular
+- Hardcoded colors (`hsl(200, 80%, 55%)`) instead of CSS variables
+- Install flow works but UX is minimal
+- Installed skills don't integrate well with Assets tab
+- Needs: category browsing, featured section, better install preview, proper integration with explorer
+
+### Git Panel Dead Code Cleanup
+- `gitApi` in `api.ts` has 10 methods calling `/git/*` routes that don't exist
+- Zero components use `gitApi` — it's entirely dead code
+- GitPanel uses `git-client.ts` (isomorphic-git) instead
+- Clean up during Phase 1 (Git Panel Redesign)
+
+### Server Security — safePath Enforcement
+- All API routes that touch filesystem are currently unscoped — can access anything
+- `skills/rollback` can `rmSync` anything under project root
+- `copilot/keys` reads/writes `.env.local` at `process.cwd()`
+- Need `safePath` middleware that validates all paths against workspace boundary
+- `packages/cli/src/svc-utils/validate-path.js` already has the logic — wrap it for API routes
+- SSH route is the one exception — reads `~/.ssh/` but returns metadata only, never key content

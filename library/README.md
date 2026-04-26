@@ -31,7 +31,7 @@ A curated collection of reusable workflows, skills, tools, templates, interactio
 | data-cleaning | Data | Handle missing values, outliers, normalization |
 | database-design | Data | Schema design, indexing, migrations, naming conventions |
 | detailed-plan | Planning | Comprehensive execution plan with phases and dependencies |
-| documentation | Content | Write docs people actually read — READMEs, APIs, runbooks |
+| documentation | Content | Write docs people actually read — READMEs, APIs, operations guides |
 | error-handling | Development | Robust error handling patterns, retry strategies, logging |
 | git-commit | Development | Git commit with safety protocol and AI-generated message |
 | incident-response | DevOps | Detect → triage → investigate → mitigate → postmortem |

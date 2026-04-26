@@ -1,13 +1,13 @@
-import { BookOpen, Wrench, PlayCircle, Brain, Database, Box, GitBranch, FileText, ArrowDownLeft, Webhook } from 'lucide-react'
+import { BookOpen, Wrench, Zap, Brain, Database, Box, GitBranch, FileText, ArrowDownLeft, Webhook } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ResourceCategory } from './types'
 
 /** Canonical list of resource categories — import this instead of hardcoding */
-export const RESOURCE_CATEGORIES: ResourceCategory[] = ['instructions', 'capabilities', 'runbooks', 'memory', 'hooks']
+export const RESOURCE_CATEGORIES: ResourceCategory[] = ['instructions', 'capabilities', 'skills', 'memory', 'hooks']
 
 /** Category → icon mapping — single source of truth */
 export const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  instructions: BookOpen, capabilities: Wrench, runbooks: PlayCircle,
+  instructions: BookOpen, capabilities: Wrench, skills: Zap,
   memory: Database, hooks: Webhook, workflows: GitBranch,
 }
 
@@ -45,9 +45,9 @@ const CATEGORIES: Record<string, CategoryDef> = {
     light: { primaryColor: '#D81B60', containerColor: '#FCE4EC', onColor: '#880E4F' },
     dark:  { primaryColor: '#F48FB1', containerColor: 'rgba(244,143,177,0.15)', onColor: '#F48FB1' },
   },
-  runbooks:     { icon: PlayCircle,    label: 'Runbooks',
-    tooltip: 'Human checkpoints and routing conditions',
-    ecosystemHint: 'Approval gates · branch conditions · pause points',
+  skills:       { icon: Zap,           label: 'Skills',
+    tooltip: 'Reusable agent skills — composable building blocks',
+    ecosystemHint: 'SKILL.md · agent skills · composable steps',
     light: { primaryColor: '#6A1B9A', containerColor: '#F3E5F5', onColor: '#4A148C' },
     dark:  { primaryColor: '#CE93D8', containerColor: 'rgba(206,147,216,0.15)', onColor: '#CE93D8' },
   },
@@ -121,22 +121,20 @@ export const NODE_TYPE_COLORS: Record<string, string> = {
 }
 
 /** Theme-aware node type colors — uses MUI theme primary for step nodes */
-export function getNodeTypeColor(nodeType: string, mode: 'light' | 'dark', themePrimary?: string): string {
+export function getNodeTypeColor(nodeType: string, _mode?: 'light' | 'dark', themePrimary?: string): string {
   if (nodeType === 'step' && themePrimary) return themePrimary
-  const colors: Record<string, { light: string; dark: string }> = {
-    step:           { light: '#1565C0', dark: '#64B5F6' },
-    router:         { light: '#F57F17', dark: '#FFD54F' },
-    'sub-workflow':  { light: '#6A1B9A', dark: '#CE93D8' },
+  const vars: Record<string, string> = {
+    step:            'var(--node-step)',
+    router:          'var(--node-router)',
+    'sub-workflow':  'var(--node-sub-workflow)',
   }
-  const c = colors[nodeType]
-  if (!c) return mode === 'dark' ? '#64B5F6' : '#1565C0'
-  return mode === 'dark' ? c.dark : c.light
+  return vars[nodeType] ?? 'var(--node-step)'
 }
 
 export const SIDEBAR_SECTIONS: { key: ResourceCategory; label: string }[] = [
   { key: 'instructions', label: 'Instructions' },
   { key: 'capabilities', label: 'Capabilities' },
-  { key: 'runbooks', label: 'Runbooks' },
+  { key: 'skills', label: 'Skills' },
   { key: 'memory', label: 'Memory' },
   { key: 'hooks', label: 'Hooks' },
 ]

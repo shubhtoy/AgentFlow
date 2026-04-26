@@ -34,7 +34,7 @@ export async function countWorkflowTokens(workflowId: string): Promise<{
 
   const encoder = enc()
   const prefix = workflowId + '/'
-  const sharedPrefixes = ['instructions/', 'capabilities/', 'runbooks/', 'memory/']
+  const sharedPrefixes = ['instructions/', 'capabilities/', 'skills/', 'memory/']
 
   let total = 0
   const files: { path: string; tokens: number }[] = []

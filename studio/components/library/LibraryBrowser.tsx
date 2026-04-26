@@ -30,7 +30,7 @@ const TYPE_FILTERS = [
   { value: 'workflow', label: 'Workflows', icon: Workflow },
   { value: 'instruction', label: 'Instructions', icon: BookOpen },
   { value: 'capability', label: 'Capabilities', icon: Wrench },
-  { value: 'runbook', label: 'Runbooks', icon: FileText },
+  { value: 'skill', label: 'Skills', icon: FileText },
   { value: 'memory', label: 'Memory', icon: Brain },
 ] as const
 
@@ -38,7 +38,7 @@ const TYPE_ICON_MAP: Record<string, typeof Workflow> = {
   workflow: Workflow,
   instruction: BookOpen,
   capability: Wrench,
-  runbook: FileText,
+  skill: FileText,
   memory: Brain,
 }
 
@@ -75,7 +75,7 @@ function SkillsShSearch() {
     timerRef.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/skills/search?q=${encodeURIComponent(q)}`)
+        const res = await fetch(`/api/skills?q=${encodeURIComponent(q)}`)
         const data = await res.json()
         setResults(data.skills ?? [])
       } catch { setResults([]) }

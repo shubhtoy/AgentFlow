@@ -1,13 +1,12 @@
 {
   "name": "memory-on-session-end",
-  "version": "1.0.0",
-  "description": "Remind the agent to persist important learnings when a workflow completes",
+  "description": "Prompt the agent to persist decisions, lessons, and preferences to memory when a workflow completes",
   "event": "workflowCompleted",
   "action": {
     "type": "notify",
     "target": "agent",
     "params": {
-      "message": "Session ending. Write any important decisions, lessons, or facts to memory before closing."
+      "message": "Workflow complete. Review session notes and persist any important decisions, lessons, or user preferences to the appropriate memory files."
     }
   },
   "enabled": true,

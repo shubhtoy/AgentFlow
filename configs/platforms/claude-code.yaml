@@ -1,0 +1,47 @@
+id: claude-code
+name: Claude Code
+website: https://claude.ai/code
+agentsmd: true
+
+paths:
+  root: .claude
+  identity: CLAUDE.md
+  rules: .claude/rules/
+  skills: .claude/skills/
+  settings: .claude/settings.json
+
+mapping:
+  identity:
+    target: CLAUDE.md
+    transform: rename
+
+  instructions:
+    target: .claude/rules/{name}.md
+    transform: copy
+
+  skills:
+    target: .claude/skills/{name}/
+    transform: copy-dir
+
+  capabilities:
+    mcp:
+      target: .claude/settings.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .claude/settings.json
+  format: claude-settings
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'
+        env: '{env}'

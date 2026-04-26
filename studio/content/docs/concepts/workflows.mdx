@@ -3,9 +3,6 @@ title: Workflows
 description: Directed graphs of nodes connected by edges — the core unit of orchestration.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 A workflow is a directed graph of nodes connected by edges. It represents a complete process — from input to output — broken into discrete steps that an agent executes sequentially.
 
@@ -75,13 +72,13 @@ Nodes connect through edge references in their SKILL.md files. The parser reads 
 # create-design/SKILL.md
 {{-> nodes/review-design}}
 
-# review-design/SKILL.md (router)
-{{-> nodes/implement | runbooks/design-approved}}
-{{-> nodes/create-design | runbooks/needs-changes}}
+# review-design/SKILL.md (step with conditional edges)
+{{-> nodes/implement | design approved by user}}
+{{-> nodes/create-design | design rejected or changes requested}}
 ```
 
 - `{{-> nodes/target}}` — unconditional edge, always go to target
-- `{{-> nodes/target | runbooks/condition}}` — conditional edge, go if condition passes
+- `{{-> nodes/target | condition text}}` — conditional edge, go if condition passes
 
 See [Edges](/docs/concepts/edges) for the full edge system.
 
@@ -140,13 +137,13 @@ The canvas below renders the build-feature workflow — 9 nodes with conditional
 
 Every workflow passes through five stages from creation to execution:
 
-<Mermaid chart={`
+```mermaid
 graph LR
     A[Author] --> B[Parse]
     B --> C[Validate]
     C --> D[Export]
     D --> E[Execute]
-`} />
+```
 
 ### Author
 
@@ -162,7 +159,7 @@ The validator checks the parsed graph for structural errors: missing entry point
 
 ### Export
 
-The exporter transforms the validated graph into a target platform format. References are inlined, directory structures are remapped, and platform-specific conventions are applied. See [Export](/docs/concepts/export) for details.
+The export system transforms the validated graph into a target platform format via the `/api/export` endpoint. References are inlined, directory structures are remapped, and platform-specific conventions are applied. See [Export](/docs/concepts/export) for details.
 
 ### Execute
 
@@ -189,8 +186,9 @@ Files inside a workflow directory are scoped to that workflow only. Other workfl
   build-feature/
     instructions/        <-- only build-feature nodes can use these
       design-patterns.md
-    runbooks/
-      design-approved.md
+    skills/
+      review-design/
+        SKILL.md
   fix-bug/
     instructions/        <-- only fix-bug nodes can use these
       triage-steps.md
@@ -211,7 +209,7 @@ Use global resources when:
 - You want a single source of truth that all workflows inherit
 
 <Cards>
-  <Card title="Nodes" href="/docs/concepts/nodes" description="Steps, routers, and sub-workflows" />
+  <Card title="Nodes" href="/docs/concepts/nodes" description="Steps and sub-workflows" />
   <Card title="Edges" href="/docs/concepts/edges" description="Flow control and conditional routing" />
   <Card title="Writing Workflows" href="/docs/authoring/writing-workflows" description="How to create a workflow from scratch" />
   <Card title="Canvas" href="/docs/studio/canvas" description="Visual workflow editing in the studio" />

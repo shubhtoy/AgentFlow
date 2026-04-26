@@ -3,24 +3,19 @@ title: Build Your First Workflow
 description: A step-by-step tutorial building a 5-node content-review pipeline with an approval gate.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
-import { Mermaid } from '@/components/docs/mdx-components';
 
 In this tutorial you will build a **content-review** pipeline — a workflow that researches a topic, drafts an article, edits it, routes it through an approval gate, and publishes the final result. The approval gate loops back to the edit step on rejection, creating a review cycle.
 
 The finished workflow graph looks like this:
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   research[Research] --> draft[Draft]
   draft --> edit[Edit]
   edit --> review-gate{Review Gate}
   review-gate -->|approved| publish[Publish]
   review-gate -->|rejected| edit
-`} />
+```
 
 <Callout type="info">
 This tutorial assumes you have the AgentFlow studio running locally. If not, run `npm run dev` from the project root and open `http://localhost:3000`.
@@ -47,9 +42,6 @@ This tutorial assumes you have the AgentFlow studio running locally. If not, run
       <Folder name="publish">
         <File name="SKILL.md" />
       </Folder>
-    </Folder>
-    <Folder name="runbooks">
-      <File name="review-approved.md" />
     </Folder>
   </Folder>
 </Files>
@@ -82,10 +74,10 @@ edges:
     to: review-gate
   - from: review-gate
     to: publish
-    condition: review-approved
+    condition: The article meets all quality criteria and is approved
   - from: review-gate
     to: edit
-    condition: "!review-approved"
+    condition: The article needs further editing based on reviewer feedback
 ---
 
 # Content Review Pipeline
@@ -209,12 +201,12 @@ You are a professional editor. Improve the article for clarity, grammar, tone, a
 <Step>
 ## Create the review-gate node
 
-This is a **router** node — it evaluates the article and decides whether to approve or reject it. Create `.agentflow/content-review/review-gate/SKILL.md`:
+This is a step node with conditional edges — it evaluates the article and decides whether to approve or reject it. Create `.agentflow/content-review/review-gate/SKILL.md`:
 
 ```markdown
 ---
 name: review-gate
-type: router
+type: step
 description: Evaluate the article and approve or reject it for publication.
 inputs:
   - name: article
@@ -228,8 +220,6 @@ outputs:
   - name: feedback
     type: string
     description: Feedback for the editor if rejected.
-conditions:
-  - review-approved
 ---
 
 # Review Gate
@@ -249,7 +239,16 @@ You are a senior content reviewer. Evaluate the article against quality standard
 1. Read the article carefully against each criterion.
 2. If all criteria are met, set approved to true.
 3. If any criterion fails, set approved to false and provide actionable feedback explaining what needs to change.
+
+## Routing
+
+- If approved → publish
+- If rejected → edit with feedback
 ```
+
+<Callout type="info">
+💡 You don't need to declare `type: router`. Add conditional edges and the node automatically becomes a gateway.
+</Callout>
 
 </Step>
 
@@ -289,35 +288,41 @@ You are a publishing assistant. Take the approved article and prepare it for pub
 </Step>
 
 <Step>
-## Create the runbook condition
+## Update the workflow descriptor with conditional edges
 
-The review gate references a condition called `review-approved`. Create the runbook file at `.agentflow/runbooks/review-approved.md`:
+The review gate uses inline conditions in the edge definitions. Update `.agentflow/content-review/AGENTS.md` to use conditional edge text:
 
 ```markdown
 ---
-name: review-approved
-type: condition
-description: Evaluates whether the review gate approved the article.
+name: content-review
+description: A content review pipeline that researches, drafts, edits, and publishes articles with an approval gate.
+nodes:
+  - research
+  - draft
+  - edit
+  - review-gate
+  - publish
+edges:
+  - from: research
+    to: draft
+  - from: draft
+    to: edit
+  - from: edit
+    to: review-gate
+  - from: review-gate
+    to: publish
+    condition: The article meets all quality criteria and is approved
+  - from: review-gate
+    to: edit
+    condition: The article needs further editing based on reviewer feedback
 ---
 
-# Review Approved
+# Content Review Pipeline
 
-This condition checks the output of the `review-gate` node.
-
-## Evaluation
-
-The condition is **true** when:
-
-- The `approved` output of the `review-gate` node is `true`.
-
-The condition is **false** when:
-
-- The `approved` output is `false`, indicating the article needs further editing.
-
-## Usage
-
-Used in the `content-review` workflow to route between the `publish` node (on approval) and the `edit` node (on rejection).
+This workflow orchestrates a full content lifecycle. Articles are researched, drafted, edited, and then routed through a review gate. Approved content is published. Rejected content loops back to the edit step for revision.
 ```
+
+Conditions are written as inline text in the edge definitions — no separate skill files needed.
 
 </Step>
 
@@ -338,16 +343,15 @@ Validating workflow: content-review
   [pass] Node: research (step) — inputs/outputs valid
   [pass] Node: draft (step) — inputs/outputs valid
   [pass] Node: edit (step) — inputs/outputs valid
-  [pass] Node: review-gate (router) — conditions resolved
+  [pass] Node: review-gate (step) — conditional edges valid
   [pass] Node: publish (step) — inputs/outputs valid
   [pass] Edge: research -> draft
   [pass] Edge: draft -> edit
   [pass] Edge: edit -> review-gate
-  [pass] Edge: review-gate -> publish (condition: review-approved)
-  [pass] Edge: review-gate -> edit (condition: !review-approved)
-  [pass] Runbook: review-approved — referenced and valid
+  [pass] Edge: review-gate -> publish (conditional)
+  [pass] Edge: review-gate -> edit (conditional)
 
-Workflow "content-review" is valid. 5 nodes, 5 edges, 1 condition.
+Workflow "content-review" is valid. 5 nodes, 5 edges.
 ```
 
 </Step>
@@ -355,6 +359,10 @@ Workflow "content-review" is valid. 5 nodes, 5 edges, 1 condition.
 </Steps>
 
 ## Explore a more complex workflow
+
+<Callout type="info">
+💡 The build-feature workflow in the library demonstrates all AgentFlow features — conditional edges, data flow, sub-workflows, and resource references.
+</Callout>
 
 Now that you have built a linear pipeline with a review loop, explore the `build-feature` workflow in the playground below. It demonstrates a larger graph with multiple router nodes, parallel paths, and sub-workflows. Use the explorer panel to navigate nodes and the validation panel to inspect the structure.
 

@@ -1,31 +1,39 @@
 ---
 title: Ref Syntax
-description: All 5 reference types and template variables.
+description: All reference types, edge syntax, and template variables.
 ---
 
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-## Resource Mention
+## Resource Reference
 
-References a resource by name to include it in context.
+References a resource by category and name to include it in context.
 
 <TypeTable
   type={{
     syntax: {
-      type: "'@resource-type/resource-name'",
-      description: "Mentions a resource to pull it into the node's context.",
+      type: "'{{category/name}}'",
+      description: "Loads a resource into the node's context.",
+    },
+    categories: {
+      type: "string",
+      description: "instructions, capabilities, skills, memory, hooks",
     },
     resolution: {
       type: "string",
-      description: "Looks up the resource in the .agentflow/ directory by type folder and filename.",
+      description: "Looks up the resource in the .agentflow/ directory by category folder and filename.",
     },
     validation_errors: {
       type: "string",
-      description: "Resource not found, ambiguous match, circular reference.",
+      description: "broken_ref (not found), ambiguous_ref (multiple matches), unknown_category.",
     },
   }}
 />
+
+```markdown
+{{instructions/code-style}}
+{{capabilities/write-file}}
+{{skills/review-design}}
+```
 
 ## Unconditional Edge
 
@@ -34,7 +42,7 @@ Connects two nodes with an always-taken path.
 <TypeTable
   type={{
     syntax: {
-      type: "'-> node-name'",
+      type: "'{{-> nodes/target}}'",
       description: "Defines a direct edge to the target node.",
     },
     resolution: {
@@ -43,73 +51,125 @@ Connects two nodes with an always-taken path.
     },
     validation_errors: {
       type: "string",
-      description: "Target node not found, self-referencing edge, duplicate edge.",
+      description: "unresolved_edge, self_referencing_edge, duplicate_edge.",
     },
   }}
 />
 
+```markdown
+{{-> nodes/create-design}}
+```
+
 ## Conditional Edge
 
-Connects two nodes with a condition-gated path.
+Connects two nodes with a condition-gated path. The condition is inline text after the pipe `|`, or a reference to an instruction file.
 
 <TypeTable
   type={{
     syntax: {
-      type: "'-> node-name (when condition)'",
+      type: "'{{-> nodes/target | condition text}}' or '{{-> nodes/target | instructions/name}}'",
       description: "Defines an edge taken only when the condition is met.",
     },
     resolution: {
       type: "string",
-      description: "Resolves the target node and evaluates the condition via a runbook or inline expression.",
+      description: "Resolves the target node. Condition is either inline text or resolved from an instruction file.",
     },
     validation_errors: {
       type: "string",
-      description: "Target node not found, invalid condition expression, unreachable branch.",
+      description: "unresolved_edge, missing_condition (when instruction ref doesn't exist).",
     },
   }}
 />
+
+```markdown
+<!-- Inline condition text -->
+{{-> nodes/plan-tasks | design approved by user}}
+{{-> nodes/create-design | design rejected or changes requested}}
+
+<!-- Instruction reference as condition -->
+{{-> nodes/plan-tasks | instructions/approval-criteria}}
+```
+
+When referencing an instruction, the instruction content (with narrativeTemplate wrapping) becomes the condition description.
 
 ## Data Flow
 
-Passes output from one node as input to another.
+Passes output from a prior node into this node's context.
 
 <TypeTable
   type={{
     syntax: {
-      type: "'node-name.output-name'",
-      description: "References a specific output from a preceding node.",
+      type: "'{{<< output.node-name}}'",
+      description: "Loads the output of a preceding node into this node's context.",
     },
     resolution: {
       type: "string",
-      description: "Resolves the source node and matches the named output from its outputs array.",
+      description: "Resolves the source node and loads its stored output.",
     },
     validation_errors: {
       type: "string",
-      description: "Source node not found, output name not defined, type mismatch.",
+      description: "broken_data_flow (node not found), data_flow_forward (node hasn't executed yet).",
     },
   }}
 />
+
+```markdown
+Using the design from {{<< output.create-design}}, implement the feature.
+```
+
+Data flow refs can only point backward in the graph — to nodes that execute before the current one.
 
 ## Template Variable
 
-Injects dynamic values into instruction or node content.
+Injects dynamic values resolved at export time.
 
 <TypeTable
   type={{
     syntax: {
-      type: "'{variable_name}'",
-      description: "Replaced at runtime with the resolved value.",
+      type: "'{{$variable_name}}'",
+      description: "Replaced at export time with the resolved value.",
     },
     resolution: {
       type: "string",
-      description: "Looks up the variable from node outputs, memory, or workflow inputs in that order.",
+      description: "Looks up the variable from workspace metadata (e.g. {{$workflows}} lists all workflows).",
     },
     validation_errors: {
       type: "string",
-      description: "Variable not defined, unresolvable at current scope.",
+      description: "malformed_variable (invalid syntax).",
     },
   }}
 />
+
+```markdown
+## Available Workflows
+
+{{$workflows}}
+```
+
+## Workflow Reference
+
+References another workflow for sub-workflow nodes.
+
+<TypeTable
+  type={{
+    syntax: {
+      type: "'{{workflows/name}}'",
+      description: "Links to a workflow's AGENTS.md descriptor.",
+    },
+    resolution: {
+      type: "string",
+      description: "Resolves to the target workflow directory and its AGENTS.md.",
+    },
+    validation_errors: {
+      type: "string",
+      description: "missing_sub_workflow_target, unresolved_workflow_ref.",
+    },
+  }}
+/>
+
+```markdown
+{{workflows/ci-cd}}
+```
 
 ## Environment Variables
 
@@ -127,7 +187,11 @@ Injects environment values at runtime.
     },
     validation_errors: {
       type: "string",
-      description: "Environment variable not set, empty value when required.",
+      description: "malformed_variable (bad syntax), environment variable not set.",
     },
   }}
 />
+
+```markdown
+${env:API_KEY}
+```

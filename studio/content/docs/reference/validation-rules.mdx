@@ -1,38 +1,155 @@
 ---
 title: Validation Rules
-description: All 23 validation rules with severity, description, and fix.
+description: All validation rules with severity, description, and fix.
 ---
 
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
+AgentFlow validates workflows against rules across five categories. In permissive mode (default), issues surface as warnings. In strict mode, all rules become errors.
 
-AgentFlow validates workflows against 23 rules across five categories. In permissive mode (default), issues surface as warnings. In strict mode, all rules become errors.
+<Callout type='warn'>
+Use `agentflow validate --strict` in CI pipelines to catch all issues before deployment. In strict mode, every rule becomes an error and blocks export.
+</Callout>
 
-| Rule | Severity | Category | Description | Fix |
-| --- | --- | --- | --- | --- |
-| `broken_ref` | error | refs | Reference to non-existent resource | Check filename spelling |
-| `missing_condition` | error | refs | Conditional edge without runbook | Create the runbook file |
-| `broken_data_flow` | error | refs | Data flow ref to non-existent node | Check node name |
-| `malformed_variable` | error | schema | Invalid `${env:...}` syntax | Fix variable format |
-| `no_entry_point` | error | graph | No node with `entry: true` | Add `entry: true` to first node |
-| `context_input_broken` | error | context | Context input ref broken | Fix the ref path |
-| `missing_mcp_server` | error | identity | MCP tool refs non-existent server | Add server to `mcp.json` |
-| `cycle` | warning/error | graph | Circular dependency | Add conditional exit |
-| `multiple_entry_points` | warning | graph | More than one entry node | Remove extra `entry: true` |
-| `unreachable` | warning | graph | Node not reachable from entry | Wire edges or remove node |
-| `router_single_exit` | warning | graph | Router with one exit | Add more conditional edges |
-| `router_non_conditional` | warning | refs | Router with unconditional edges | Use conditional edges |
-| `router_has_capabilities` | warning | refs | Router with tools | Remove capability refs from router |
-| `router_has_instructions` | warning | refs | Router with instructions | Remove instruction refs |
-| `ambiguous_ref` | warning | refs | Ref matches multiple files | Use full path |
-| `context_budget` | warning | context | Node exceeds max_tokens | Reduce refs or increase budget |
-| `context_budget_high` | warning | context | Node approaching budget | Consider reducing |
-| `output_declaration` | warning | context | Output ref without declaration | Add outputs to frontmatter |
-| `unknown_category` | warning | schema | Unknown resource category | Use standard categories |
-| `misplaced_resource` | warning | schema | Resource in wrong directory | Move to correct dir |
-| `schema` | warning | schema | Frontmatter field wrong type | Fix the value |
-| `identity` | warning | identity | Missing name/description | Add to `AGENTS.md` |
-| `orphaned_mcp_tool` | warning | identity | MCP tool never referenced | Reference it or remove |
+<Tabs items={['References', 'Graph', 'Context', 'Schema', 'Identity']}>
+<Tab value='References'>
+
+## Reference Rules
+
+Rules that validate links between nodes, resources, and files.
+
+| Rule | Severity | What it checks | Fix |
+| --- | --- | --- | --- |
+| `broken_ref` | error | Reference to non-existent resource | Check filename spelling |
+| `missing_condition` | error | Conditional edge references an instruction that doesn't exist | Create the instruction file or use inline condition text |
+| `broken_data_flow` | error | Data flow ref to non-existent node | Check node name |
+| `ambiguous_ref` | warning | Ref matches multiple files | Use full path |
+| `missing_sub_workflow_target` | warning | Workflow ref points to non-existent directory | Check workflow path |
+| `unresolved_workflow_ref` | warning | Workflow ref cannot resolve target AGENTS.md | Add AGENTS.md to workflow directory |
+
+### Example Fix — `broken_ref`
+
+```md
+<!-- ❌ Bad: typo in reference -->
+{{instructions/codestyle}}
+
+<!-- ✅ Good: correct filename -->
+{{instructions/code-style}}
+```
+
+### Example Fix — `missing_condition`
+
+```md
+<!-- ❌ Bad: references non-existent instruction -->
+{{-> nodes/plan-tasks | instructions/missing-criteria}}
+
+<!-- ✅ Good: use inline condition text -->
+{{-> nodes/plan-tasks | design approved by user}}
+
+<!-- ✅ Also good: reference an existing instruction -->
+{{-> nodes/plan-tasks | instructions/approval-criteria}}
+```
+
+</Tab>
+<Tab value='Graph'>
+
+## Graph Rules
+
+Rules that validate workflow structure and connectivity.
+
+| Rule | Severity | What it checks | Fix |
+| --- | --- | --- | --- |
+| `no_entry_point` | error | No node with `entry: true` | Add `entry: true` to first node |
+| `cycle` | warning/error | Circular dependency | Add conditional exit |
+| `multiple_entry_points` | warning | More than one entry node | Remove extra `entry: true` |
+| `unreachable` | warning | Node not reachable from entry | Wire edges or remove node |
+| `orphaned_sub_workflow` | warning | Sub-workflow directory exists but no node references it | Add sub-workflow node or remove directory |
+| `infinite_sub_workflow` | error | Sub-workflow chain creates infinite recursion | Break the cycle |
+
+### Example Fix — `no_entry_point`
+
+```md
+---
+# Add entry: true to your first node's frontmatter
+entry: true
+type: step
+---
+```
+
+</Tab>
+<Tab value='Context'>
+
+## Context Rules
+
+Rules that validate context budgets and data flow.
+
+| Rule | Severity | What it checks | Fix |
+| --- | --- | --- | --- |
+| `context_input_broken` | error | Context input ref broken | Fix the ref path |
+| `context_budget` | warning | Node exceeds max_tokens | Reduce refs or increase budget |
+| `context_budget_high` | warning | Node approaching budget | Consider reducing |
+| `output_declaration` | warning | Output ref without declaration | Add outputs to frontmatter |
+
+### Example Fix — `context_budget`
+
+```yaml
+---
+# Reduce references or increase the budget
+context:
+  max_tokens: 8000
+---
+```
+
+</Tab>
+<Tab value='Schema'>
+
+## Schema Rules
+
+Rules that validate frontmatter structure and resource placement.
+
+| Rule | Severity | What it checks | Fix |
+| --- | --- | --- | --- |
+| `malformed_variable` | error | Invalid `${env:...}` syntax | Fix variable format |
+| `unknown_category` | warning | Unknown resource category | Use one of the 5 standard categories: instructions, capabilities, skills, memory, hooks |
+| `misplaced_resource` | warning | Resource in wrong directory | Move to correct dir |
+| `schema` | warning | Frontmatter field wrong type | Fix the value |
+
+### Example Fix — `malformed_variable`
+
+```md
+<!-- ❌ Bad -->
+${env:API_KEY
+
+<!-- ✅ Good -->
+${env:API_KEY}
+```
+
+</Tab>
+<Tab value='Identity'>
+
+## Identity Rules
+
+Rules that validate workspace and MCP configuration.
+
+| Rule | Severity | What it checks | Fix |
+| --- | --- | --- | --- |
+| `missing_mcp_server` | error | MCP tool refs non-existent server | Add server to `mcp.json` |
+| `identity` | warning | Missing name/description | Add to `AGENTS.md` |
+| `orphaned_mcp_tool` | warning | MCP tool never referenced | Reference it or remove |
+
+### Example Fix — `missing_mcp_server`
+
+```json
+// Add the missing server to mcp.json
+{
+  "servers": {
+    "my-server": {
+      "url": "https://my-server.example.com"
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
 
 ## Modes
 

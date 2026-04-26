@@ -10,7 +10,7 @@ import '@xyflow/react/dist/style.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { useAppStore } from '@/store'
-import { Plus, Layers, Footprints, GitBranch, X, Sparkles, Search } from 'lucide-react'
+import { Plus, Layers, Footprints, GitBranch, X, Sparkles, Search, ArrowRight, Trash2 } from 'lucide-react'
 import { emit } from '@/utils/events'
 import { nodeTypes as customNodeTypes, edgeTypes as customEdgeTypes } from './canvas/node-types'
 import type { WorkflowNodeData } from './canvas/WorkflowNode'
@@ -94,7 +94,7 @@ export function Canvas() {
   const drillIntoSubWorkflowRef = useRef(drillIntoSubWorkflow); drillIntoSubWorkflowRef.current = drillIntoSubWorkflow
 
   const wf = activeWf ? data?.workflows[activeWf] : null
-  const primaryColor = isDark ? 'hsl(238, 76%, 67%)' : 'hsl(238, 76%, 67%)'
+  const primaryColor = 'var(--node-step)'
 
   const buildGraph = useCallback(() => {
     if (!data) { setNodes([]); setEdges([]); return }
@@ -148,7 +148,7 @@ export function Canvas() {
         description: (node as any).description,
         toolCount: (node as any).toolCount ?? 0,
         refCounts: (() => {
-          const counts = { instructions: 0, capabilities: 0, runbooks: 0, memory: 0 }
+          const counts = { instructions: 0, capabilities: 0, skills: 0, memory: 0 }
           for (const ref of node.allRefs || []) {
             const cat = ref.category as keyof typeof counts
             if (cat in counts) counts[cat]++
@@ -167,18 +167,15 @@ export function Canvas() {
     for (const edge of wf.edges) {
       if (edge.condition) {
         // Conditional edge: insert a condition gate node between source and target
-        const sep = edge.condition.indexOf('/')
-        const condName = sep > 0 ? edge.condition.slice(sep + 1) : edge.condition
-        const condCat = sep > 0 ? edge.condition.slice(0, sep) : 'runbooks'
+        const condName = edge.condition
         const condId = `cond:${edge.from}-${condName}-${edge.to}`
-        const file = (data[condCat as keyof typeof data] as Record<string, any>)?.[condName]
-        const cfg = catConfig[condCat] ?? catConfig['runbooks']
+        const cfg = catConfig['skills'] ?? catConfig['instructions']
 
         const condData: ResourceNodeData = {
-          id: condId, name: condName, category: condCat,
-          label: 'Condition', color: cfg?.primaryColor ?? '#f59e0b',
-          description: file?.frontmatter?.check as string | undefined,
-          subType: file?.frontmatter?.type as string | undefined,
+          id: condId, name: condName, category: 'condition',
+          label: 'Condition', color: '#f59e0b',
+          description: edge.condition,
+          subType: undefined,
           ecosystemHint: cfg?.ecosystemHint,
           compact: false,
         }
@@ -187,13 +184,13 @@ export function Canvas() {
         // Edge: source → condition gate
         rfEdges.push({
           id: `flow:${edge.from}-${condId}`, source: `step:${edge.from}`, target: condId, type: 'custom',
-          data: { label: condName } as Record<string, unknown>,
+          data: { label: condName, edgeType: 'condition-in' } as Record<string, unknown>,
           markerEnd: { type: MarkerType.ArrowClosed, color: isDark ? '#fbbf24' : '#f59e0b', width: 16, height: 16 },
         })
         // Edge: condition gate → target
         rfEdges.push({
           id: `flow:${condId}-${edge.to}`, source: condId, target: `step:${edge.to}`, type: 'custom',
-          data: { label: edge.to } as Record<string, unknown>,
+          data: { label: edge.to, edgeType: 'condition-out' } as Record<string, unknown>,
           markerEnd: { type: MarkerType.ArrowClosed, color: isDark ? '#fbbf24' : '#f59e0b', width: 16, height: 16 },
         })
       } else {
@@ -655,11 +652,23 @@ export function Canvas() {
             handleTrailClick(stepId)
             select({ type: 'node', key: stepId, workflowId: activeWf })
           } else if (raw.startsWith('cond:')) {
-            // Condition gate — add to trail AND open inspector
-            handleTrailClick(raw) // use full ID for cond nodes
+            // Condition gate — show edge popover with condition info
+            handleTrailClick(raw)
             const d = node.data as unknown as ResourceNodeData
-            if (d?.category && d?.name) {
-              select({ type: 'resource', category: d.category as any, key: d.name })
+            // Parse source/target from condId format: cond:{from}-{condName}-{to}
+            const parts = raw.replace(/^cond:/, '').split('-')
+            const fromId = parts[0] || ''
+            const toId = parts[parts.length - 1] || ''
+            const rect = reactFlowWrapper.current?.getBoundingClientRect()
+            if (rect) {
+              setEdgePopover({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+                from: wf?.nodes[fromId]?.name || fromId,
+                to: wf?.nodes[toId]?.name || toId,
+                condition: d?.description || d?.name,
+                edgeId: raw,
+              })
             }
           } else {
             // Other resource nodes
@@ -693,7 +702,14 @@ export function Canvas() {
         connectionRadius={20} colorMode={isDark ? 'dark' : 'light'} className="h-full w-full !bg-background">
         <SelectionSyncHandler />
         <Background color={isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)'} gap={20} size={1.5} />
-        <MiniMap position="bottom-right" pannable zoomable
+        <MiniMap
+          position="bottom-right"
+          pannable
+          zoomable
+          zoomStep={10}
+          offsetScale={8}
+          nodeBorderRadius={10}
+          nodeStrokeWidth={1}
           nodeColor={(n) => {
             if (n.type === 'resource') {
               const d = n.data as unknown as ResourceNodeData
@@ -703,8 +719,20 @@ export function Canvas() {
             if (n.type === 'sub-workflow') return getNodeTypeColor('sub-workflow', resolvedTheme)
             return getNodeTypeColor('step', resolvedTheme, primaryColor)
           }}
-          maskColor={isDark ? 'rgba(0,0,0,0.3)' : 'rgba(240,240,240,0.6)'}
-          style={{ background: isDark ? 'hsl(240, 10%, 8%)' : 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid color-mix(in srgb, var(--border) 30%, transparent)', marginRight: 12, marginBottom: 32, width: 240, height: 160 }} />
+          nodeStrokeColor={(n) => n.selected ? 'var(--primary)' : 'transparent'}
+          bgColor={isDark ? 'hsl(220 10% 9%)' : 'hsl(0 0% 98%)'}
+          maskColor={isDark ? 'rgba(0,0,0,0.4)' : 'rgba(240,240,240,0.7)'}
+          maskStrokeColor={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}
+          maskStrokeWidth={1.5}
+          onNodeClick={(_e, node) => {
+            if (node.type === 'step' || node.type === 'router' || node.type === 'sub-workflow') {
+              const nodeId = node.id.replace('step:', '')
+              window.dispatchEvent(new CustomEvent('node:focus', { detail: nodeId }))
+            }
+          }}
+          className="!rounded-xl !border !border-border/30 !shadow-sm"
+          style={{ width: 280, height: 180, marginRight: 12, marginBottom: 32 }}
+        />
       </ReactFlow>
 
       {/* Empty state — welcome screen */}
@@ -760,7 +788,7 @@ export function Canvas() {
             {/* Manual node creation */}
             <div className="flex gap-2 justify-center">
               {([
-                { type: 'step', label: 'Agent', icon: Footprints },
+                { type: 'step', label: 'Step', icon: Footprints },
                 { type: 'router', label: 'Gateway', icon: GitBranch },
                 { type: 'sub-workflow', label: 'Workflow', icon: Layers },
               ] as const).map(tmpl => {
@@ -787,35 +815,52 @@ export function Canvas() {
       {/* Edge click popover */}
       {edgePopover && (
         <div
-          className="absolute z-50 pointer-events-auto"
+          className="absolute z-50 pointer-events-auto animate-in fade-in-0 zoom-in-95 duration-150"
           style={{ left: edgePopover.x, top: edgePopover.y }}
         >
-          <div className="bg-popover/95 backdrop-blur-xl border border-border rounded-xl shadow-xl p-3 min-w-[200px] -translate-x-1/2 -translate-y-full mb-2">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium">{edgePopover.from}</span>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-medium">{edgePopover.to}</span>
+          <div className="bg-popover/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl min-w-[220px] -translate-x-1/2 -translate-y-full mb-2 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                {edgePopover.condition ? (
+                  <><GitBranch size={12} className="text-amber-500" /><span>Conditional</span></>
+                ) : (
+                  <><ArrowRight size={12} /><span>Connection</span></>
+                )}
+              </div>
+              <button
+                onClick={() => setEdgePopover(null)}
+                className="size-5 flex items-center justify-center rounded hover:bg-accent text-muted-foreground transition-colors"
+              >
+                <X size={12} />
+              </button>
             </div>
+
+            {/* Route */}
+            <div className="flex items-center gap-2 px-3 py-1 text-sm">
+              <span className="font-medium truncate max-w-[100px]">{edgePopover.from}</span>
+              <span className="text-muted-foreground">→</span>
+              <span className="font-medium truncate max-w-[100px]">{edgePopover.to}</span>
+            </div>
+
+            {/* Condition text */}
             {edgePopover.condition && (
-              <p className="text-xs text-muted-foreground mt-1.5 bg-muted/50 rounded px-2 py-1">
-                Condition: {edgePopover.condition}
-              </p>
+              <div className="mx-3 my-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">{edgePopover.condition}</p>
+              </div>
             )}
-            <div className="flex gap-1.5 mt-2">
+
+            {/* Actions */}
+            <div className="flex items-center gap-1 px-2 py-2 border-t border-border/50 mt-1">
               <button
                 onClick={() => {
                   handleCtxAction('delete-edge', edgePopover.edgeId)
                   setEdgePopover(null)
                 }}
-                className="text-xs text-destructive hover:bg-destructive/10 px-2 py-1 rounded transition-colors"
+                className="flex items-center gap-1.5 text-xs text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-md transition-colors"
               >
+                <Trash2 size={12} />
                 Delete
-              </button>
-              <button
-                onClick={() => setEdgePopover(null)}
-                className="text-xs text-muted-foreground hover:bg-accent px-2 py-1 rounded transition-colors"
-              >
-                Close
               </button>
             </div>
           </div>

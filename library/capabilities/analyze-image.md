@@ -1,7 +1,32 @@
 ---
+name: analyze-image
 type: builtin
-builtin_mapping: analyze_image
+description: Describe, analyze, or extract information from images. Supports screenshots, diagrams, charts, photos, and UI mockups.
+parameters:
+  path:
+    type: string
+    description: Path to the image file
+    required: true
+  prompt:
+    type: string
+    description: What to analyze or extract from the image
+    required: false
+outputs:
+  - description
+  - extracted_text
+  - analysis
+narrativeTemplate:
+  prefix: "Analyze"
+  suffix: "to understand the visual content"
 ---
+
 # Analyze Image
 
-Describe, analyze, or extract information from images. Supports screenshots, diagrams, charts, photos, and UI mockups. Use for visual QA, diagram understanding, or OCR-like tasks.
+Describe, analyze, or extract information from images. Supports screenshots, diagrams, charts, photos, and UI mockups.
+
+## When to use
+
+- Understanding UI mockups or wireframes
+- Extracting text from screenshots (OCR)
+- Analyzing architecture diagrams
+- Visual QA of rendered output

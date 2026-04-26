@@ -1,0 +1,46 @@
+id: kiro
+name: Kiro
+website: https://kiro.dev
+
+paths:
+  root: .kiro
+  specs: .kiro/specs/
+  steering: .kiro/steering/
+  settings: .kiro/settings/
+
+mapping:
+  identity:
+    target: .kiro/steering/identity.md
+    transform: copy
+
+  instructions:
+    target: .kiro/steering/{name}.md
+    transform: copy
+
+  skills:
+    target: .kiro/specs/{name}.md
+    transform: flatten-skill
+
+  capabilities:
+    mcp:
+      target: .kiro/settings/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: .kiro/steering/{name}.md
+    transform: copy
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .kiro/settings/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'
+        env: '{env}'

@@ -3,9 +3,6 @@ title: Frontmatter Form
 description: Structured YAML editing with dropdowns, toggles, and validation.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
 
 The frontmatter editor renders form controls dynamically based on the resource type schema. Instead of editing raw YAML, you get purpose-built UI controls that reduce errors and speed up configuration.
 
@@ -51,7 +48,7 @@ Number fields render as numeric inputs with increment/decrement buttons. The sch
 
 ## Form Fields by Resource Type
 
-<Tabs items={['Workflow (AGENTS.md)', 'Node (SKILL.md)', 'Capability', 'Instruction', 'Runbook']}>
+<Tabs items={['Workflow (AGENTS.md)', 'Node (SKILL.md)', 'Capability', 'Instruction', 'Skill']}>
 <Tab value="Workflow (AGENTS.md)">
 | Field | Type | Description |
 |-------|------|-------------|
@@ -90,11 +87,11 @@ Number fields render as numeric inputs with increment/decrement buttons. The sch
 | `scope` | select | `global`, `workflow`, or `node` |
 | `priority` | number | Ordering weight |
 </Tab>
-<Tab value="Runbook">
+<Tab value="Skill">
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | text | Runbook identifier |
-| `description` | textarea | What this runbook handles |
+| `name` | text | Skill identifier |
+| `description` | textarea | What this skill handles |
 | `trigger` | text | Activation condition |
 | `conditions` | taglist | Prerequisite checks |
 </Tab>

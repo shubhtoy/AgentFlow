@@ -32,7 +32,7 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
     timerRef.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/skills/search?q=${encodeURIComponent(q)}`)
+        const res = await fetch(`/api/skills?q=${encodeURIComponent(q)}`)
         const data = await res.json()
         setResults(data.skills ?? [])
       } catch { setResults([]) }
@@ -43,10 +43,10 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
   const handleInstall = useCallback(async (skill: SkillResult) => {
     setInstalling(skill.id)
     try {
-      const res = await fetch('/api/skills/preview', {
+      const res = await fetch('/api/skills', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: skill.source }),
+        body: JSON.stringify({ action: 'preview', source: skill.source }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Preview failed')
@@ -82,10 +82,10 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
 
   const handleCancel = useCallback(async () => {
     if (!preview) return
-    await fetch('/api/skills/rollback', {
+    await fetch('/api/skills', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dirs: preview.skills.map(s => s.dir) }),
+      body: JSON.stringify({ action: 'rollback', dirs: preview.skills.map(s => s.dir) }),
     }).catch(() => {})
     setPreview(null)
   }, [preview])

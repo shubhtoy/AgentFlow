@@ -3,62 +3,52 @@ title: Platform Configs
 description: Create new export targets.
 ---
 
-AgentFlow's export system is entirely config-driven. To add a new platform, you create a JSON file — no subclasses or adapter code needed.
+AgentFlow's export system is entirely config-driven. To add a new platform, you create a YAML file in `configs/platforms/` — no subclasses or adapter code needed.
 
 ## Overview
 
-The transport layer converts `.agentflow/` workspace files into platform-specific outputs (LangGraph, Claude, GitHub Actions, etc.). Each platform is defined by a single JSON config that declares how files map from source to target.
+The export engine in `packages/cli/src/export/` converts `.agentflow/` workspace files into platform-specific outputs (Claude Code, Cursor, Kiro, etc.). Each platform is defined by a single YAML config that declares how files map from source to target.
 
 ## Adding a New Platform
 
 ### 1. Create the config file
 
-Add a JSON file at `src/transport/platforms/your-name.json`:
+Add a YAML file at `configs/platforms/your-name.yaml`:
 
-```json
-{
-  "name": "your-name",
-  "version": "1.0.0",
-  "description": "Export target for Your Platform",
-  "exportRules": [
-    {
-      "source": ".agentflow/AGENTS.md",
-      "target": "agent.yaml",
-      "type": "single-file",
-      "transform": "agentsToYaml",
-      "fidelity": "native"
-    },
-    {
-      "source": ".agentflow/**/SKILL.md",
-      "target": "nodes/",
-      "type": "glob-transform",
-      "transform": "skillToNode",
-      "fidelity": "translated"
-    }
-  ],
-  "importRules": [
-    {
-      "source": "agent.yaml",
-      "target": ".agentflow/AGENTS.md",
-      "type": "single-file",
-      "transform": "yamlToAgents"
-    }
-  ]
-}
+```yaml
+name: your-name
+version: "1.0.0"
+description: Export target for Your Platform
+outputDir: .your-name
+
+exportRules:
+  - source: ".agentflow/AGENTS.md"
+    target: "agent.yaml"
+    type: single-file
+    transform: agentsToYaml
+    fidelity: native
+
+  - source: ".agentflow/**/SKILL.md"
+    target: "nodes/"
+    type: glob-transform
+    transform: skillToNode
+    fidelity: translated
+
+importRules:
+  - source: "agent.yaml"
+    target: ".agentflow/AGENTS.md"
+    type: single-file
+    transform: yamlToAgents
 ```
 
 ### 2. Define transform functions
 
-If your rules reference named transforms, add them to a `transforms.js` file alongside your config or in `src/transport/transforms/your-name.js`:
+If your rules reference named transforms, add them in `packages/cli/src/export/transforms/`:
 
-```js
-export function agentsToYaml(content, context) {
+```ts
+export function agentsToYaml(content: string, context: TransformContext) {
   // content: raw markdown string
   // context: { sourcePath, targetPath, config }
-  return convertedOutput
-}
-
-export function skillToNode(content, context) {
   return convertedOutput
 }
 ```
@@ -110,13 +100,33 @@ The `fidelity` field documents how accurately a rule preserves the original sema
 
 Fidelity is informational — it does not change export behavior but helps users understand what to expect.
 
-## How AdapterFactory Auto-Loads Configs
+## How the Export Engine Loads Configs
 
-The `AdapterFactory` in `src/transport/factory.js` scans `src/transport/platforms/` at startup. Every `.json` file found is registered as an available platform:
+The export engine in `packages/cli/src/export/engine.ts` scans `configs/platforms/` at startup. Every `.yaml` file found is registered as an available platform:
 
-1. The factory reads all JSON files from the platforms directory.
-2. Each config is validated against the platform schema (name, version, exportRules required).
-3. Transform function references are resolved from the corresponding transforms module.
+1. The engine reads all YAML files from the platforms directory.
+2. Each config is validated (name, version, exportRules required).
+3. Transform function references are resolved from the transforms module.
 4. The platform becomes available via `--platform` flag without any manual registration.
 
-This means adding a new JSON file is sufficient to make a platform available — no code changes to the factory or CLI are required.
+This means adding a new YAML file is sufficient to make a platform available — no code changes to the engine or CLI are required.
+
+## Existing Platforms
+
+The following platform configs ship with AgentFlow in `configs/platforms/`:
+
+| Config file | Platform |
+|---|---|
+| `claude-code.yaml` | Claude Code |
+| `cursor.yaml` | Cursor |
+| `kiro.yaml` | Kiro |
+| `windsurf.yaml` | Windsurf |
+| `copilot.yaml` | VS Code Copilot |
+| `openclaw.yaml` | OpenClaw |
+| `agent-spec.yaml` | Agent Spec (primary) |
+| `gemini-cli.yaml` | Gemini CLI |
+| `aider.yaml` | Aider |
+| `opencode.yaml` | OpenCode |
+| `kimi.yaml` | Kimi |
+| `qwen.yaml` | Qwen |
+| `antigravity.yaml` | Antigravity |

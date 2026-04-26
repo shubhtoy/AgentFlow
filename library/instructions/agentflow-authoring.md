@@ -1,9 +1,7 @@
 ---
-type: instruction
 name: agentflow-authoring
-scope: global
-inclusion: auto
 description: Complete reference for authoring AgentFlow workspaces — file formats, taxonomy, context layers, reference syntax, validation rules
+domain: agentflow
 tags:
   - agentflow
   - authoring
@@ -22,8 +20,7 @@ You are building on the AgentFlow platform. This is your reference for all file 
   AGENTS.md              ← Identity + workflow discovery      (Layer 0, ~200-800 tok)
   mcp.json               ← MCP server configuration           (optional)
   capabilities/          ← Tool definitions: builtin, script, MCP
-  instructions/          ← Reusable instruction modules (workflow + global)
-  runbooks/              ← Routing conditions + human touchpoints
+  instructions/          ← Reusable instruction modules
   memory/                ← Persistent state across sessions
   hooks/                 ← Event-driven automation (JSON)
   <workflow>/
@@ -33,16 +30,15 @@ You are building on the AgentFlow platform. This is your reference for all file 
       output/            ← Runtime artifacts                   (Layer 4, never loaded)
 ```
 
-## Six Resource Categories
+## Five Resource Categories
 
-| Category | Directory | Scopes | Purpose |
-|----------|-----------|--------|---------|
-| **instructions** | `instructions/` | `workflow`, `global` | How to do things — reusable instruction modules |
-| **capabilities** | `capabilities/` | `descriptor`, `config` | What the agent can do — tool definitions |
-| **runbooks** | `runbooks/` | `interaction`, `condition` | Routing conditions + human touchpoints |
-| **memory** | `memory/` | — | Persistent state across sessions |
-| **hooks** | `hooks/` | — | Event-driven automation (JSON files) |
-| **identity** | `AGENTS.md` | — | Who the agent is |
+| Category | Directory | Purpose |
+|----------|-----------|---------|
+| **instructions** | `instructions/` | How to do things — reusable instruction modules |
+| **capabilities** | `capabilities/` | What the agent can do — tool definitions |
+| **memory** | `memory/` | Persistent state across sessions |
+| **hooks** | `hooks/` | Event-driven automation (JSON files) |
+| **identity** | `AGENTS.md` | Who the agent is |
 
 ## Five Context Layers
 
@@ -62,7 +58,7 @@ You are building on the AgentFlow platform. This is your reference for all file 
 {{capabilities/read-code}}                            → mention: load resource
 {{instructions/code-search}}                          → mention: load instruction
 {{-> nodes/create-design}}                            → edge: go here next
-{{-> nodes/plan-tasks | runbooks/design-approved}}    → conditional edge: go here IF
+{{-> nodes/plan-tasks | the design is approved}}      → conditional edge: go here IF
 {{<< output.gather-requirements}}                     → data flow: read previous output
 ```
 
@@ -116,19 +112,9 @@ Body: workflows (`{{-> nodes/...}}`), capabilities, instructions, memory refs, b
 
 ## Capability Types
 
-**Builtin:** `type: builtin`, `builtin_mapping: readCode`
-**Script:** `type: script`, `command: npm test`
-**MCP:** `type: mcp`, `mcp: server-name` (must match key in mcp.json)
-
-## Instruction Scopes
-
-**Workflow:** loaded by specific nodes that reference it
-**Global:** `inclusion: auto` — loaded every session automatically
-
-## Runbook Types
-
-**Condition:** `type: condition`, `check: <unambiguous evaluable statement>`
-**Interaction:** `type: approval|freeform|choice|confirm`, `timeout: 300`
+- **Builtin:** `type: builtin`, `builtin_mapping: readCode`
+- **Script:** `type: script`, `command: npm test`
+- **MCP:** `type: mcp`, `mcp: server-name` (must match key in mcp.json)
 
 ## Hook Format (JSON)
 
@@ -153,7 +139,7 @@ Events: `fileEdited`, `fileCreated`, `fileDeleted`, `preToolUse`, `postToolUse`,
     "server-name": {
       "command": "command",
       "args": ["arg1"],
-      "env": { "API_KEY": "${env:API_KEY}" }
+      "env": { "API_KEY": "${env:VAR}" }
     }
   }
 }

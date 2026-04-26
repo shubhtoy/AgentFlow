@@ -3,9 +3,6 @@ title: Identity
 description: Workspace and workflow AGENTS.md — defining who the agent is at each level.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
 
 Identity in AgentFlow is defined through AGENTS.md files at two levels: the workspace root (global identity) and each workflow directory (workflow-specific identity). Together they tell the agent who it is, how it should behave, and what constraints it must follow.
 
@@ -122,12 +119,12 @@ Individual nodes can override the workspace agent with a different persona. This
 # review-design-gate/SKILL.md
 ---
 name: review-design-gate
-type: router
+type: step
 agent: Senior Architect
 ---
 ```
 
-This node uses "Senior Architect" as its persona instead of the workspace-level identity. The override applies only to this node — other nodes continue using the workspace identity.
+This node uses "Senior Architect" as its persona instead of the workspace-level identity. The override applies only to this node — other nodes continue using the workspace identity. Because this node has conditional edges, it renders as a gateway on the canvas despite being a step.
 
 ## Template Variables
 
@@ -158,7 +155,7 @@ The Explorer panel below shows the file tree of the build-feature workspace. Not
 
 Identity is assembled in layers. Each layer can extend or override the previous one, with constraints always cascading downward.
 
-<Mermaid chart={`
+```mermaid
 graph TD
     L0[Layer 0: Root AGENTS.md] --> L1[Layer 1: Workflow AGENTS.md]
     L1 --> L2[Layer 2: Node SKILL.md agent override]
@@ -168,7 +165,7 @@ graph TD
     L1 -->|description, context| L2
     L2 -->|agent field overrides persona| FINAL[Final assembled identity]
     L0 -->|constraints always cascade| FINAL
-`} />
+```
 
 ### Layer 0 — Workspace root
 

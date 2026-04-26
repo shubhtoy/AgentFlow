@@ -45,7 +45,7 @@ function TokenIndicator({ workflowId }: { workflowId: string }) {
         if (cf.rawContent) total += countTokens(cf.rawContent)
       }
     }
-    for (const cat of ['instructions', 'capabilities', 'runbooks', 'memory'] as const) {
+    for (const cat of ['instructions', 'capabilities', 'skills', 'memory'] as const) {
       for (const res of Object.values<any>(data[cat] || {})) {
         if (res.rawContent) total += countTokens(res.rawContent)
       }

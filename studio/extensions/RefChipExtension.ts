@@ -149,7 +149,7 @@ function RefChipComponent(props: NodeViewProps) {
     } else {
       store.select({
         type: 'resource',
-        category: category as 'instructions' | 'capabilities' | 'runbooks' | 'memory' | 'hooks',
+        category: category as 'instructions' | 'capabilities' | 'skills' | 'memory' | 'hooks',
         key: name,
       })
     }

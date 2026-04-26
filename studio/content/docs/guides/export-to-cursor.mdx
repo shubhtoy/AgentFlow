@@ -3,20 +3,16 @@ title: Export to Cursor
 description: Export your AgentFlow workflows to Cursor-compatible format with rules, hooks, and MCP configuration.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 AgentFlow can export your workspace directly to Cursor's native configuration format. Your identity, instructions, hooks, and MCP servers are mapped to the `.cursor/` directory structure that Cursor understands.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A[".agentflow/AGENTS.md"] -->|identity + global| B[".cursorrules"]
   C["instructions/"] -->|workflow scope| D[".cursor/rules/*.mdc"]
   E["hooks/"] --> F[".cursor/rules/*.mdc"]
   G["mcp.json"] --> H[".cursor/mcp.json"]
-`} />
+```
 
 ## Quick Start
 
@@ -147,6 +143,6 @@ During import, `.cursor/rules/*.mdc` files are converted to `instructions/{name}
 
 <Cards>
   <Card title="Export to Claude" href="/docs/guides/export-to-claude" />
-  <Card title="Export to GitHub Actions" href="/docs/guides/export-to-github-actions" />
-  <Card title="Export to LangGraph" href="/docs/guides/export-to-langgraph" />
+  <Card title="Export to Kiro" href="/docs/guides/export-to-kiro" />
+  <Card title="Export Concepts" href="/docs/concepts/export" />
 </Cards>

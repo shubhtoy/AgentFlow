@@ -42,7 +42,7 @@ type Mode = 'body' | 'frontmatter'
 const METADATA_HINTS: Record<string, string> = {
   capabilities: 'The agent will have access to this capability and can invoke it autonomously during execution.',
   instructions: 'The agent will follow this instruction set when executing the node.',
-  runbooks: 'This runbook will be available for routing conditions or user interactions at this node.',
+  skills: 'This skill will be available as a composable building block at this node.',
   memory: 'The agent can read from and write to this memory during execution.',
   hooks: 'This hook will trigger automation when the specified event occurs.',
   customFiles: 'This file will be available as structured metadata on the node.',
@@ -55,8 +55,8 @@ function getWarnings(
   const w: string[] = []
   if (nodeType === 'router' && ['capabilities', 'instructions', 'memory'].includes(category))
     w.push(`Routers usually only reference conditions and edges. Attaching a ${category.slice(0, -1)} may not have the expected effect.`)
-  if (nodeType === 'sub-workflow' && category === 'runbooks')
-    w.push('Runbooks are typically attached to steps, not sub-workflows.')
+  if (nodeType === 'sub-workflow' && category === 'skills')
+    w.push('Skills are typically attached to steps, not sub-workflows.')
   if (nodeRefs.some(r => r.category === category && r.name === resourceName))
     w.push(`"${resourceName}" is already referenced by this node.`)
   if (category === 'workflows' || category === 'workflow')
@@ -321,7 +321,7 @@ export function AttachResourceDialog({ open, onClose, payload }: AttachResourceD
                       <div className="flex-1 min-w-0">
                         <span className="text-[13px] font-semibold block truncate">{node.name}</span>
                         <span className="text-[11px] block" style={{ color: nodeColor }}>
-                          {node.type === 'sub-workflow' ? 'Workflow' : node.type === 'router' ? 'Gateway' : 'Agent'}
+                          {node.type === 'sub-workflow' ? 'Sub-workflow' : node.type === 'router' ? 'Gateway' : 'Step'}
                         </span>
                       </div>
                       <ArrowRight size={14} className="text-muted-foreground" />

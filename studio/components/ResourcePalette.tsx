@@ -40,7 +40,7 @@ const UnifiedCard = memo(function UnifiedCard({
   const isDark = document.documentElement.classList.contains('dark')
   const cfg = categoryConfig[item.category] ?? categoryConfig.customFiles
   const Icon: LucideIcon = cfg?.icon ?? categoryConfig.nodes.icon
-  const color = cfg?.primaryColor ?? 'hsl(238, 76%, 67%)'
+  const color = cfg?.primaryColor ?? 'var(--node-step)'
   const isLibrary = item.source === 'library'
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
@@ -127,7 +127,7 @@ const CategoryGroup = memo(function CategoryGroup({
   const categoryConfig = useCategoryConfig()
   const cfg = categoryConfig[category] ?? categoryConfig.customFiles
   const Icon: LucideIcon = cfg?.icon ?? categoryConfig.nodes.icon
-  const color = cfg?.primaryColor ?? 'hsl(238, 76%, 67%)'
+  const color = cfg?.primaryColor ?? 'var(--node-step)'
   const wsCount = items.filter(i => i.source === 'workspace').length
   const libCount = items.filter(i => i.source === 'library').length
 

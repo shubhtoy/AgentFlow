@@ -3,10 +3,6 @@ title: Installation
 description: Set up AgentFlow Studio locally or use the hosted version.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 <Tabs items={['Hosted (no setup)', 'Local development']}>
   <Tab value="Hosted (no setup)">
@@ -57,7 +53,7 @@ import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
         npm run dev
         ```
 
-        Open `http://localhost:3000`.
+        Open `http://localhost:3000`. The prebuild script automatically generates `library/index.json` before starting.
       </Step>
     </Steps>
   </Tab>
@@ -67,11 +63,14 @@ import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 ```
 agentflow/
-  src/              # Core engine (parser, validator, exporter)
+  packages/
+    core/           # Core engine (parser, validator, taxonomy, schemas) — TypeScript
+    cli/            # CLI, export engine, services — TypeScript
   studio/           # Visual editor (Next.js)
-  library/          # Pre-built resources and workflows
-  docs/             # Documentation source
-  bin/              # CLI
+  library/          # Pre-built resources and workflows (auto-indexed)
+  configs/
+    platforms/      # YAML platform export configs
+  scripts/          # Build scripts (library indexer)
   tests/            # Test suite
 ```
 

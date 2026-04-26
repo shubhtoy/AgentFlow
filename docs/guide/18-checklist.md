@@ -20,7 +20,7 @@ Use this when creating or reviewing a workflow. Every item maps to a validation 
 - [ ] Root `AGENTS.md` is under 800 tokens
 - [ ] All `{{ref}}` tokens resolve to existing files
 - [ ] `mcp.json` exists if any capabilities use `type: mcp`
-- [ ] All refs use the current taxonomy: `capabilities/`, `instructions/`, `runbooks/`
+- [ ] All refs use the current taxonomy: `capabilities/`, `instructions/`, `skills/`
   (not the old names: `tools/`, `skills/`, `templates/`, `interactions/`)
 
 ## Workflow Level
@@ -45,13 +45,13 @@ Use this when creating or reviewing a workflow. Every item maps to a validation 
 
 ## Resource Level
 
-- [ ] Every conditional edge has a matching runbook with a `check` field
-- [ ] Runbook `check` fields are unambiguous and evaluable
+- [ ] Every conditional edge has a matching skill with a `check` field
+- [ ] Skill `check` fields are unambiguous and evaluable
 - [ ] Capability files declare their type (`builtin`, `script`, or `mcp`)
 - [ ] Script capabilities have a `command` field
 - [ ] MCP capabilities have an `mcp` field matching a server in `mcp.json`
 - [ ] MCP capabilities document their server configuration in the body
-- [ ] Interaction runbooks declare their type (`approval`, `freeform`, `choice`, `confirm`)
+- [ ] Interaction skills declare their type (`approval`, `freeform`, `choice`, `confirm`)
 - [ ] Instructions are self-contained — they make sense without the referencing node
 - [ ] Global instructions use `inclusion: auto` in frontmatter
 - [ ] Memory files are append-friendly with date-prefix conventions

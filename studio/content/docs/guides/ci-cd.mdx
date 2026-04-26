@@ -3,22 +3,19 @@ title: CI/CD Integration
 description: Validate AgentFlow workflows in CI/CD pipelines to catch errors before deployment.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 ## Overview
 
 AgentFlow provides CLI commands to validate workflows, parse output as JSON, and check token budgets. Integrate these into your CI/CD pipeline to catch issues early.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A["git push"] --> B["CI Pipeline"]
   B --> C["agentflow validate"]
   C -->|pass| D["agentflow export"]
   C -->|fail| E["Report errors"]
   D --> F["Deploy / Publish"]
-`} />
+```
 
 ## Pipeline Configuration
 
@@ -183,5 +180,5 @@ fi
 
 <Cards>
 <Card title="Validation Rules" href="/docs/reference/validation-rules" description="Full reference of all validation rules and their severity levels." />
-<Card title="Troubleshooting" href="/docs/guides/troubleshooting" description="Common validation errors and how to resolve them." />
+<Card title="Troubleshooting" href="/docs/troubleshooting/common-errors" description="Common validation errors and how to resolve them." />
 </Cards>

@@ -40,16 +40,16 @@ Read {{memory/decisions}} for past choices.
 
 Creates a directed edge in the workflow graph from the current node to the target.
 
-## 3. Conditional Edge — `{{-> nodes/target | runbooks/condition}}`
+## 3. Conditional Edge — `{{-> nodes/target | skills/condition}}`
 
 ```markdown
-- Approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
-- Rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+- Approved → {{-> nodes/plan-tasks | skills/design-approved}}
+- Rejected → {{-> nodes/create-design | skills/design-rejected}}
 ```
 
 **What it means:** "Transition to this target IF the condition is met."
 
-The condition references a runbook file whose `check` field describes when this edge should be taken. The pipe `|` is the separator; whitespace around it is ignored.
+The condition references a skill file whose `check` field describes when this edge should be taken. The pipe `|` is the separator; whitespace around it is ignored.
 
 ## 4. Data Flow — `{{<< output.nodeName}}`
 
@@ -72,9 +72,9 @@ References work in any markdown context — paragraphs, lists, headings. The par
 | `{{capabilities/read-code}}` | Mention | Load tool / wire as callable |
 | `{{instructions/code-search}}` | Mention | Load instruction module |
 | `{{memory/decisions}}` | Mention | Load memory file |
-| `{{runbooks/review-design}}` | Mention | Load interaction definition |
+| `{{skills/review-design}}` | Mention | Load interaction definition |
 | `{{-> nodes/create-design}}` | Edge | Go here next |
-| `{{-> nodes/plan-tasks \| runbooks/design-approved}}` | Conditional edge | Go here IF condition met |
+| `{{-> nodes/plan-tasks \| skills/design-approved}}` | Conditional edge | Go here IF condition met |
 | `{{<< output.gather-requirements}}` | Data flow | Read previous node's output |
 
 ---

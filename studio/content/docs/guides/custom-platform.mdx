@@ -3,48 +3,46 @@ title: Custom Platform Config
 description: Create a new export target platform configuration for AgentFlow's transport system.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table"
 
 ## Overview
 
-Platform configs are JSON files that define how AgentFlow workflows are exported to (and imported from) a target platform. The `PlatformAdapter` is entirely config-driven — no subclasses are needed. You define your platform's behavior through a JSON file in `src/transport/platforms/`.
+Platform configs are YAML files that define how AgentFlow workflows are exported to (and imported from) a target platform. The `PlatformAdapter` is entirely config-driven — no subclasses are needed. You define your platform's behavior through a YAML file in `configs/platforms/`.
+
+<Callout type="info">
+💡 Each platform is a YAML config file in `configs/platforms/`. Adding support for a new IDE = adding one YAML file.
+</Callout>
 
 ## Steps
 
-1. Create a new JSON file in `src/transport/platforms/`
+1. Create a new YAML file in `configs/platforms/`
 2. Define export rules that map AgentFlow sources to platform targets
 3. Register transform functions in `transforms.js` if needed
 4. Test your config with the adapter factory
 
 ## Minimal Platform Config
 
-```json
-{
-  "name": "my-platform",
-  "displayName": "My Platform",
-  "version": "1.0.0",
-  "tier": "community",
-  "capabilities": ["workflows", "steps"],
-  "detectMarkers": ["my-platform.config.json"],
-  "exportRules": [
-    {
-      "source": "workflows/**/*.md",
-      "target": "pipelines/",
-      "type": "glob-transform",
-      "transform": "markdownToPipelineYaml",
-      "fidelity": "translated"
-    }
-  ],
-  "importRules": [
-    {
-      "platformPath": "pipelines/**/*.yaml",
-      "agentflowTarget": "workflows/",
-      "type": "glob-transform",
-      "fidelity": "translated",
-      "reverseTransform": "pipelineYamlToMarkdown"
-    }
-  ]
-}
+```yaml
+name: my-platform
+displayName: My Platform
+version: 1.0.0
+tier: community
+capabilities:
+  - workflows
+  - steps
+detectMarkers:
+  - my-platform.config.json
+exportRules:
+  - source: "workflows/**/*.md"
+    target: "pipelines/"
+    type: glob-transform
+    transform: markdownToPipelineYaml
+    fidelity: translated
+importRules:
+  - platformPath: "pipelines/**/*.yaml"
+    agentflowTarget: "workflows/"
+    type: glob-transform
+    fidelity: translated
+    reverseTransform: pipelineYamlToMarkdown
 ```
 
 ## Export Rule Fields
@@ -110,12 +108,14 @@ Import rules are optional. If omitted, the platform is export-only.
 
 ## Testing Your Config
 
-The `AdapterFactory` loads configs from disk or a pre-loaded array. Use the array form for testing:
+The `AdapterFactory` loads configs from disk or a pre-loaded object. Use the object form for testing:
 
 ```js
-import { AdapterFactory } from "../src/transport/adapter-factory.js"
-import myConfig from "./my-platform.json" assert { type: "json" }
+// Platform configs are YAML files in configs/platforms/ — no code imports needed
+import { readFileSync } from "fs"
+import { parse } from "yaml"
 
+const myConfig = parse(readFileSync("./configs/platforms/my-platform.yaml", "utf8"))
 const adapter = AdapterFactory.create(myConfig)
 const result = await adapter.export("./my-agentflow-project")
 

@@ -1,25 +1,25 @@
 {
   "name": "@agentflow/cli",
   "version": "0.1.0",
-  "description": "AgentFlow CLI — parse, validate, export agent workflows from the command line.",
+  "description": "AgentFlow CLI \u2014 parse, validate, export agent workflows from the command line.",
   "main": "src/parser.js",
   "bin": {
     "agentflow": "bin/cli.js"
   },
   "exports": {
-    ".": "./src/parser.js",
-    "./parser": "./src/parser.js",
-    "./branding": "./src/branding.js",
-    "./library": "./src/library.js",
-    "./pretty-printer": "./src/pretty-printer.js",
-    "./structured-exporter": "./src/structured-exporter.js",
-    "./git/*": "./src/git/*.js",
-    "./mcp/*": "./src/mcp/*.js",
-    "./services/*": "./src/services/*.js",
-    "./svc-utils/*": "./src/svc-utils/*.js",
-    "./utils/*": "./src/utils/*.js",
-    "./transport/*": "./src/transport/*.js",
-    "./export": "./src/export/index.js"
+    ".": "./src/parser.ts",
+    "./parser": "./src/parser.ts",
+    "./branding": "./src/branding.ts",
+    "./library": "./src/library.ts",
+    "./pretty-printer": "./src/pretty-printer.ts",
+    "./structured-exporter": "./src/structured-exporter.ts",
+    "./git/*": "./src/git/*.ts",
+    "./mcp/*": "./src/mcp/*.ts",
+    "./services/*": "./src/services/*.ts",
+    "./svc-utils/*": "./src/svc-utils/*.ts",
+    "./utils/*": "./src/utils/*.ts",
+    "./transport/*": "./src/transport/*.ts",
+    "./export": "./src/export/index.ts"
   },
   "dependencies": {
     "@agentflow/core": "*",

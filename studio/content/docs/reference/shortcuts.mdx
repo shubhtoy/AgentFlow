@@ -3,22 +3,66 @@ title: Keyboard Shortcuts
 description: All keyboard shortcuts in the studio.
 ---
 
-| Shortcut | Action | Context |
-| --- | --- | --- |
-| `Cmd+K` | Command palette | Global |
-| `Cmd+S` | Save | Editor |
-| `Cmd+Shift+V` | Validate | Global |
-| `Cmd+Shift+E` | Export dialog | Global |
-| `Cmd+,` | Settings | Global |
-| `Cmd+B` | Toggle sidebar | Global |
-| `Cmd+N` | New file | Global |
-| `Cmd+D` | Duplicate node | Canvas |
-| `Del/Backspace` | Delete selected | Canvas |
-| `Cmd+G` | Git panel | Global |
-| `Scroll` | Zoom | Canvas |
-| `Drag` | Pan | Canvas |
-| `Click` | Select | Canvas |
-| `Double-click` | Edit node | Canvas |
-| `Right-click` | Context menu | Canvas |
-| `Esc` | Close dialog/deselect | Global |
-| `Arrow keys` | Navigate | Command palette |
+<Callout type='info'>
+On Windows/Linux, replace `Cmd` with `Ctrl` for all shortcuts below.
+</Callout>
+
+<Tabs items={['Global', 'Canvas', 'Editor', 'Panels']}>
+<Tab value='Global'>
+
+## Global Shortcuts
+
+These work anywhere in the studio.
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+K` | Command palette |
+| `Cmd+Shift+V` | Validate |
+| `Cmd+Shift+E` | Export dialog |
+| `Cmd+,` | Settings |
+| `Cmd+B` | Toggle sidebar |
+| `Cmd+N` | New file |
+| `Cmd+G` | Git panel |
+| `Esc` | Close dialog/deselect |
+
+</Tab>
+<Tab value='Canvas'>
+
+## Canvas Shortcuts
+
+These work when the workflow canvas is focused.
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+D` | Duplicate node |
+| `Del/Backspace` | Delete selected |
+| `Scroll` | Zoom |
+| `Drag` | Pan |
+| `Click` | Select |
+| `Double-click` | Edit node |
+| `Right-click` | Context menu |
+
+</Tab>
+<Tab value='Editor'>
+
+## Editor Shortcuts
+
+These work when the markdown editor is focused.
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+S` | Save |
+
+</Tab>
+<Tab value='Panels'>
+
+## Panel Shortcuts
+
+Shortcuts for navigating panels and palettes.
+
+| Shortcut | Action |
+| --- | --- |
+| `Arrow keys` | Navigate (command palette) |
+
+</Tab>
+</Tabs>

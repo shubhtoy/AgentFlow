@@ -3,252 +3,433 @@ title: Architecture
 description: How the codebase is organized.
 ---
 
-import { Files, Folder, File } from "fumadocs-ui/components/files"
+## Monorepo Overview
 
-## Directory Structure
+AgentFlow is an npm workspaces monorepo with three main areas: two shared packages, a standalone studio app, and a content library.
+
+<Callout type="info">
+💡 The codebase is fully TypeScript. Core engine is in `packages/core/src/`, export engine in `packages/cli/src/export/`, studio in `studio/`.
+</Callout>
+
+```mermaid
+graph TD
+  ROOT["agentflow (root)"] --> CORE["packages/core"]
+  ROOT --> CLI["packages/cli"]
+  ROOT --> STUDIO["studio"]
+  ROOT --> LIB["library"]
+  CLI --> CORE
+  STUDIO --> CORE
+  STUDIO --> CLI
+```
+
+<Callout type="info">
+`packages/core` and `packages/cli` are npm workspace members. `studio` is a standalone Next.js app that depends on both via `"*"` version specifiers — it is **not** a workspace member.
+</Callout>
 
 <Files>
-  <Folder name="src" defaultOpen>
-    <File name="parser.js" />
-    <File name="parser-core.js" />
-    <File name="validator.js" />
-    <File name="exporter.js" />
-    <File name="taxonomy.js" />
-    <File name="library.js" />
-    <File name="branding.js" />
-    <File name="errors.js" />
-    <File name="pretty-printer.js" />
-    <Folder name="transport">
-      <File name="platform-adapter.js" />
-      <File name="transforms.js" />
-      <File name="export-pipeline.js" />
-      <File name="import-pipeline.js" />
-      <File name="langgraph.json" />
-      <File name="claude.json" />
-      <File name="github-actions.json" />
-      <File name="openai.json" />
-      <File name="bedrock.json" />
-      <File name="crewai.json" />
-      <File name="autogen.json" />
+  <Folder name="agentflow" defaultOpen>
+    <File name="package.json" />
+    <Folder name="packages" defaultOpen>
+      <Folder name="core" />
+      <Folder name="cli" />
+    </Folder>
+    <Folder name="studio" />
+    <Folder name="library" />
+    <Folder name="configs" />
+    <Folder name="scripts" />
+    <Folder name=".agentflow" />
+  </Folder>
+</Files>
+
+| Area | Package name | Runtime | Purpose |
+|---|---|---|---|
+| `packages/core` | `@agentflow/core` | Browser + Node | Parser, validator, taxonomy, schemas — pure logic |
+| `packages/cli` | `@agentflow/cli` | Node only | CLI binary, file I/O services, git, MCP bridge, export engine |
+| `studio` | `agentflow-app` | Next.js 16 | Visual workflow editor |
+| `library` | — | — | Pre-built workflows, skills, capabilities, instructions, memory, hooks |
+| `configs/platforms` | — | — | YAML platform export configurations |
+
+---
+
+## packages/core
+
+`@agentflow/core` is the foundation. It contains the parser, validator, and schemas — all pure TypeScript with **zero Node.js API dependencies**. This makes it safe to run in the browser.
+
+**Dependencies**: `gray-matter`, `js-yaml`, `zod`
+
+<Files>
+  <Folder name="packages/core/src" defaultOpen>
+    <File name="parser-core.ts" />
+    <File name="parser-browser.ts" />
+    <File name="validator.ts" />
+    <File name="errors.ts" />
+    <File name="taxonomy.ts" />
+    <Folder name="schemas" defaultOpen>
+      <File name="index.ts" />
+      <File name="frontmatter-schemas.ts" />
+      <File name="brand-schemas.ts" />
+      <File name="agent-schemas.ts" />
+      <File name="builder-schemas.ts" />
     </Folder>
     <Folder name="services">
-      <File name="workflow.js" />
-      <File name="validation.js" />
-      <File name="template.js" />
-      <File name="git.js" />
-      <File name="export.js" />
-      <File name="import.js" />
-      <File name="mcp-bridge.js" />
-      <File name="hook-registry.js" />
-      <File name="event-hook-engine.js" />
-      <File name="instruction-manager.js" />
-      <File name="scaffold-gen.js" />
-    </Folder>
-    <Folder name="git">
-      <File name="git-manager.js" />
-      <File name="repo-scanner.js" />
-      <File name="config-manager.js" />
-      <File name="sync-engine.js" />
+      <File name="index.ts" />
+      <File name="types.ts" />
+      <File name="validation-service.ts" />
+      <File name="event-hook-engine.ts" />
     </Folder>
     <Folder name="mcp">
-      <File name="config-manager.js" />
-      <File name="tool-provider.js" />
-      <File name="tool-scaffolder.js" />
-      <File name="registry-client.js" />
-      <File name="unified-search.js" />
-      <File name="server-lifecycle.js" />
+      <File name="registry-client.ts" />
+    </Folder>
+    <Folder name="utils">
+      <File name="compatibility.ts" />
+      <File name="narrative.ts" />
+    </Folder>
+    <Folder name="types">
+      <File name="index.ts" />
     </Folder>
   </Folder>
-  <Folder name="studio">
-    <Folder name="components" />
-    <Folder name="app" />
-    <Folder name="lib" />
-    <Folder name="hooks" />
-    <Folder name="store" />
+</Files>
+
+### Key modules
+
+<Tabs items={["Parser", "Validator", "Taxonomy"]}>
+  <Tab value="Parser">
+    `parser-core.ts` reads `.md` files from a workflow directory, extracts YAML frontmatter with `gray-matter`, and builds an in-memory graph of nodes and edges. Nodes are either `step` or `sub-workflow` types. Router behavior is inferred from the graph structure — there is no explicit router node type. `parser-browser.ts` is a thin shim that delegates to the core parser without touching any Node APIs.
+  </Tab>
+  <Tab value="Validator">
+    `validator.ts` takes a parsed workflow graph and runs structural, semantic, and schema checks. All frontmatter is validated against Zod schemas defined in `schemas/`. Returns a list of diagnostics (errors, warnings, info).
+  </Tab>
+  <Tab value="Taxonomy">
+    `taxonomy.ts` defines the five fixed resource categories: **instructions**, **capabilities**, **skills**, **memory**, and **hooks**. Node labels are "Step" and "Sub-workflow".
+  </Tab>
+</Tabs>
+
+---
+
+## packages/cli
+
+`@agentflow/cli` provides the `agentflow` command-line binary and all Node.js-dependent services: file I/O, git operations, MCP server lifecycle, template scaffolding, and the **export engine**.
+
+**Dependencies**: `@agentflow/core`, `commander`, `glob`, `simple-git`, `jszip`, `@modelcontextprotocol/sdk`, `zod`
+
+<Callout type="warn">
+This package uses Node.js APIs (fs, path, child_process). It cannot run in the browser. Studio imports it only in server-side API routes.
+</Callout>
+
+<Files>
+  <Folder name="packages/cli" defaultOpen>
+    <Folder name="bin">
+      <File name="cli.js" />
+    </Folder>
+    <Folder name="src" defaultOpen>
+      <File name="parser.ts" />
+      <File name="pretty-printer.ts" />
+      <File name="branding.ts" />
+      <File name="library.ts" />
+      <Folder name="export" defaultOpen>
+        <File name="index.ts" />
+        <File name="engine.ts" />
+        <File name="agent-spec-transform.ts" />
+        <Folder name="transforms">
+          <File name="index.ts" />
+          <File name="concatenate.ts" />
+          <File name="rename.ts" />
+          <File name="copy.ts" />
+          <File name="flatten-skill.ts" />
+          <File name="to-skill-dir.ts" />
+          <File name="to-mdc.ts" />
+          <File name="split-identity.ts" />
+          <File name="merge-mcp-config.ts" />
+        </Folder>
+      </Folder>
+      <Folder name="git">
+        <File name="repo-scanner.ts" />
+        <File name="config-manager.ts" />
+        <File name="sync-engine.ts" />
+        <File name="git-manager.ts" />
+      </Folder>
+      <Folder name="services" defaultOpen>
+        <File name="workflow-service.ts" />
+        <File name="validation-service.ts" />
+        <File name="export-service.ts" />
+        <File name="git-service.ts" />
+        <File name="template-service.ts" />
+        <File name="scaffold-gen-service.ts" />
+        <File name="import-service.ts" />
+        <File name="instruction-manager.ts" />
+        <File name="mcp-bridge.ts" />
+        <File name="hook-registry.ts" />
+      </Folder>
+      <Folder name="mcp">
+        <File name="server-lifecycle.ts" />
+        <File name="tool-provider.ts" />
+        <File name="config-manager.ts" />
+        <File name="tool-scaffolder.ts" />
+        <File name="unified-search.ts" />
+      </Folder>
+      <Folder name="svc-utils">
+        <File name="validate-path.ts" />
+        <File name="file-io.ts" />
+      </Folder>
+      <Folder name="utils">
+        <File name="resolve-root.ts" />
+      </Folder>
+    </Folder>
   </Folder>
-  <Folder name="library">
-    <Folder name="workflows" />
-    <Folder name="instructions" />
+</Files>
+
+### Service layer
+
+The `services/` directory is the primary integration point for studio. Each service wraps a domain (git, export, validation, templates) and exposes functions that return structured `ok`/`fail` results.
+
+<Tabs items={["Workflow", "Git", "Export", "MCP"]}>
+  <Tab value="Workflow">
+    `workflow-service.ts` — create, read, update, delete workflows and nodes. Coordinates parser + validator + file I/O.
+  </Tab>
+  <Tab value="Git">
+    `git-service.ts` wraps `simple-git` via the `git/` modules. Handles clone, pull, push, commit, status, and diff. `sync-engine.ts` manages bidirectional sync between local workspace and remote.
+  </Tab>
+  <Tab value="Export">
+    `export-service.ts` orchestrates multi-platform export. The export engine lives in `packages/cli/src/export/` and reads YAML platform configs from `configs/platforms/`. The studio exposes export via the `/api/export` server-side route.
+  </Tab>
+  <Tab value="MCP">
+    `mcp-bridge.ts` connects to external MCP servers. `tool-provider.ts` exposes AgentFlow operations as MCP tools. `server-lifecycle.ts` manages start/stop of the MCP server process.
+  </Tab>
+</Tabs>
+
+---
+
+## Studio
+
+The visual editor is a standalone Next.js 16 app (React 19, TypeScript). It imports from both `@agentflow/core` (client + server) and `@agentflow/cli` (server only).
+
+### What studio imports
+
+| Source | Used where | Examples |
+|---|---|---|
+| `@agentflow/core` | Client + Server | `parser-browser`, `validator`, `taxonomy`, `schemas` |
+| `@agentflow/cli` | Server only (API routes) | `parser`, `services/*`, `git/*`, `mcp/*`, `svc-utils/*`, `export/*` |
+
+### API routes
+
+Every server-side operation goes through Next.js API routes in `studio/app/api/`:
+
+<Files>
+  <Folder name="app/api" defaultOpen>
+    <Folder name="export">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="git">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="skills">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="library">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="copilot">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="mcp">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="search">
+      <File name="route.ts" />
+    </Folder>
+    <Folder name="auth">
+      <File name="device/route.ts" />
+      <Folder name="[[...nextauth]]">
+        <File name="route.ts" />
+      </Folder>
+    </Folder>
+    <Folder name="copilotkit">
+      <Folder name="[[...path]]">
+        <File name="route.ts" />
+      </Folder>
+    </Folder>
+    <Folder name="config">
+      <Folder name="mode">
+        <File name="route.ts" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+| Route | Purpose |
+|---|---|
+| `/api/export` | Server-side export — receives workspace files, returns transformed output |
+| `/api/git` | Git operations (status, commit, push, pull, clone) |
+| `/api/skills` | Skills.sh search and install |
+| `/api/library` | Library browsing and content serving |
+| `/api/copilot` | AI copilot chat completions |
+| `/api/mcp` | MCP server management and tool discovery |
+| `/api/search` | Unified search across workspace and library |
+| `/api/auth/*` | NextAuth + device flow authentication |
+| `/api/copilotkit/*` | CopilotKit integration endpoint |
+| `/api/config/mode` | Runtime mode configuration |
+
+### Client-side architecture
+
+<Accordions>
+  <Accordion title="lib/ — client libraries">
+    Key modules in `studio/lib/`:
+
+    - **`api.ts`** — central API client, all fetch calls to API routes
+    - **`constants.ts`** — app-wide constants and defaults
+    - **`workspace/`** — storage adapters (browser OPFS, IndexedDB, local filesystem, git)
+    - **`copilot/`** — AI model registry, system prompts, key management
+    - **`parse-client-files.ts`** — client-side parsing via `@agentflow/core/parser-browser`
+    - **`service-context.ts`** — React context for dependency injection of services
+    - **`agentflow-language.ts`** — Monaco editor language definition for `.agentflow` markdown
+  </Accordion>
+  <Accordion title="components/ — UI components">
+    Top-level components include `Canvas.tsx`, `Editor.tsx`, `ExplorerPanel.tsx`, `NodeDetail.tsx`, `ExportDialog.tsx`, `GitPanel.tsx`, `MCPPanel.tsx`, `ValidationPanel.tsx`, `CommandPalette.tsx`, and `SettingsDialog.tsx`.
+
+    Subdirectories:
+    - **`ui/`** — Radix-based primitives (Button, Dialog, Popover, etc.)
+    - **`canvas/`** — ReactFlow node types, edges, canvas architecture
+    - **`copilot/`** — AI chat interface components
+    - **`layout/`** — ActionBar, AppMenubar, StatusBar, ThreePanelLayout
+    - **`git/`** — git status, diff, commit UI
+    - **`library/`** — library browser and installer
+    - **`docs/`** — embedded documentation viewer
+    - **`onboarding/`** — first-run setup wizard
+  </Accordion>
+</Accordions>
+
+---
+
+## Library
+
+The `library/` directory contains pre-built, reusable content auto-indexed by `scripts/build-library-index.js` which generates `library/index.json`.
+
+`studio/public/library` is a symlink to `../../library`, so changes to library content are immediately reflected in the studio.
+
+<Files>
+  <Folder name="library" defaultOpen>
+    <File name="index.json" />
+    <File name="registry.json" />
+    <File name="README.md" />
+    <Folder name="workflows">
+      <Folder name="build-feature" />
+      <Folder name="agent-builder" />
+    </Folder>
+    <Folder name="skills" />
     <Folder name="capabilities" />
-    <Folder name="runbooks" />
+    <Folder name="instructions" />
     <Folder name="memory" />
     <Folder name="hooks" />
   </Folder>
-  <Folder name="bin">
-    <File name="cli.js" />
-  </Folder>
-  <Folder name="tests" />
 </Files>
 
-## Core Engine (`src/`)
+Skills in the library are directory-based — each skill is a directory containing its files, imported from skills.sh.
 
-The core engine handles parsing, validation, and export of `.agentflow` workflows. The parser reads markdown files into an AST, the validator checks structural and semantic correctness, and the exporter serializes workflows to target platforms.
+| Directory | Content |
+|---|---|
+| `workflows/` | Complete workflow definitions |
+| `skills/` | Reusable skill directories (imported from skills.sh) |
+| `capabilities/` | Tool capability definitions (`.md`) |
+| `instructions/` | Instruction sets (`.md`) |
+| `memory/` | Memory templates (`.md`) |
+| `hooks/` | Event hook definitions (`.json`) |
 
-## Transport Layer (`src/transport/`)
-
-Handles multi-platform export and import. The `platform-adapter.js` normalizes platform differences, `transforms.js` applies AST transformations, and the pipeline files orchestrate the full export/import flow. Each platform has a JSON configuration file defining its node mappings and constraints.
-
-## Services (`src/services/`)
-
-Thirteen service modules provide the application logic. Services cover workflow CRUD, validation, template management, git operations, export/import orchestration, MCP bridging, hook management, instruction resolution, and project scaffolding.
-
-## Git Integration (`src/git/`)
-
-Four modules handle git operations: repository management, scanning for workspace changes, configuration, and syncing local state with remotes.
-
-## MCP Integration (`src/mcp/`)
-
-Six modules manage Model Context Protocol connections: server configuration, tool discovery and provisioning, scaffolding new tool definitions, registry search, unified tool search across providers, and server lifecycle management.
-
-## Studio (`studio/`)
-
-A Next.js application providing the visual workflow editor. Built with React Flow for the canvas, Zustand for state management, and custom hooks for workflow operations.
-
-## Library (`library/`)
-
-Pre-built workflows, instructions, capabilities, runbooks, memory templates, and hooks that users can install into their workspace.
-
-## Service Layer Pattern
-
-All services are instantiated through a single factory:
-
-```js
-const services = createServiceLayer(ctx)
-```
-
-The `ctx` object carries workspace path, configuration, and shared state. Every service method returns a result object following the `ok`/`fail` pattern:
-
-```js
-// Success
-{ ok: true, data: { ... } }
-
-// Failure
-{ ok: false, error: { code: "VALIDATION_ERROR", message: "..." } }
-```
-
-This makes error handling consistent and composable across the entire codebase.
+---
 
 ## Data Flow
 
-The following diagram shows the complete data flow when a user edits a workflow file in the studio:
+This is how a user edit flows through the system:
 
 ```mermaid
 sequenceDiagram
     participant User
     participant Studio
-    participant WorkflowService
-    participant Parser
-    participant Validator
-    participant Store
-    participant Canvas
+    participant Core
+    participant CLI
+    participant FS as File System
 
-    User->>Studio: Edit file content
-    Studio->>WorkflowService: save(path, content)
-    WorkflowService->>WorkflowService: Atomic file write
-    WorkflowService->>Parser: parseRoot(workspacePath)
-    Parser->>Parser: Read all .md files into AST
-    Parser-->>WorkflowService: Parsed workflow tree
-    WorkflowService->>Validator: validate(tree)
-    Validator->>Validator: Check refs, cycles, schema
-    Validator-->>WorkflowService: ValidationResult
-    WorkflowService->>Store: updateWorkflow(tree, errors)
-    Store->>Canvas: Re-render nodes and edges
-    Canvas-->>User: Updated visual graph
+    User->>Studio: Edit node in canvas
+    Studio->>Core: Parse markdown (parser-browser)
+    Core-->>Studio: Parsed workflow graph
+    Studio->>Core: Validate graph
+    Core-->>Studio: Diagnostics (errors/warnings)
+    Studio->>Studio: Render canvas + panels
+    User->>Studio: Save
+    Studio->>CLI: Write files (API route → workflow-service)
+    CLI->>FS: Atomic write to .agentflow/
+    CLI-->>Studio: ok/fail result
 ```
 
-Every edit triggers this full pipeline. The atomic file write ensures that the on-disk state is never partially written. If validation fails, the store still updates with the new tree but attaches error annotations so the canvas can display inline diagnostics.
+<Steps>
+### Parse
 
-## Service Layer Pattern
+User edits produce markdown content. The parser (`parser-core` on server, `parser-browser` on client) extracts frontmatter via `gray-matter`, resolves node references, and builds a directed graph. Nodes are typed as "Step" or "Sub-workflow".
 
-### Factory Creation
+### Validate
 
-All services are created through a single entry point:
+The validator runs the graph through structural checks (orphan nodes, missing edges), semantic checks (invalid references, circular dependencies), and schema checks (Zod validation of all frontmatter fields).
 
-```js
-import { createServiceLayer } from "./services/index.js"
+### Render
 
-const ctx = {
-  workspacePath: "/path/to/.agentflow",
-  config: loadedConfig,
-  fs: fileSystemAdapter,
-}
+The studio renders the validated graph on a ReactFlow canvas. Diagnostics appear in the ValidationPanel. Node details are editable in the side panel.
 
-const services = createServiceLayer(ctx)
-```
+### Persist
 
-The `ctx` object is immutable after creation. Services never modify it. This guarantees that all services share the same view of the workspace without hidden side effects.
+On save, the studio calls an API route that delegates to `@agentflow/cli` services. Files are written atomically to the `.agentflow/` directory.
+</Steps>
 
-### Result Pattern
-
-Every service method returns a discriminated result:
-
-```js
-// Calling a service
-const result = await services.workflow.save(path, content)
-
-if (result.ok) {
-  console.log(result.data) // The saved workflow
-} else {
-  console.error(result.error.code)    // e.g. "WRITE_FAILED"
-  console.error(result.error.message) // Human-readable description
-}
-```
-
-This pattern eliminates try/catch chains and makes error propagation explicit. Services that call other services simply forward failures:
-
-```js
-async function exportWorkflow(name, target) {
-  const parsed = await services.workflow.load(name)
-  if (!parsed.ok) return parsed // Forward the failure
-
-  const validated = await services.validation.check(parsed.data)
-  if (!validated.ok) return validated
-
-  return services.export.run(parsed.data, target)
-}
-```
-
-### Service Composition
-
-Services reference each other through the shared context, never through direct imports. This keeps the dependency graph flat and makes testing straightforward since you can replace any service with a mock in the context.
+---
 
 ## Key Design Decisions
 
-### Config-Driven Transport (No Subclasses)
+### Config-driven export
 
-Each export target (LangGraph, Claude, GitHub Actions, etc.) is defined as a JSON configuration file rather than a class hierarchy. The `platform-adapter.js` reads the config and applies it generically. This means adding a new platform requires only a new JSON file with node mappings and constraints, not new code.
+Platform export is driven entirely by YAML configuration files in `configs/platforms/`. Adding support for a new AI coding tool means adding a single `.yaml` file — no code changes required. The export engine in `packages/cli/src/export/` reads the config and applies the transform pipeline.
 
-```
-src/transport/
-  langgraph.json      # Node mappings, edge rules, output format
-  claude.json
-  github-actions.json
-  platform-adapter.js # Generic adapter that reads any config
-```
-
-Benefits:
-- No inheritance chains to maintain
-- Platform configs are declarative and auditable
-- Community contributors can add platforms without touching core logic
-
-### Zod Validation
-
-All frontmatter schemas are defined with Zod. The validator uses these schemas at parse time to produce precise, actionable error messages. Zod schemas also serve as the single source of truth for the TypeTable documentation in the reference docs.
-
-```js
-const nodeSchema = z.object({
-  entry: z.boolean().optional(),
-  refs: z.array(z.string()).optional(),
-  max_tokens: z.number().positive().optional(),
-  outputs: z.array(z.string()).optional(),
-})
+```mermaid
+graph LR
+    WF[Workspace Files] --> ENG[export/engine.ts]
+    PC[configs/platforms/*.yaml] --> ENG
+    ENG --> TR[transforms/*]
+    TR --> OUT[Platform Output]
 ```
 
-### Atomic File Writes
+### Zod schema validation
 
-All file mutations go through a write-then-rename pattern:
+All frontmatter is validated with Zod schemas defined in `packages/core/src/schemas/`. This gives:
 
-1. Write content to a temporary file in the same directory
-2. Call `fs.rename()` to atomically replace the target file
+- **Type-safe parsing** — invalid frontmatter is caught at parse time, not at runtime
+- **Descriptive errors** — Zod produces human-readable validation messages
+- **Single source of truth** — schemas are shared between parser, validator, and studio form generation
 
-This prevents partial writes from corrupting workflow files if the process crashes mid-write. The filesystem guarantees that rename is atomic on all supported platforms.
+### Service layer pattern (ok/fail)
+
+All CLI services return structured results instead of throwing exceptions:
+
+```ts
+// Success
+{ ok: true, data: { ... } }
+
+// Failure
+{ ok: false, error: { code: 'VALIDATION_FAILED', message: '...' } }
+```
+
+This makes error handling explicit at every call site. Studio API routes translate these into appropriate HTTP status codes.
+
+### Atomic file writes
+
+File mutations in `@agentflow/cli` go through `svc-utils/file-io.ts`, which writes to a temporary file first, then renames it into place. This prevents partial writes from corrupting workspace files if the process is interrupted.
+
+### Browser/Node split
+
+The `core` ↔ `cli` boundary exists specifically to keep `@agentflow/core` browser-safe. Any module that needs `fs`, `path`, `child_process`, or other Node APIs lives in `@agentflow/cli`. The studio uses `parser-browser` on the client and the full `parser` (via API routes) on the server.
+
+---
+
+## Where to Go Next
+
+<Cards>
+  <Card title="Development Setup" href="/docs/contributing/development-setup" description="Set up your development environment" />
+  <Card title="New Features" href="/docs/contributing/features" description="How to add new features" />
+  <Card title="Library" href="/docs/contributing/library" description="Contributing to the shared library" />
+</Cards>

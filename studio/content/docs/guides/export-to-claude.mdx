@@ -3,34 +3,34 @@ title: Export to Claude Code
 description: Export your AgentFlow workspace to Claude Code's native .claude/ directory format with full support for hooks, MCP, and agent files.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Mermaid } from '@/components/docs/mdx-components'
 
-AgentFlow exports your workspace directly to Claude Code format. The exporter transforms your `.agentflow/` directory into the `.claude/` structure that Claude Code expects, mapping identity to `CLAUDE.md`, instructions to agent files, hooks to `settings.json`, and MCP to `.mcp.json`.
+AgentFlow exports your workspace directly to Claude Code format. The exporter transforms your `.agentflow/` directory into the `.claude/` structure that Claude Code expects, mapping identity to `CLAUDE.md`, instructions to agent files, hooks to `settings.json`, and MCP to `.mcp.json`. Export is handled server-side via `/api/export`.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A[".agentflow/AGENTS.md"] -->|identity| B["CLAUDE.md"]
   C["instructions/"] -->|global scope| B
   D["instructions/"] -->|workflow scope| E[".claude/agents/*.md"]
   F["hooks/"] --> G[".claude/settings.json"]
   H["mcp.json"] --> I[".mcp.json"]
   J["capabilities/"] -->|MCP type| I
-`} />
+```
 
 ## Export Steps
 
 <Steps>
   <Step>
-    ### Run the export command
+    ### Run the export
+
+    Export is handled server-side via the API:
 
     ```bash
-    agentflow export --platform claude-code
+    curl -X POST http://localhost:3000/api/export \
+      -H "Content-Type: application/json" \
+      -d '{"platform": "claude-code"}'
     ```
 
-    This generates the Claude Code output in your project root.
+    Or use the studio's Export dialog to trigger the export visually.
   </Step>
 
   <Step>

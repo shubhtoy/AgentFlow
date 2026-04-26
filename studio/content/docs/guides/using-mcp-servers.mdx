@@ -3,29 +3,23 @@ title: Using MCP Servers
 description: Connect external tools via Model Context Protocol — configure servers, generate capabilities, and reference them from nodes.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Mermaid } from '@/components/docs/mdx-components';
 
 MCP (Model Context Protocol) lets your workflows call external tools — GitHub, databases, browsers, Slack, and anything else with an MCP server. AgentFlow manages the connection lifecycle: you configure the server, discover its tools, and reference the generated capabilities from your nodes.
 
 ## Architecture
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   subgraph "Your Workflow"
     N["Node SKILL.md"] -->|"{{capabilities/create-issue}}"| C["Capability .md"]
   end
   subgraph "AgentFlow Runtime"
     C -->|"mcp: github"| M["McpToolManager"]
-    M --> T{"Transport"}
   end
   subgraph "External"
-    T -->|stdio| S["Local MCP Server"]
-    T -->|HTTP/SSE| R["Remote MCP Server"]
+    M --> S["MCP Server"]
   end
-`} />
+```
 
 The capability file bridges your workflow and the MCP server. Nodes reference capabilities by name; the runtime reads the `mcp` field to determine which server to call.
 
@@ -72,7 +66,7 @@ Create `.agentflow/mcp.json`:
 }
 ```
 
-- `command` and `args` define how to start the server (stdio transport).
+- `command` and `args` define how to start the server.
 - `${env:GITHUB_TOKEN}` is a placeholder resolved only at connection time — never stored in the file.
 - `required: true` means the workflow fails if this server cannot start.
 
@@ -118,7 +112,7 @@ agentflow mcp discover github
 ```
 
 ```
-Connected to github (stdio)
+Connected to github
 Found 12 tools
 Generated 12 capability files in .agentflow/capabilities/
 ```
@@ -226,15 +220,6 @@ Remote servers use `url` instead of `command`/`args`:
   }
 }
 ```
-
-The runtime auto-detects the transport:
-
-<Mermaid chart={`graph TD
-  A{"Server config has..."} --> B{"command + args?"}
-  B -->|Yes| C["stdio transport<br/>Spawn local process"]
-  B -->|No| D{"url?"}
-  D -->|Yes| E["HTTP/SSE transport<br/>Connect to remote endpoint"]
-`} />
 </Step>
 
 <Step>
@@ -281,7 +266,7 @@ MCP configuration exports to each platform's expected location:
 Capability files are inlined into exported node content — the target platform does not need the separate `.md` files.
 
 <Cards>
-  <Card title="MCP Authoring" href="/docs/authoring/mcp" description="Full MCP reference with transport details" />
+  <Card title="MCP Authoring" href="/docs/authoring/mcp" description="Full MCP reference" />
   <Card title="Writing Resources" href="/docs/authoring/writing-resources" description="Capability types including MCP" />
   <Card title="Studio MCP Panel" href="/docs/studio/mcp" description="Visual server management" />
   <Card title="Debugging Workflows" href="/docs/guides/debugging-workflows" description="Fix MCP-related validation errors" />

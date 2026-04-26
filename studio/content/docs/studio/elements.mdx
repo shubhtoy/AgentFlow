@@ -1,11 +1,8 @@
 ---
 title: Elements
-description: Resources organized by category -- capabilities, instructions, runbooks, memory, hooks.
+description: Resources organized by category -- capabilities, instructions, skills, memory, hooks.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 The Elements panel shows all resources in your workspace grouped by their category. Use it to browse, filter, and attach resources to workflow nodes.
 
@@ -21,7 +18,7 @@ Open the panel below to explore the elements view. Click any resource to select 
 
 Resources are grouped into five categories, each corresponding to a directory in your `.agentflow/` workspace:
 
-<Tabs items={['Capabilities', 'Instructions', 'Runbooks', 'Memory', 'Hooks']}>
+<Tabs items={['Capabilities', 'Instructions', 'Skills', 'Memory', 'Hooks']}>
 <Tab value="Capabilities">
 Tool definitions that describe what external actions an agent can perform. Each capability file defines a tool name, parameters, return type, and optionally an MCP server binding. Capabilities appear with a wrench icon.
 
@@ -32,8 +29,8 @@ Reusable text blocks that provide guidance to the agent. Instructions can be sco
 
 Example uses: coding standards, tone guidelines, error handling policies.
 </Tab>
-<Tab value="Runbooks">
-Conditional logic and interaction patterns. Runbooks define when and how an agent should respond to specific situations. They include trigger conditions and step-by-step procedures. Runbooks appear with a flowchart icon.
+<Tab value="Skills">
+Conditional logic and interaction patterns. Skills define when and how an agent should respond to specific situations. They include trigger conditions and step-by-step procedures. Skills appear with a flowchart icon.
 
 Example uses: escalation procedures, retry strategies, user clarification flows.
 </Tab>
@@ -99,7 +96,7 @@ Click the **+** button at the top of any category section. A dialog appears with
 
 ### From the command palette
 
-Press `Cmd+K` and type "Create Capability", "Create Instruction", or "Create Runbook". The command palette opens a creation dialog with the correct template for the selected resource type.
+Press `Cmd+K` and type "Create Capability", "Create Instruction", or "Create Skill". The command palette opens a creation dialog with the correct template for the selected resource type.
 
 ### From the explorer
 
@@ -113,7 +110,7 @@ The elements panel includes a **Library** tab that shows pre-built resources fro
 <Step>
 ### Browse the library
 
-Click the **Library** tab at the top of the elements panel. Resources are organized by the same categories as your workspace (capabilities, instructions, runbooks).
+Click the **Library** tab at the top of the elements panel. Resources are organized by the same categories as your workspace (capabilities, instructions, skills).
 </Step>
 <Step>
 ### Preview a resource

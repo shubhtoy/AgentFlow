@@ -3,10 +3,6 @@ title: Writing Nodes
 description: SKILL.md structure, frontmatter fields, and real patterns for each node type.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 Every node is a directory with a `SKILL.md` file. The file has two parts: YAML frontmatter (structured config) and a markdown body (the agent's task description). Here's how to write effective nodes for each type.
 
@@ -73,7 +69,7 @@ the user's feature request into a precise, testable requirements document.
 
 <TypeTable type={{
   name: { description: 'Node identifier — should match directory name', type: 'string', required: true },
-  type: { description: 'Determines behavior: step does work, router routes, sub-workflow delegates', type: '"step" | "router" | "sub-workflow"', required: true },
+  type: { description: 'Determines behavior: step does work (add conditional edges to make it a gateway), sub-workflow delegates', type: '"step" | "sub-workflow"', required: true },
   entry: { description: 'Marks the workflow starting point — exactly one per workflow', type: 'boolean', default: 'false' },
   primary: { description: 'Marks the primary file in a multi-file node directory', type: 'boolean', default: 'false' },
   agent: { description: 'Override workspace persona (e.g. "requirements-analyst", "senior-architect")', type: 'string' },
@@ -115,7 +111,7 @@ context:
 
 ## Writing Each Node Type
 
-<Tabs items={['Step nodes', 'Router nodes', 'Sub-workflow nodes']}>
+<Tabs items={['Step nodes', 'Steps with conditional edges', 'Sub-workflow nodes']}>
   <Tab value="Step nodes">
     Steps do work and produce output. The body should:
 
@@ -147,13 +143,13 @@ context:
     {{-> nodes/verify-feature}}
     ```
   </Tab>
-  <Tab value="Router nodes">
-    Routers evaluate conditions and route. They should be lightweight — no tools, no instructions:
+  <Tab value="Steps with conditional edges">
+    Add conditional edges to a step and it automatically becomes a gateway in the graph. No separate router type needed:
 
     ```yaml
     ---
     name: review-design-gate
-    type: router
+    type: step
     context:
       inputs:
         - ref: memory/user
@@ -162,17 +158,16 @@ context:
 
     # Review Design Gate
 
-    Present the design from {{<< output.create-design}} to the user
-    via {{runbooks/review-design}}.
+    Present the design from {{<< output.create-design}} to the user.
 
     ## Routing
 
-    - If approved → {{-> nodes/plan-tasks | runbooks/design-approved}}
-    - If rejected → {{-> nodes/create-design | runbooks/design-rejected}}
+    - If approved → {{-> nodes/plan-tasks | The user explicitly approves the design}}
+    - If rejected → {{-> nodes/create-design | The user rejects the design or requests changes}}
     ```
 
-    <Callout type="warn" title="Validator warnings">
-      The validator emits `router_has_capabilities` and `router_has_instructions` if a router references tools or instructions. Routers should only evaluate conditions.
+    <Callout type="info" title="No router type needed">
+      💡 You don't need to declare `type: router`. Add conditional edges and the node automatically becomes a gateway.
     </Callout>
   </Tab>
   <Tab value="Sub-workflow nodes">
@@ -221,9 +216,6 @@ All files in the directory are loaded into the node's context. Use this when a n
 <Accordions>
   <Accordion title="Loading too much context">
     Every resource reference adds tokens. A node that references 10 instructions and 8 capabilities will have a bloated context where the model loses focus. Use `scope: signature` for tools you mention but do not need full docs for. Use `context.exclude` to block resources from other phases.
-  </Accordion>
-  <Accordion title="Routers that do work">
-    Routers should only evaluate conditions and route. If your router is reading files, making decisions, or producing output, it should be a step node followed by a router.
   </Accordion>
   <Accordion title="Missing output declarations">
     If a downstream node uses a data flow reference to your node but your node does not declare `outputs` in its frontmatter, the validator emits `output_declaration`. Always declare what your node produces.

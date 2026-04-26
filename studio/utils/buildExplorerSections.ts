@@ -18,7 +18,7 @@ function collectReferencedKeys(data: WorkflowGraph, activeWf: string): Set<strin
       if (ref.category && ref.name) {
         keys.add(`${ref.category}/${ref.name}`)
       }
-      // Conditional edge conditions reference runbooks: "runbooks/design-approved"
+      // Conditional edge conditions
       if (ref.condition) {
         const slash = ref.condition.indexOf('/')
         if (slash > 0) {
@@ -52,31 +52,6 @@ export function buildExplorerSections(data: WorkflowGraph, activeWf: string, sho
 
   for (const cat of RESOURCE_CATEGORIES) {
     const records = (data[cat] ?? {}) as Record<string, { title: string; scope?: string; frontmatter: Record<string, unknown> }>
-
-    // Split runbooks into Conditions and Interactions sub-groups
-    if (cat === 'runbooks') {
-      const conditions: ExplorerItem[] = []
-      const interactions: ExplorerItem[] = []
-      for (const [key, file] of Object.entries(records)) {
-        if (!showAll && !referencedResources.has(`${cat}/${key}`)) continue
-        const item: ExplorerItem = {
-          id: `${cat}/${key}`,
-          name: (file.frontmatter?.name as string) || file.title || key,
-          type: 'resource' as const,
-          category: cat,
-          referenced: referencedResources.has(`${cat}/${key}`),
-        }
-        if (file.scope === 'condition') conditions.push(item)
-        else interactions.push(item)
-      }
-      if (conditions.length > 0) {
-        sections.push({ key: cat, label: 'Conditions', tooltip: 'Natural language checks that determine routing', ecosystemHint: 'The agent evaluates these to decide which path to take', items: conditions })
-      }
-      if (interactions.length > 0) {
-        sections.push({ key: cat, label: 'Interactions', tooltip: 'Human-in-the-loop pause points', ecosystemHint: 'The agent stops here and asks for your input', items: interactions })
-      }
-      continue
-    }
 
     const items: ExplorerItem[] = Object.entries(records)
       .filter(([key]) => showAll || referencedResources.has(`${cat}/${key}`))

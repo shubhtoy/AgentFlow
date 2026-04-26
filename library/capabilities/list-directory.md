@@ -1,8 +1,7 @@
 ---
 name: list-directory
 type: builtin
-builtin_mapping: listDirectory
-description: List directory contents with optional recursive depth.
+description: List directory contents with optional recursive depth. Use to understand project structure before diving into specific files.
 parameters:
   path:
     type: string
@@ -23,4 +22,10 @@ narrativeTemplate:
 
 # List Directory
 
-List directory contents in long format. Supports recursive listing with configurable depth. Use to understand project structure before diving into specific files.
+List directory contents in long format. Supports recursive listing with configurable depth.
+
+## When to use
+
+- Understanding project structure at a glance
+- Finding files in unfamiliar codebases
+- Verifying generated file layout

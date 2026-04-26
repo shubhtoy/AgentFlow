@@ -3,15 +3,19 @@ title: Library
 description: Add workflows and resources to the library.
 ---
 
-import { Steps, Step } from "fumadocs-ui/components/steps"
-import { Files, Folder, File } from "fumadocs-ui/components/files"
 
 The library contains pre-built workflows and resources that users can install into their workspace. Contributions here help the entire community.
+
+<Callout type="info">
+💡 Library content is auto-indexed. Run `node scripts/build-library-index.js` or it runs automatically via prebuild. No manual manifest files needed.
+</Callout>
 
 ## Directory Structure
 
 <Files>
   <Folder name="library" defaultOpen>
+    <File name="index.json" />
+    <File name="registry.json" />
     <Folder name="workflows">
       <Folder name="build-feature">
         <File name="AGENTS.md" />
@@ -24,19 +28,37 @@ The library contains pre-built workflows and resources that users can install in
       <File name="code-review.md" />
     </Folder>
     <Folder name="capabilities">
-      <File name="github-api.md" />
+      <File name="github-mcp.md" />
     </Folder>
-    <Folder name="runbooks">
-      <File name="deploy-checklist.md" />
+    <Folder name="skills">
+      <Folder name="systematic-debugging">
+        <File name="SKILL.md" />
+        <File name="README.md" />
+      </Folder>
     </Folder>
     <Folder name="memory">
       <File name="project-context.md" />
     </Folder>
     <Folder name="hooks">
-      <File name="on-commit.md" />
+      <File name="lint-on-save.json" />
     </Folder>
   </Folder>
 </Files>
+
+The five resource categories are: **instructions**, **capabilities**, **skills**, **memory**, and **hooks**.
+
+Skills are directory-based — each skill is a directory containing its files (e.g., `SKILL.md`, resources). Skills are imported from [skills.sh](https://skills.sh).
+
+## Auto-Indexing
+
+The library is auto-indexed by `scripts/build-library-index.js`, which generates `library/index.json`. This script:
+
+- Runs automatically as a prebuild step (`predev` and `prebuild` in `studio/package.json`)
+- Walks the entire `library/` directory recursively
+- Produces a flat list of all file paths
+- Eliminates the need for per-directory manifest files
+
+The studio serves library content via `studio/public/library`, which is a symlink to `../../library`. Changes to library files are immediately reflected in the studio without rebuilding.
 
 ## Naming Conventions
 
@@ -44,6 +66,7 @@ The library contains pre-built workflows and resources that users can install in
 - Workflow directories should describe the action: `build-feature`, `review-pr`, `debug-issue`
 - Resource files should describe their purpose: `code-review.md`, `deploy-checklist.md`
 - Node directories within workflows should be verb-first: `gather-requirements`, `validate-output`
+- Skill directories should be descriptive: `systematic-debugging`, `code-review`, `frontend-design`
 
 ## Adding a Resource
 
@@ -51,18 +74,18 @@ The library contains pre-built workflows and resources that users can install in
   <Step>
     ### Create the resource
 
-    Add your workflow or resource file to the appropriate subdirectory under `library/`. Follow the markdown format used by existing entries.
+    Add your workflow or resource file to the appropriate subdirectory under `library/`. Follow the markdown format used by existing entries. For skills, create a directory with at least a `SKILL.md` file.
   </Step>
   <Step>
-    ### Test with the library index
+    ### Rebuild the index
 
     Run the library indexer to verify your addition is discovered correctly:
 
     ```bash
-    npx agentflow library index
+    node scripts/build-library-index.js
     ```
 
-    Confirm your resource appears in the output with the correct metadata.
+    Confirm your resource appears in `library/index.json`.
   </Step>
   <Step>
     ### Submit a PR

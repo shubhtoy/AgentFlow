@@ -15,9 +15,9 @@ export const createLibrarySlice: StateCreator<LibrarySlice> = (set) => ({
   loadLibrary: async () => {
     set({ libraryLoading: true })
     try {
-      const res = await fetch('/api/library')
+      const res = await fetch('/library/registry.json')
       const data = await res.json()
-      set({ libraryEntries: data.entries ?? [] })
+      set({ libraryEntries: (data.entries ?? []).map((e: any) => ({ ...e, builtin: true })) })
     } catch (err) {
       console.error('Failed to load library:', err)
     } finally {

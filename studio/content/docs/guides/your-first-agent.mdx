@@ -3,21 +3,17 @@ title: Your First Agent
 description: Build the simplest possible agent — one node, one tool, one instruction — and understand every file involved.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Mermaid } from '@/components/docs/mdx-components';
 
 This guide builds the smallest useful agent — a single-node workflow that reads a file and summarizes it. You will create every file by hand so you understand what each one does before moving to more complex workflows.
 
 The finished agent has one workflow, one node, one capability, and one instruction:
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A["AGENTS.md<br/>(identity)"] --> B["summarize<br/>(step node)"]
   B --> C["{{capabilities/read-code}}"]
   B --> D["{{instructions/writing-style}}"]
-`} />
+```
 
 ## What you will create
 
@@ -208,14 +204,15 @@ If you see a `broken_ref` error, check that your filenames match the references 
 
 When the agent executes the `summarize` node, the runtime assembles context from multiple layers. Here is what gets loaded and in what order:
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
   L0["Layer 0: Workspace Identity<br/>.agentflow/AGENTS.md"] --> L1
   L1["Layer 1: Workflow Descriptor<br/>summarize/AGENTS.md"] --> L2
   L2["Layer 2: Node Instructions<br/>summarize/SKILL.md body"] --> L3
   L3["Layer 3: Referenced Resources<br/>capabilities/read-code<br/>instructions/writing-style"] --> L4
   L4["Layer 4: Prior Outputs<br/>(none — this is the first node)"]
   L4 --> PROMPT["Assembled Prompt"]
-`} />
+```
 
 Only referenced resources are loaded. If you added ten more instruction files to `.agentflow/instructions/`, none of them would appear in this node's context unless the SKILL.md explicitly referenced them. This is the selective context model — nodes get exactly what they need, nothing more.
 </Step>
@@ -242,12 +239,13 @@ This single-node agent is the foundation for everything else. To grow it:
 | Want to... | Do this |
 |------------|---------|
 | Add a second step | Create a new node directory with a SKILL.md, add an edge `{{-> nodes/new-step}}` |
-| Add an approval gate | Create a router node between two steps with condition runbooks |
+| Add an approval gate | Create a router node between two steps with condition skills |
 | Add external tools | Create an `mcp.json` and generate capabilities via `agentflow mcp discover` |
 | Share instructions across workflows | Move instruction files to the global `.agentflow/instructions/` directory |
 | Persist decisions | Create a `memory/decisions.md` file and reference it with `{{memory/decisions}}` |
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   subgraph "Start here"
     A[Single node]
   end
@@ -261,7 +259,7 @@ This single-node agent is the foundation for everything else. To grow it:
   end
   A -.-> B
   D -.-> E
-`} />
+```
 
 <Cards>
   <Card title="Build Your First Workflow" href="/docs/guides/first-workflow" description="A 5-node pipeline with an approval gate" />

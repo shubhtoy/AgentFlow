@@ -3,8 +3,6 @@ title: Workflow Engineering Playbook
 description: A framework-agnostic guide to designing effective AI agent workflows — patterns, pitfalls, and principles.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 This guide is not about any specific tool. It is a distilled set of principles for designing AI agent workflows that actually work — regardless of what framework, platform, or orchestration layer you use.
 
@@ -16,13 +14,14 @@ Give this to your agent. Or read it yourself. Either way, it will help you build
 
 A workflow is a directed graph where each node is a task an AI agent performs, and each edge is a transition between tasks. The agent moves through the graph, executing one node at a time, until it reaches a terminal state.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A[Understand] --> B[Plan]
   B --> C[Execute]
   C --> D{Check}
   D -->|pass| E[Done]
   D -->|fail| C
-`} />
+```
 
 That is the simplest useful workflow: understand the problem, plan the approach, execute, check the result, loop if needed.
 
@@ -128,11 +127,12 @@ This is how you avoid the "dump everything" anti-pattern. Each node declares exa
 
 A gate (or review node) is a checkpoint where the agent pauses and asks for human input before continuing. Gates are the single most important pattern for building trustworthy workflows.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A[Generate] --> B{Review Gate}
   B -->|approved| C[Continue]
   B -->|rejected| A
-`} />
+```
 
 Without gates, the agent will happily generate an entire codebase based on a misunderstood requirement. With gates, you catch the misunderstanding after the first step.
 
@@ -155,12 +155,13 @@ A good gate:
 
 Iteration is powerful but dangerous. An implement-check-retry loop without a clear exit condition will run forever.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A[Implement] --> B{Check}
   B -->|tests fail| A
   B -->|tests pass| C[Done]
   B -->|3 failures| D[Ask for help]
-`} />
+```
 
 Every loop needs:
 - A success condition (tests pass, user approves)

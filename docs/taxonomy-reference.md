@@ -10,7 +10,7 @@ AgentFlow uses 6 canonical resource categories. Old directory names (`tools/`, `
 |---|---|---|---|---|
 | **instructions** | `instructions/` | skills + steering | `workflow`, `global` | `workflow` |
 | **capabilities** | `capabilities/` | tools + protocols | `descriptor`, `config` | `descriptor` |
-| **runbooks** | `runbooks/` | interactions + templates | `interaction`, `condition` | `interaction` |
+| **skills** | `skills/` | interactions + templates | `interaction`, `condition` | `interaction` |
 | **memory** | `memory/` | *(unchanged)* | *(none)* | `null` |
 | **hooks** | `hooks/` | *(unchanged)* | *(none)* | `null` |
 | **identity** | `AGENTS.md` | *(unchanged)* | *(singular file)* | N/A |
@@ -28,7 +28,7 @@ AgentFlow uses 6 canonical resource categories. Old directory names (`tools/`, `
   capabilities/                  ← Was: tools/ + protocols/
     read-code.md                   scope: descriptor
     source-agent.md                scope: descriptor
-  runbooks/                      ← Was: interactions/ + templates/
+  skills/                      ← Was: interactions/ + templates/
     checkpoint.md                  scope: interaction
     design-approved.md             scope: condition
   memory/                        ← Unchanged
@@ -45,7 +45,7 @@ AgentFlow uses 6 canonical resource categories. Old directory names (`tools/`, `
 
 ## Scope System
 
-Each resource in `instructions/`, `capabilities/`, or `runbooks/` has a `scope` that distinguishes its sub-type. Scope is set via frontmatter or inferred automatically.
+Each resource in `instructions/`, `capabilities/`, or `skills/` has a `scope` that distinguishes its sub-type. Scope is set via frontmatter or inferred automatically.
 
 ### Explicit Scope
 
@@ -68,8 +68,8 @@ When no explicit `scope` is set, the system infers it:
 | **instructions** | Otherwise | `workflow` |
 | **capabilities** | Frontmatter `type` is `builtin`, `script`, `mcp`, or `package` | `descriptor` |
 | **capabilities** | Otherwise | `config` |
-| **runbooks** | Frontmatter `type` is `condition` | `condition` |
-| **runbooks** | Otherwise | `interaction` |
+| **skills** | Frontmatter `type` is `condition` | `condition` |
+| **skills** | Otherwise | `interaction` |
 
 Categories without scopes (`memory`, `hooks`) always return `null`.
 
@@ -132,7 +132,7 @@ outputs: [test_results, pass_count, fail_count]
 ---
 ```
 
-### runbooks/ (was interactions/ + templates/)
+### skills/ (was interactions/ + templates/)
 
 **Interaction scope** (was "interaction"):
 ```yaml
@@ -169,9 +169,9 @@ References use canonical category names:
 ```
 {{instructions/code-search}}                          → mention (load resource)
 {{capabilities/read-code}}                            → mention
-{{runbooks/checkpoint}}                               → mention
+{{skills/checkpoint}}                               → mention
 {{-> nodes/create-design}}                            → edge (unchanged)
-{{-> nodes/plan-tasks | runbooks/design-approved}}    → conditional edge
+{{-> nodes/plan-tasks | skills/design-approved}}    → conditional edge
 {{<< output.gather-requirements}}                     → data flow (unchanged)
 ```
 
@@ -185,8 +185,8 @@ References use canonical category names:
 | steering | `steering/` | instruction (scope: global) | `instructions/` |
 | tool | `tools/` | capability (scope: descriptor) | `capabilities/` |
 | protocol | `protocols/` | capability (scope: config) | `capabilities/` |
-| interaction | `interactions/` | runbook (scope: interaction) | `runbooks/` |
-| template | `templates/` | runbook (scope: condition) | `runbooks/` |
+| interaction | `interactions/` | skill (scope: interaction) | `skills/` |
+| template | `templates/` | skill (scope: condition) | `skills/` |
 | memory | `memory/` | memory | `memory/` *(unchanged)* |
 | hooks | `hooks/` | hooks | `hooks/` *(unchanged)* |
 | identity | `AGENTS.md` | identity | `AGENTS.md` *(unchanged)* |
@@ -197,7 +197,7 @@ References use canonical category names:
 |---|---|
 | `{{tools/read-code}}` | `{{capabilities/read-code}}` |
 | `{{skills/code-search}}` | `{{instructions/code-search}}` |
-| `{{templates/design-approved}}` | `{{runbooks/design-approved}}` |
-| `{{interactions/review-design}}` | `{{runbooks/review-design}}` |
+| `{{templates/design-approved}}` | `{{skills/design-approved}}` |
+| `{{interactions/review-design}}` | `{{skills/review-design}}` |
 
 This is a clean break. Old directory names are not recognized and files in them will fall into `customFiles`.

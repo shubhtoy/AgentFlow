@@ -1,13 +1,8 @@
 ---
 title: Resources
-description: The five resource categories — instructions, capabilities, runbooks, memory, and hooks.
+description: The five resource categories — instructions, capabilities, skills, memory, and hooks.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 Resources are the reusable building blocks that nodes reference. They live in dedicated directories and are loaded into a node's context only when explicitly referenced via `{{category/name}}`.
 
@@ -21,9 +16,13 @@ Resources are the reusable building blocks that nodes reference. They live in de
       <File name="write-file.md" />
       <File name="run-tests.md" />
     </Folder>
-    <Folder name="runbooks" defaultOpen>
-      <File name="design-approved.md" />
-      <File name="tests-pass.md" />
+    <Folder name="skills" defaultOpen>
+      <Folder name="review-design" defaultOpen>
+        <File name="SKILL.md" />
+        <Folder name="references" />
+        <Folder name="scripts" />
+        <Folder name="assets" />
+      </Folder>
     </Folder>
     <Folder name="memory" defaultOpen>
       <File name="decisions.md" />
@@ -34,16 +33,16 @@ Resources are the reusable building blocks that nodes reference. They live in de
   </Folder>
 </Files>
 
-<Mermaid chart={`
+```mermaid
 graph LR
     I["Instructions"] --> N["Nodes"]
     C["Capabilities"] --> N
-    R["Runbooks"] --> N
+    R["Skills"] --> N
     M["Memory"] --> N
     H["Hooks"] -->|"event triggers"| N
-`} />
+```
 
-## Categories
+## Five Categories
 
 <Accordions>
   <Accordion title="Instructions — guidance and conventions">
@@ -62,7 +61,7 @@ graph LR
     - No `any` types — use `unknown` and narrow
     ```
 
-    Scopes: global (workspace-level) or workflow-scoped (inside a workflow directory).
+    Instructions are scoped by position in the directory tree: place them at the workspace level for global access, or inside a workflow directory for workflow-scoped access.
   </Accordion>
   <Accordion title="Capabilities — tool definitions">
     What the agent can do. Referenced as `{{capabilities/name}}`. Types: `builtin`, `script`, `mcp`, `package`.
@@ -79,22 +78,32 @@ graph LR
     Browser automation CLI for AI agents. Uses Chrome/Chromium via CDP.
     ```
   </Accordion>
-  <Accordion title="Runbooks — conditions and interactions">
-    Decision criteria for routers and human-in-the-loop patterns. Referenced as `{{runbooks/name}}`.
+  <Accordion title="Skills — directory-based reusable components">
+    Skills are directory-based: each skill lives in `skills/name/SKILL.md` with optional `references/`, `scripts/`, and `assets/` subdirectories. Referenced as `{{skills/name}}`.
 
-    ```yaml
-    # runbooks/design-approved.md
-    ---
-    type: condition
-    name: design-approved
-    check: The user explicitly approves the design
-    ---
+    Skills use progressive disclosure: metadata (frontmatter) → body (instructions) → references (supporting files).
 
-    **True when:** The user says the design is approved.
-    **False when:** The user requests changes or raises concerns.
+    ```
+    skills/
+      review-design/
+        SKILL.md            ← skill definition
+        references/         ← supporting documents
+        scripts/            ← automation scripts
+        assets/             ← images, templates, etc.
     ```
 
-    Types: `condition` (for routing decisions) and `interaction` (for human-in-the-loop steps).
+    ```yaml
+    # skills/review-design/SKILL.md
+    ---
+    name: review-design
+    description: Present design for user review and approval
+    ---
+
+    # Review Design
+
+    Present the design document to the user and collect feedback.
+    Ask for explicit approval or specific change requests.
+    ```
   </Accordion>
   <Accordion title="Memory — persistent state">
     Decisions, preferences, and context that persists across workflow runs. Referenced as `{{memory/name}}`. The only resource category the agent can write to during execution.
@@ -132,7 +141,13 @@ graph LR
   </Accordion>
 </Accordions>
 
+<Callout type="info" title="💡 Discover tab">
+  Skills from skills.sh can be installed directly from the Discover tab in the studio.
+</Callout>
+
 ## Scoping
+
+Resources are scoped by their position in the directory tree:
 
 <Tabs items={['Global', 'Workflow-scoped']}>
   <Tab value="Global">
@@ -170,7 +185,7 @@ This node loads 3 resources. All other resources in the workspace are excluded. 
 
 ## Explore Resources in the Studio
 
-The Elements panel below shows all resources in the build-feature workflow, organized by category — capabilities, instructions, runbooks. Click any resource to see which nodes reference it. Switch to the Explorer panel to see the same resources as files in the directory tree.
+The Elements panel below shows all resources in the build-feature workflow, organized by category — capabilities, instructions, skills. Click any resource to see which nodes reference it. Switch to the Explorer panel to see the same resources as files in the directory tree.
 
 <ComponentPreview title="Resources in build-feature" height="lg">
   <DocsPlayground workflow="build-feature" panels={['elements', 'explorer']} />

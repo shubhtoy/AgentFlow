@@ -195,7 +195,7 @@ The parser recognizes exactly four reference patterns. They are applied in this 
 {{capabilities/read-code}}
 {{instructions/requirements-elicitation}}
 {{memory/decisions}}
-{{runbooks/review-design}}
+{{skills/review-design}}
 ```
 
 **What it means:** "Load this resource as context for the current node."
@@ -906,7 +906,7 @@ The full execution model. An orchestrator walks the graph node by node, managing
 **Per-node execution loop:**
 1. Load Layer 0 (identity) + Layer 1 (routing) as the system prompt base
 2. Load Layer 2 (current node's SKILL.md content)
-3. Resolve Layer 3 refs — load instructions, runbooks, memory as additional context
+3. Resolve Layer 3 refs — load instructions, skills, memory as additional context
 4. Wire capabilities — convert `{{capabilities/...}}` refs into callable tool schemas
 5. Inject data flows — load `{{<< output.nodeName}}` from stored outputs
 6. Call the LLM with the assembled context and available tools

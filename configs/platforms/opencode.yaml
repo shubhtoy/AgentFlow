@@ -1,0 +1,42 @@
+id: opencode
+name: OpenCode
+website: https://opencode.ai
+
+paths:
+  root: .opencode
+  agents: .opencode/agents/
+
+mapping:
+  identity:
+    target: .opencode/agents/identity.md
+    transform: copy
+
+  instructions:
+    target: .opencode/agents/{name}.md
+    transform: copy
+
+  skills:
+    target: .opencode/agents/{name}.md
+    transform: flatten-skill
+
+  capabilities:
+    mcp:
+      target: .opencode/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .opencode/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'

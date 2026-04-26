@@ -1,45 +1,39 @@
 ---
 name: design-agentflow-feature
-type: sub-workflow
 description: Delegates to the agent-builder workflow when the feature involves designing AgentFlow workflows
+type: sub-workflow
 workflow: agent-builder
+context:
+  inputs: [output.gather-requirements]
+outputs:
+  - name: design
+    format: markdown
+    description: AgentFlow workflow design with nodes, edges, and resource references
 ---
 
 # Design AgentFlow Feature
 
-This node delegates execution to the **agent-builder** sub-workflow when the feature being built involves designing or scaffolding an AgentFlow workflow, agent workspace, or workflow-based system.
+This node delegates to the **agent-builder** workflow when the feature being built is itself an AgentFlow workflow (nodes, edges, resources, AGENTS.md).
 
-## When to enter
+## When This Node Activates
 
-The design gate determines this feature involves AgentFlow workflow design — for example:
-- Building a new agent workflow or multi-step pipeline
-- Designing node graphs, routing logic, or sub-workflow composition
-- Scaffolding an AgentFlow workspace with resources, capabilities, and instructions
+The review-design gate routes here instead of create-design when the requirements indicate the feature is an AgentFlow workflow — for example:
+- Building a new workflow template
+- Designing an agent pipeline
+- Creating a multi-step automation
 
-If the feature is standard software (API, UI, backend logic), skip this node and proceed directly to plan-tasks.
+## What the Sub-workflow Does
 
-## Context passed in
+The agent-builder workflow specializes in:
+1. Extracting intent from requirements
+2. Selecting appropriate resources (instructions, capabilities, skills)
+3. Designing the node graph with edges and conditions
+4. Generating the `.agentflow/` file structure
 
-The parent workflow provides:
-- The approved requirements document from gather-requirements ({{<< output.gather-requirements}})
-- The approved design from create-design ({{<< output.create-design}})
-- Shared resources: {{instructions/prompt-engineering}}, {{instructions/task-decomposition}}
-- Capabilities: {{capabilities/read-code}}, {{capabilities/write-file}}, {{capabilities/file-search}}
+## Input
 
-## Expected outcome
+Receives {{<< output.gather-requirements}} — the approved requirements document from the gather phase.
 
-A fully scaffolded AgentFlow workspace with:
-- Workflow AGENTS.md with node graph and edges
-- Node SKILL.md files with proper instructions
-- Referenced resources (instructions, capabilities, runbooks)
-- Validated structure (no broken refs, proper frontmatter)
+## Output
 
-Control returns to the parent workflow at plan-tasks for any remaining non-AgentFlow implementation work.
-
-## Workflow definition
-
-{{workflows/agent-builder}}
-
-## Next
-
-→ {{-> nodes/verify-feature}}
+Produces `output.design` — a complete AgentFlow workflow design that the plan-tasks node can decompose into implementation tasks.

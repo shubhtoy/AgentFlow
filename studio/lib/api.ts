@@ -40,7 +40,7 @@ async function request<T = unknown>(url: string, opts?: RequestInit): Promise<T>
 // ── Parser ──
 
 function parseClientSide(files: { path: string; content: string }[]): WorkflowGraph {
-  if (!files.length) return { workflows: {}, instructions: {}, capabilities: {}, runbooks: {}, memory: {}, rootDir: '.' } as any
+  if (!files.length) return { workflows: {}, instructions: {}, capabilities: {}, skills: {}, memory: {}, rootDir: '.' } as any
   const { parseFromFiles } = require('@agentflow/core/parser-browser')
   const fileMap: Record<string, string> = {}
   for (const f of files) fileMap[f.path] = f.content
@@ -62,43 +62,6 @@ export const api = {
     for (const f of files) { const c = f.path.split('/')[0]; cats[c] = (cats[c] || 0) + 1 }
     console.log('[getData]', files.length, 'files:', JSON.stringify(cats))
     const result = parseClientSide(files)
-    console.log('[getData] parsed: runbooks=' + Object.keys(result.runbooks || {}).length,
-      'instructions=' + Object.keys(result.instructions || {}).length,
-      'capabilities=' + Object.keys(result.capabilities || {}).length,
-      'workflows=' + Object.keys(result.workflows || {}).length)
-    console.log('[getData] runbook names:', Object.keys(result.runbooks || {}))
-    console.log('[getData] runbook files:', files.filter(f => f.path.startsWith('runbooks/')).map(f => f.path))
-    // Auto-heal: if condition runbooks are missing, fetch from library and write them
-    const missingRunbooks: string[] = []
-    for (const wf of Object.values(result.workflows || {})) {
-      for (const edge of (wf as any).edges || []) {
-        if (edge.condition) {
-          const [cat, name] = edge.condition.split('/')
-          if (cat === 'runbooks' && !(result as any).runbooks?.[name]) {
-            missingRunbooks.push(name)
-          }
-        }
-      }
-    }
-    if (missingRunbooks.length > 0) {
-      console.warn(`[getData] Auto-healing ${missingRunbooks.length} missing condition runbooks...`)
-      try {
-        const { importResource } = await import('./library-client')
-        for (const name of missingRunbooks) {
-          try {
-            const { files: libFiles } = await importResource('runbook', name)
-            for (const f of libFiles) await w.write(f.path, f.content)
-          } catch {}
-        }
-        // Re-parse with healed files
-        files = await w.readAll()
-        const healed = parseClientSide(files)
-        console.log(`[getData] Healed: runbooks now=${Object.keys(healed.runbooks || {}).length}`)
-        return healed
-      } catch (e) {
-        console.error('[getData] Auto-heal failed:', e)
-      }
-    }
     return result
   },
 
@@ -136,8 +99,8 @@ export const api = {
 
   // Library — static project-level catalog (not workspace data)
   getLibrary: async (): Promise<{ version: string; entries: LibraryEntry[] }> => {
-    try { return await request('/library') }
-    catch { return { version: '0.0.0', entries: [] } }
+    // Library is served as static assets — use library-client.ts for imports
+    return { version: '0.0.0', entries: [] }
   },
 
   // Hooks — workspace JSON files
@@ -192,33 +155,45 @@ export const api = {
     ]
   }),
 
-  // Export — still needs server (fs/path deps in exporters)
-  exportWorkflow: async (options: { workflow: string }): Promise<ExportBundle> =>
-    request('/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(options) }),
-
-  exportStructured: async (options: ExportOptions): Promise<Blob> => {
-    const files = await (await ensureWs()).readAll()
-    const res = await fetch(BASE + '/export', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...options, files })
+  // Export — via /api/export server route
+  exportWorkflow: async (options: { workflow: string }): Promise<ExportBundle> => {
+    const data = await api.getData()
+    const files = Object.fromEntries(
+      (data.allFiles || []).map((f: any) => [f.relativePath, f.rawContent || ''])
+    )
+    const res = await fetch('/api/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files, format: 'agent-spec', workflowId: options.workflow }),
     })
-    if (!res.ok) throw new Error('Export failed')
-    return res.blob()
+    return res.json()
   },
 
-  exportPreview: async (options: ExportOptions): Promise<Record<string, string>> =>
-    request('/export', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...options, preview: true, files: await (await ensureWs()).readAll() })
-    }),
+  exportStructured: async (options: ExportOptions): Promise<Blob> => {
+    const files = await api.exportPreview(options)
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
+    for (const [fp, content] of Object.entries(files)) zip.file(fp, content)
+    return zip.generateAsync({ type: 'blob' })
+  },
+
+  exportPreview: async (options: ExportOptions): Promise<Record<string, string>> => {
+    const data = await api.getData()
+    const files = Object.fromEntries(
+      (data.allFiles || []).map((f: any) => [f.relativePath, f.rawContent || ''])
+    )
+    const format = options.format === 'platform' ? (options.platform || 'agent-spec') : 'agent-spec'
+    const res = await fetch('/api/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files, format, workflowId: options.workflow }),
+    })
+    const result = await res.json()
+    return result.files || {}
+  },
 
   exportDownload: async (options: ExportOptions): Promise<Blob> => {
-    const res = await fetch(BASE + '/export', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...options, files: await (await ensureWs()).readAll() })
-    })
-    if (!res.ok) throw new Error('Export failed')
-    return res.blob()
+    return api.exportStructured(options)
   },
 
   // Token calculator — client-side from parsed data
@@ -253,7 +228,7 @@ export const api = {
     // Full scope
     let total = 0
     const categories: Record<string, any[]> = {}
-    for (const cat of ['instructions', 'capabilities', 'runbooks', 'memory'] as const) {
+    for (const cat of ['instructions', 'capabilities', 'skills', 'memory'] as const) {
       categories[cat] = []
       for (const [key, res] of Object.entries<any>(data[cat] || {})) {
         const t = countTokens(res.rawContent || '')
@@ -280,32 +255,4 @@ export const api = {
 // ── Git API (always server — needs shell) ──
 
 export interface GitRepoStatus { isRepo: boolean; isClean: boolean; branch: string; ahead: number; behind: number; modifiedFiles: string[]; untrackedFiles: string[]; hasRemote: boolean; remoteUrl: string | null }
-export interface ScanResult { repoDir: string; agentflowPaths: string[]; resources: { instructions: ScannedResource[]; capabilities: ScannedResource[]; runbooks: ScannedResource[]; memory: ScannedResource[]; hooks: ScannedResource[] }; workflows: ScannedWorkflow[]; stats: { totalFiles: number; totalWorkflows: number; totalResources: number; scanDurationMs: number }; warnings: { path: string; message: string; severity: 'info' | 'warning' }[] }
-export interface ScannedResource { name: string; path: string; resourceType: string; hasFrontmatter: boolean; frontmatterFields: string[] }
-export interface ScannedWorkflow { name: string; path: string; nodeCount: number; hasDescriptor: boolean; entryPoints: string[] }
-export interface SyncConflict { path: string; localContent: string; remoteContent: string; resolution: 'pending' | 'local_wins' | 'remote_wins' | 'merged' | null }
-export interface SyncResult { success: boolean; direction: 'push' | 'pull' | 'bidirectional'; filesAdded: string[]; filesModified: string[]; filesDeleted: string[]; conflicts: SyncConflict[]; timestamp: string }
 export interface RepoMapping { name: string; url: string; branch: string; localPath: string; repoType: 'public' | 'private' | 'custom'; role: 'primary' | 'agentic' | 'shared'; agentflowPath: string }
-export type SyncDirection = 'bidirectional' | 'push_only' | 'pull_only'
-export interface GitAuthMethod { type: 'ssh' | 'ssh-agent' | 'credential-helper' | 'gh-cli' | 'env-token'; label: string; ready: boolean; scope?: 'global' | 'local' | 'env' }
-export interface GitAuthInfo { methods: GitAuthMethod[]; recommended: 'ssh' | 'https' | 'none'; sshExample: string; httpsExample: string; ghCliInstalled?: boolean }
-export interface AuthSetupResult { success: boolean; interactive?: boolean; command?: string; message: string; user_code?: string; verification_uri?: string; expires_in?: number; interval?: number; status?: 'pending' | 'slow_down' | 'authorized'; scope?: string; token_type?: string }
-
-export const gitApi = {
-  getStatus: (): Promise<GitRepoStatus> => request('/git/status'),
-  initRepo: (params: { url: string; name: string; role: string; branch: string; repoType: string }): Promise<{ success: boolean; scanResult: ScanResult; mapping: RepoMapping }> =>
-    request('/git/init', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
-  sync: (params: { repoName?: string; direction?: SyncDirection; dryRun?: boolean }): Promise<SyncResult> =>
-    request('/git/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
-  scan: (params?: { dir?: string; depth?: number }): Promise<ScanResult> =>
-    request(`/git/scan${params ? `?${new URLSearchParams(Object.entries(params).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)])).toString()}` : ''}`),
-  getConflicts: (): Promise<SyncConflict[]> => request<{ conflicts: SyncConflict[] }>('/git/conflicts').then(r => r.conflicts),
-  resolve: (params: { path: string; strategy: string }): Promise<{ success: boolean }> =>
-    request('/git/resolve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
-  getConfig: (): Promise<{ repos: RepoMapping[] }> => request('/git/config'),
-  updateConfig: (config: Record<string, unknown>): Promise<{ success: boolean }> =>
-    request('/git/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config) }),
-  getAuthInfo: (): Promise<GitAuthInfo> => request('/git/auth-info'),
-  authSetup: (params: { action: string; dir?: string; helper?: string }): Promise<AuthSetupResult> =>
-    request('/git/auth-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
-}

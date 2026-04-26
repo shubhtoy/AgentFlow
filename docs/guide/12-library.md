@@ -1,7 +1,7 @@
 ---
 name: pre-shipped-library
 scope: workflow
-description: "Part 12: The pre-shipped library — all capabilities, instructions, runbooks, hooks, memory, and workflows"
+description: "Part 12: The pre-shipped library — all capabilities, instructions, skills, hooks, memory, and workflows"
 tags:
   - guide
   - library
@@ -47,7 +47,7 @@ AgentFlow ships with a curated library of ready-to-use resources across all cate
 | `refactoring` | workflow | Safe refactoring techniques |
 | `prompt-engineering` | workflow | Effective prompt construction |
 
-## Runbooks (29)
+## Skills (29)
 
 **Conditions (17):**
 `design-approved`, `design-rejected`, `requirements-approved`, `requirements-rejected`, `tasks-approved`, `tasks-rejected`, `tests-pass`, `tests-fail`, `all-tasks-done`, `more-tasks-remain`, `task-complete`, `task-failed`, `implementation-ready`, `retry-with-feedback`, `code-needed`, `debug-needed`, `explore-needed`

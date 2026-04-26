@@ -3,10 +3,8 @@ title: Frontmatter Schema
 description: Every frontmatter field for all 6 resource types.
 ---
 
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-<Tabs items={['Agents', 'Node', 'Capability', 'Instruction', 'Runbook', 'Memory']}>
+<Tabs items={['Agents', 'Node', 'Capability', 'Instruction', 'Skill', 'Memory']}>
 
 <Tab value="Agents">
 
@@ -72,8 +70,8 @@ Fields for `SKILL.md` node definitions.
       required: true,
     },
     type: {
-      type: "'step' | 'router' | 'sub-workflow'",
-      description: "The node type.",
+      type: "'step' | 'sub-workflow'",
+      description: "The node type. Steps with conditional edges are automatically rendered as gateways.",
       required: true,
     },
     entry: {
@@ -120,12 +118,12 @@ The `context` object accepts:
       description: "Maximum token budget for this node's context.",
     },
     inputs: {
-      type: "string[]",
-      description: "Explicit input references to include.",
+      type: "ContextInput[]",
+      description: "Explicit input references with scope control (full, summary, signature).",
     },
     exclude: {
       type: "string[]",
-      description: "References to exclude from context.",
+      description: "Glob patterns to exclude from context.",
     },
   }}
 />
@@ -201,7 +199,7 @@ Fields for capability resource definitions.
 
 <Tab value="Instruction">
 
-Fields for instruction resource definitions.
+Fields for instruction resource definitions. Scope is determined by position in the directory tree (global vs workflow-scoped), and inclusion is by explicit `{{instructions/name}}` reference.
 
 <TypeTable
   type={{
@@ -213,14 +211,6 @@ Fields for instruction resource definitions.
     description: {
       type: "string",
       description: "What this instruction provides.",
-    },
-    scope: {
-      type: "'global' | 'workflow' | 'node'",
-      description: "Where this instruction applies.",
-    },
-    inclusion: {
-      type: "'auto' | 'manual'",
-      description: "Whether the instruction is included automatically or must be referenced.",
     },
     max_tokens: {
       type: "number",
@@ -239,32 +229,24 @@ Fields for instruction resource definitions.
 
 </Tab>
 
-<Tab value="Runbook">
+<Tab value="Skill">
 
-Fields for runbook resource definitions.
+Fields for skill resource definitions. Skills are directory-based: `skills/name/SKILL.md` with optional `references/`, `scripts/`, and `assets/` subdirectories.
 
 <TypeTable
   type={{
     name: {
       type: "string",
-      description: "Runbook name.",
+      description: "Skill name.",
       required: true,
-    },
-    type: {
-      type: "'condition' | 'approval' | 'confirm' | 'escalation' | 'freeform' | 'choice'",
-      description: "The interaction type this runbook defines.",
     },
     description: {
       type: "string",
-      description: "What this runbook handles.",
+      description: "What this skill does.",
     },
-    check: {
-      type: "string",
-      description: "Condition expression to evaluate. Required when type is 'condition'.",
-    },
-    timeout: {
-      type: "number",
-      description: "Timeout in seconds before escalation or failure.",
+    tags: {
+      type: "string[]",
+      description: "Tags for categorization and filtering.",
     },
   }}
 />

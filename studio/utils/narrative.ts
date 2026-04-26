@@ -7,7 +7,7 @@ import type { NarrativeTemplate, ResourceCategory } from '@/lib/types'
 export const DEFAULT_NARRATIVE: Record<ResourceCategory, NarrativeTemplate> = {
   capabilities: { prefix: 'Use',           suffix: 'to' },
   instructions: { prefix: 'Apply',         suffix: 'to' },
-  runbooks:     { prefix: 'When',          suffix: '' },
+  skills:     { prefix: 'When',          suffix: '' },
   memory:       { prefix: 'Recall from',   suffix: '' },
   hooks:        { prefix: '',              suffix: '' },
   customFiles:  { prefix: '',              suffix: '' },

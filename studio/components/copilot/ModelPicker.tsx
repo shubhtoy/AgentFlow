@@ -42,7 +42,7 @@ function ctxLabel(ctx?: number): string {
 }
 
 export function ModelPicker() {
-  const { data, isLoading } = useSWR('/api/copilot/model', fetcher, {
+  const { data, isLoading } = useSWR('/api/copilot', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30_000,
   })
@@ -60,12 +60,12 @@ export function ModelPicker() {
   const select = useCallback(async (id: string) => {
     setOpen(false)
     setShowCustom(false)
-    await fetch('/api/copilot/model', {
+    await fetch('/api/copilot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: id }),
+      body: JSON.stringify({ action: 'model', model: id }),
     })
-    mutate('/api/copilot/model')
+    mutate('/api/copilot')
   }, [])
 
   const filtered = useMemo(() => {

@@ -424,7 +424,7 @@ program
 program
   .command('add')
   .description('Install a resource from the library')
-  .argument('<type>', 'resource type (workflow, instruction, capability, runbook, memory)')
+  .argument('<type>', 'resource type (workflow, instruction, capability, skill, memory)')
   .argument('<name>', 'resource name')
   .action((type, name) => {
     const registryPath = path.resolve('library', 'registry.json');
@@ -505,7 +505,7 @@ program
   .description('Library management commands')
   .argument('<action>', 'action (index, list, search)')
   .argument('[query]', 'search query (for search action)')
-  .option('--type <type>', 'filter by type (workflow, instruction, capability, runbook, memory)')
+  .option('--type <type>', 'filter by type (workflow, instruction, capability, skill, memory)')
   .option('--tags <tags>', 'filter by tags (comma-separated)')
   .action((action, query, opts) => {
     if (action === 'index') {

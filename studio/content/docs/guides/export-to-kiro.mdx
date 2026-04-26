@@ -3,32 +3,32 @@ title: Export to Kiro
 description: Export your AgentFlow workspace to Kiro's native .kiro/ directory format with full support for steering files, hooks, and MCP configuration.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Mermaid } from '@/components/docs/mdx-components'
 
-AgentFlow exports your workspace directly to Kiro format. The exporter transforms your `.agentflow/` directory into the `.kiro/` structure that Kiro expects, mapping identity to `steering/identity.md`, instructions to steering files, hooks to native JSON, and MCP to `settings/mcp.json`.
+AgentFlow exports your workspace directly to Kiro format. The exporter transforms your `.agentflow/` directory into the `.kiro/` structure that Kiro expects, mapping identity to `steering/identity.md`, instructions to steering files, hooks to native JSON, and MCP to `settings/mcp.json`. Export is handled server-side via `/api/export`.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A[".agentflow/AGENTS.md"] -->|identity| B[".kiro/steering/identity.md"]
   C["instructions/"] --> D[".kiro/steering/*.md"]
   E["hooks/"] --> F[".kiro/hooks/*.json"]
   G["mcp.json"] --> H[".kiro/settings/mcp.json"]
-`} />
+```
 
 ## Export Steps
 
 <Steps>
   <Step>
-    ### Run the export command
+    ### Run the export
+
+    Export is handled server-side via the API:
 
     ```bash
-    agentflow export --platform kiro
+    curl -X POST http://localhost:3000/api/export \
+      -H "Content-Type: application/json" \
+      -d '{"platform": "kiro"}'
     ```
 
-    This generates the Kiro output in your project root.
+    Or use the studio's Export dialog to trigger the export visually.
   </Step>
 
   <Step>
@@ -59,7 +59,7 @@ AgentFlow exports your workspace directly to Kiro format. The exporter transform
 
     | Output | Source | Description |
     |---|---|---|
-    | `.kiro/steering/identity.md` | Root `AGENTS.md` | Identity with `inclusion: auto` frontmatter added |
+    | `.kiro/steering/identity.md` | Root `AGENTS.md` | Identity content from workspace root |
     | `.kiro/steering/{name}.md` | Instructions | Each instruction becomes a dedicated steering file |
     | `.kiro/hooks/{name}.json` | Hooks | Converted to Kiro native JSON hook format |
     | `.kiro/settings/mcp.json` | MCP capabilities | MCP server configuration for Kiro |
@@ -70,7 +70,7 @@ AgentFlow exports your workspace directly to Kiro format. The exporter transform
 
 ## Identity Transform
 
-Your root `AGENTS.md` becomes `.kiro/steering/identity.md` with `inclusion: auto` added to the frontmatter.
+Your root `AGENTS.md` becomes `.kiro/steering/identity.md` with frontmatter stripped.
 
 <Tabs items={["AgentFlow Source", "Kiro Output"]}>
   <Tab value="AgentFlow Source">
@@ -91,10 +91,6 @@ Your root `AGENTS.md` becomes `.kiro/steering/identity.md` with `inclusion: auto
   </Tab>
   <Tab value="Kiro Output">
     ```markdown title=".kiro/steering/identity.md"
-    ---
-    inclusion: auto
-    ---
-
     You are a senior engineer who writes clean, tested code.
 
     ## Guidelines
@@ -106,13 +102,13 @@ Your root `AGENTS.md` becomes `.kiro/steering/identity.md` with `inclusion: auto
   </Tab>
 </Tabs>
 
-The `inclusion: auto` frontmatter tells Kiro to always include this steering file in the agent context. The original name and description frontmatter fields are stripped during export.
+The original name and description frontmatter fields are stripped during export. The body content is preserved as-is.
 
 ## What Gets Transformed
 
 The export applies these conversions:
 
-- **Identity** — `AGENTS.md` becomes `.kiro/steering/identity.md` with `inclusion: auto` frontmatter.
+- **Identity** — `AGENTS.md` becomes `.kiro/steering/identity.md` with frontmatter stripped.
 - **Instructions** — All files in `.agentflow/instructions/` become `.kiro/steering/{name}.md` files.
 - **Hooks** — Converted to `.kiro/hooks/{name}.json` using Kiro's native JSON format.
 - **MCP** — Restructured into `.kiro/settings/mcp.json` with the schema Kiro expects.

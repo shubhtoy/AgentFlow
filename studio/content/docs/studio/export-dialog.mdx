@@ -3,12 +3,12 @@ title: Export
 description: Multi-format export with preview and download.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
 
 The export dialog converts your AgentFlow workspace into platform-specific formats. Preview the output, select your target platform, and download the result as a ZIP archive or individual files.
+
+<Callout type="info">
+💡 Export is server-side. The studio sends workspace files to `/api/export` which returns the transformed output. Agent Spec JSON is the primary format.
+</Callout>
 
 ## Opening the Export Dialog
 
@@ -26,15 +26,15 @@ The dialog offers three export modes:
 <Tab value="Raw">
 Export files exactly as they exist in your workspace, with no transformations applied. The output mirrors your `.agentflow/` directory structure. Use this when you want a clean backup or when sharing the workspace with another AgentFlow user.
 
-The raw export includes all files: workflows, nodes, capabilities, instructions, runbooks, memory, hooks, and configuration files.
+The raw export includes all files: workflows, nodes, capabilities, instructions, skills, memory, hooks, and configuration files.
 </Tab>
 <Tab value="Parsed">
-Export with all references resolved. Instruction refs, capability refs, and runbook refs are inlined into the output. Each node's `SKILL.md` becomes a self-contained file with all referenced content embedded.
+Export with all references resolved. Instruction refs, capability refs, and skill refs are inlined into the output. Each node's `SKILL.md` becomes a self-contained file with all referenced content embedded.
 
 Use parsed export when you want to inspect the fully assembled prompt that each node would receive at runtime. This is useful for debugging token usage or sharing node content with someone who does not have the full workspace.
 </Tab>
 <Tab value="Platform">
-Export targeting a specific agent platform with the appropriate structure and configuration. The exporter transforms your AgentFlow workspace into the native format of the selected platform.
+Export targeting a specific agent platform with the appropriate structure and configuration. The export engine reads YAML platform configs from `configs/platforms/` and transforms your workspace into the native format of the selected platform.
 
 Select your target platform from the dropdown (see Platform Targets below).
 </Tab>
@@ -52,9 +52,20 @@ When using Platform export, select your target:
 | **Windsurf** | `.windsurf/` directory | Formatted for Windsurf agent consumption |
 | **VS Code Copilot** | `.github/copilot-instructions.md` | GitHub Copilot instructions format |
 | **OpenClaw** | `.openclaw/` directory | OpenClaw-compatible agent definition |
-| **Agent Spec** | `agent-spec.yaml` | Generic agent specification format |
+| **Agent Spec** | `agent-spec.yaml` | Generic agent specification format (primary) |
 
-Each platform exporter handles the mapping from AgentFlow concepts (workflows, nodes, capabilities, instructions) to the platform's native equivalents. The preview pane shows exactly what will be generated.
+Each platform has a YAML config in `configs/platforms/` that defines how workspace files map to the target format. The preview pane shows exactly what will be generated.
+
+## How Export Works
+
+Export is entirely server-side:
+
+1. The studio collects workspace files and sends them to the `/api/export` API route
+2. The API route delegates to the export engine in `packages/cli/src/export/`
+3. The engine reads the YAML platform config and applies the transform pipeline
+4. The transformed output is returned to the studio for preview and download
+
+No client-side imports of the export engine are needed.
 
 ## Workflow vs Workspace Scope
 
@@ -70,7 +81,7 @@ Exports only the currently active workflow and the resources it references. Shar
 </Tabs>
 
 <Callout type="info">
-When exporting a single workflow, the exporter traces all references and includes only the capabilities, instructions, runbooks, and memory files that the workflow's nodes actually use. Unreferenced resources are excluded.
+When exporting a single workflow, the exporter traces all references and includes only the capabilities, instructions, skills, and memory files that the workflow's nodes actually use. Unreferenced resources are excluded.
 </Callout>
 
 ## File Tree Preview

@@ -1,8 +1,0 @@
-AGENTS.md
-billing/SKILL.md
-general/SKILL.md
-hooks/memory-on-session-end.json
-respond/SKILL.md
-route-gate/SKILL.md
-technical/SKILL.md
-triage/SKILL.md

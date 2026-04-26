@@ -39,7 +39,7 @@ export function CopilotActions() {
       }
 
       // Resource: <category>/<name>.md → select resource
-      const CATEGORIES = ['capabilities', 'instructions', 'runbooks', 'memory', 'hooks']
+      const CATEGORIES = ['capabilities', 'instructions', 'skills', 'memory', 'hooks']
       if (parts.length === 2 && CATEGORIES.includes(parts[0])) {
         const name = parts[1].replace(/\.md$/, '').replace(/\.json$/, '')
         store.select({ type: 'resource', category: parts[0] as any, key: name })
@@ -51,7 +51,7 @@ export function CopilotActions() {
   useFrontendTool({
     name: 'createFile',
     description:
-      'Create a new file in the .agentflow/ workspace. Use this to create AGENTS.md, SKILL.md, capability files, instruction files, runbooks, memory files, etc. The path is relative to the .agentflow/ root.',
+      'Create a new file in the .agentflow/ workspace. Use this to create AGENTS.md, SKILL.md, capability files, instruction files, skills, memory files, etc. The path is relative to the .agentflow/ root.',
     parameters: z.object({
       path: z.string().describe('File path relative to .agentflow/ root'),
       content: z.string().describe('Full file content including YAML frontmatter and markdown body'),
@@ -127,7 +127,7 @@ export function CopilotActions() {
     name: 'addFromLibrary',
     description: 'Add a pre-built resource from the AgentFlow library.',
     parameters: z.object({
-      type: z.string().describe('Resource type (capability, instruction, runbook, memory, hook, workflow)'),
+      type: z.string().describe('Resource type (capability, instruction, skill, memory, hook, workflow)'),
       name: z.string().describe('Resource name from the library'),
     }),
     handler: async ({ type, name }) => {
@@ -208,9 +208,9 @@ export function CopilotActions() {
   // ── UI: Select a resource ─────────────────────────────────────────
   useFrontendTool({
     name: 'selectResource',
-    description: 'Select a resource (capability, instruction, runbook, memory, hook) to show its details.',
+    description: 'Select a resource (capability, instruction, skill, memory, hook) to show its details.',
     parameters: z.object({
-      category: z.string().describe('Resource category: capabilities, instructions, runbooks, memory, hooks'),
+      category: z.string().describe('Resource category: capabilities, instructions, skills, memory, hooks'),
       name: z.string().describe('Resource name (without .md extension)'),
     }),
     handler: async ({ category, name }) => {

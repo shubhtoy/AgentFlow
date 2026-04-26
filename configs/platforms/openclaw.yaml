@@ -1,0 +1,43 @@
+id: openclaw
+name: OpenClaw
+website: https://openclaw.dev
+
+paths:
+  root: .
+  soul: SOUL.md
+  agents: AGENTS.md
+  identity: IDENTITY.md
+
+mapping:
+  identity:
+    target: null
+    transform: split-identity
+    outputs:
+      soul: SOUL.md
+      agents: AGENTS.md
+      identity: IDENTITY.md
+
+  instructions:
+    target: instructions/{name}.md
+    transform: copy
+
+  skills:
+    target: skills/{name}/SKILL.md
+    transform: to-skill-dir
+
+  capabilities:
+    mcp:
+      target: null
+    non-mcp:
+      embed: soul
+
+  memory:
+    target: memory/{name}.md
+    transform: copy
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: null
+  format: null

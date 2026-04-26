@@ -3,11 +3,6 @@ title: MCP
 description: Connect external tools via Model Context Protocol — search, add, discover, use.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 MCP (Model Context Protocol) lets your workflows use external tools — GitHub, databases, browsers, Slack, Linear, and anything else with an MCP server. AgentFlow handles the full lifecycle from discovery to execution.
 
@@ -22,7 +17,7 @@ MCP (Model Context Protocol) lets your workflows use external tools — GitHub, 
     ```
 
     ```
-    github — GitHub API (create issues, PRs, search code)  [npm, stdio]
+    github — GitHub API (create issues, PRs, search code)
     ```
 
     The official registry at `registry.modelcontextprotocol.io` has hundreds of servers. You can also browse it in the studio's MCP panel.
@@ -59,7 +54,7 @@ MCP (Model Context Protocol) lets your workflows use external tools — GitHub, 
     ```
 
     ```
-    ✓ Connected to github (stdio)
+    ✓ Connected to github
     ✓ Found 12 tools
     ✓ Generated 12 capability files in .agentflow/capabilities/
     ```
@@ -103,25 +98,15 @@ MCP (Model Context Protocol) lets your workflows use external tools — GitHub, 
 ## Config Format
 
 <TypeTable type={{
-  command: { description: 'Executable for stdio transport (e.g. "npx", "uvx", "node")', type: 'string' },
+  command: { description: 'Executable for local servers (e.g. "npx", "uvx", "node")', type: 'string' },
   args: { description: 'Arguments passed to the command', type: 'string[]' },
-  url: { description: 'URL for HTTP/SSE transport (mutually exclusive with command)', type: 'string' },
+  url: { description: 'URL for remote servers (mutually exclusive with command)', type: 'string' },
   env: { description: 'Environment variables — ${env:VAR} tokens resolved at connection time only', type: 'Record<string, string>' },
   required: { description: 'If true, workflow fails when server can\'t start. If false, warns and continues.', type: 'boolean', default: 'false' },
   disabled: { description: 'Skip this server entirely', type: 'boolean', default: 'false' },
   discoveredTools: { description: 'Tool names found via discover (auto-populated)', type: 'string[]' },
   autoApprove: { description: 'Tools that don\'t need user confirmation', type: 'string[]' },
 }} />
-
-### Transport auto-detection
-
-The `add` command figures out the transport from the registry entry:
-
-| Source | Transport | Config |
-|--------|-----------|--------|
-| npm package | stdio | `command: "npx"`, `args: ["-y", package]` |
-| PyPI package | stdio | `command: "uvx"`, `args: [package]` |
-| HTTP endpoint | HTTP/SSE | `url: "https://..."` |
 
 ### Example: Remote server (Linear)
 
@@ -136,7 +121,7 @@ The `add` command figures out the transport from the registry entry:
 }
 ```
 
-No `command` or `args` — just a URL. The runtime uses HTTP transport.
+No `command` or `args` — just a URL. The runtime connects to the remote server directly.
 
 ## CLI Reference
 
@@ -160,13 +145,13 @@ The studio provides visual server management — registry browsing, one-click ad
 
 <Accordions>
   <Accordion title="Registry browser">
-    Search the official registry, browse recently updated servers, see transport type and auth requirements. One-click add auto-populates env tokens and prompts for API keys.
+    Search the official registry, browse recently updated servers, and see auth requirements. One-click add auto-populates env tokens and prompts for API keys.
   </Accordion>
   <Accordion title="Server management">
-    Each server card shows: status (connected/disconnected), transport (stdio/HTTP/SSE), discovered tools. Actions: Test (with latency), Discover, Configure (edit env vars), Toggle, Remove.
+    Each server card shows: status (connected/disconnected), discovered tools. Actions: Test (with latency), Discover, Configure (edit env vars), Toggle, Remove.
   </Accordion>
   <Accordion title="Custom servers">
-    Add servers not in the registry — enter a URL for HTTP/SSE or a command for stdio, plus environment variables.
+    Add servers not in the registry — enter a URL for remote servers or a command for local servers, plus environment variables.
   </Accordion>
 </Accordions>
 
@@ -209,21 +194,15 @@ AgentFlow can also **import** MCP configs from other platforms — if you alread
 
 ## MCP Architecture
 
-The runtime connects workflows to external tools through a layered architecture:
+The runtime connects workflows to external tools through capability references:
 
 ```mermaid
 flowchart LR
     A[Workflow Node] --> B[Capability Reference]
     B --> C[McpToolManager]
-    C --> D{Transport}
-    D -->|Local process| E[StdioClientTransport]
-    D -->|Remote server| F[HTTPTransport / SSE]
-    E --> G[MCP Server Process]
-    F --> H[MCP Server Endpoint]
-    G --> I[tools/list]
-    G --> J[tools/call]
-    H --> I
-    H --> J
+    C --> D[MCP Server]
+    D --> E[tools/list]
+    D --> F[tools/call]
 ```
 
 ### How capability files bridge the gap
@@ -231,83 +210,11 @@ flowchart LR
 Capability files (`.agentflow/capabilities/*.md`) act as the contract between your workflow and the MCP server. When a node references a capability via the standard syntax, the runtime:
 
 1. Reads the capability frontmatter to find the `mcp` field (server name)
-2. Looks up the server in `mcp.json` to determine transport and connection details
+2. Looks up the server in `mcp.json` to determine connection details
 3. Calls `McpToolManager.invokeTool()` with the tool name and parameters
-4. The manager routes through the appropriate transport to the MCP server
-5. The server executes `tools/call` and returns the result
+4. The server executes `tools/call` and returns the result
 
-This indirection means workflow authors never deal with transport details — they reference capabilities by name, and the runtime handles connection management, retries, and serialization.
-
-## Supported Transports
-
-AgentFlow supports three transport mechanisms for communicating with MCP servers. The choice depends on where the server runs and how it's deployed.
-
-### stdio (Standard I/O)
-
-The runtime spawns the MCP server as a child process and communicates over stdin/stdout using JSON-RPC.
-
-| Aspect | Detail |
-|--------|--------|
-| Config | `command` + `args` in mcp.json |
-| Lifecycle | Process starts on first tool call, stays alive for the session |
-| Latency | Lowest — no network overhead |
-| Use when | Server is an npm/PyPI package, runs locally, needs filesystem access |
-
-```json
-{
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-github"],
-  "env": { "GITHUB_TOKEN": "${env:GITHUB_TOKEN}" }
-}
-```
-
-### HTTP with Server-Sent Events (SSE)
-
-The runtime connects to a remote HTTP endpoint. Requests go via POST, and the server can push streaming responses via SSE.
-
-| Aspect | Detail |
-|--------|--------|
-| Config | `url` in mcp.json |
-| Lifecycle | Persistent HTTP connection, reconnects on failure |
-| Latency | Higher — network round-trip per call |
-| Use when | Server is hosted remotely, shared across teams, or managed by a third party |
-
-```json
-{
-  "url": "https://mcp.linear.app/mcp"
-}
-```
-
-### HTTP (Stateless)
-
-A simpler HTTP mode where each tool call is an independent POST request with no persistent connection or streaming.
-
-| Aspect | Detail |
-|--------|--------|
-| Config | `url` in mcp.json with `"transport": "http"` |
-| Lifecycle | Stateless — each call is independent |
-| Latency | Moderate — no connection reuse overhead but no streaming |
-| Use when | Server is behind a load balancer, serverless function, or API gateway |
-
-```json
-{
-  "url": "https://api.example.com/mcp",
-  "transport": "http"
-}
-```
-
-### Choosing a transport
-
-```mermaid
-flowchart TD
-    A{Where does the server run?} --> B{Local machine?}
-    B -->|Yes| C[Use stdio]
-    B -->|No| D{Need streaming responses?}
-    D -->|Yes| E[Use HTTP + SSE]
-    D -->|No| F{Serverless or load-balanced?}
-    F -->|Yes| G[Use stateless HTTP]
-    F -->|No| E
-```
+This indirection means workflow authors never deal with connection details — they reference capabilities by name, and the runtime handles everything.
 
 <Cards>
   <Card title="Writing Resources" href="/docs/authoring/writing-resources" description="Capability types including MCP" />

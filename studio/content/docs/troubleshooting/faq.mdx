@@ -3,8 +3,6 @@ title: FAQ
 description: Frequently asked questions.
 ---
 
-import { Accordion, Accordions } from "fumadocs-ui/components/accordion"
-import { Callout } from "fumadocs-ui/components/callout"
 
 <Accordions>
 <Accordion title="Can I use AgentFlow without the studio?">
@@ -19,7 +17,12 @@ Yes. The hosted version uses OPFS (Origin Private File System) to store your wor
 </Accordion>
 <Accordion title="How do I add a custom resource category?">
 
-You cannot. AgentFlow has five fixed resource categories: instructions, capabilities, runbooks, memory, and hooks. These are not configurable.
+You cannot. AgentFlow has five fixed resource categories: instructions, capabilities, skills, memory, and hooks. These are not configurable.
+
+</Accordion>
+<Accordion title="What node types are supported?">
+
+AgentFlow has two node types: **Step** and **Sub-workflow**. Router behavior is inferred from the graph structure — there is no explicit router node type.
 
 </Accordion>
 <Accordion title="Can workflows have cycles?">
@@ -37,10 +40,12 @@ The copilot feature supports Anthropic, OpenAI, and Google. Configure your prefe
 Run the export command once for each target platform:
 
 ```bash
-agentflow export --target langgraph
-agentflow export --target claude
-agentflow export --target github-actions
+agentflow export --platform claude-code
+agentflow export --platform cursor
+agentflow export --platform kiro
 ```
+
+Platform configs are YAML files in `configs/platforms/`. Export is server-side — the studio sends workspace files to `/api/export` which returns the transformed output.
 
 </Accordion>
 <Accordion title="Can I use AgentFlow with an existing project?">
@@ -85,23 +90,23 @@ npm install
 <Accordions>
 <Accordion title="How does export actually work?">
 
-Export follows a four-stage pipeline:
+Export is server-side and follows a pipeline:
 
-1. **Parse** - The workspace is parsed into a complete AST representing all workflows, nodes, edges, and resource references
-2. **Scope** - The exporter resolves all references and builds a self-contained context for each node, inlining referenced instructions and capabilities
-3. **Transform** - The platform adapter applies the target platform's JSON configuration to map AgentFlow node types to platform-specific constructs
-4. **Write** - The transformed output is serialized to disk in the target format (Python files for LangGraph, YAML for GitHub Actions, etc.)
+1. **Parse** — The workspace is parsed into a complete AST representing all workflows, nodes, edges, and resource references
+2. **Scope** — The exporter resolves all references and builds a self-contained context for each node, inlining referenced instructions and capabilities
+3. **Transform** — The export engine in `packages/cli/src/export/` reads the target platform's YAML config from `configs/platforms/` and applies the transform pipeline
+4. **Write** — The transformed output is serialized and returned (via `/api/export` in the studio, or written to disk via CLI)
 
 You can inspect intermediate stages by running with the `--verbose` flag:
 
 ```bash
-agentflow export --target langgraph --verbose
+agentflow export --platform claude-code --verbose
 ```
 
 </Accordion>
 <Accordion title="Can I use AgentFlow with TypeScript, Python, or other languages?">
 
-Yes. AgentFlow is language-agnostic. The `.agentflow/` directory defines workflow structure and agent behavior in markdown. The exported output adapts to the target platform's language. For example, exporting to LangGraph produces Python, while exporting to GitHub Actions produces YAML.
+Yes. AgentFlow is language-agnostic. The `.agentflow/` directory defines workflow structure and agent behavior in markdown. The exported output adapts to the target platform's conventions.
 
 Your application code can be written in any language. AgentFlow does not impose constraints on your runtime or dependencies.
 
@@ -115,10 +120,10 @@ Each node receives its own copy of the resource content in its context window. R
 
 Start by inspecting what each node actually sees in its context:
 
-1. Run `agentflow export --target langgraph --verbose` to see the resolved context per node
-2. Check which instructions, capabilities, and runbooks are attached to the problematic node
+1. Run `agentflow export --platform claude-code --verbose` to see the resolved context per node
+2. Check which instructions, capabilities, and skills are attached to the problematic node
 3. Verify that data flow inputs from upstream nodes contain the expected fields
-4. Look for context budget warnings - if a node exceeds its token limit, content may be truncated
+4. Look for context budget warnings — if a node exceeds its token limit, content may be truncated
 
 The studio also provides a "Context Inspector" panel that shows the fully resolved context for any selected node.
 
@@ -134,8 +139,8 @@ Define a sub-workflow node by setting `type: sub-workflow` and `workflow: workfl
 
 Two approaches:
 
-1. **Git** - Commit the `.agentflow/` directory to your repository. Team members get the workflows when they pull. This is the recommended approach.
-2. **Export as ZIP** - Run `agentflow pack` to create a portable ZIP archive of your workspace. Share the ZIP file and recipients can unpack it into their own project.
+1. **Git** — Commit the `.agentflow/` directory to your repository. Team members get the workflows when they pull. This is the recommended approach.
+2. **Export as ZIP** — Run `agentflow pack` to create a portable ZIP archive of your workspace. Share the ZIP file and recipients can unpack it into their own project.
 
 The library system also supports publishing workflows for broader reuse across teams.
 
@@ -144,9 +149,9 @@ The library system also supports publishing workflows for broader reuse across t
 
 There is no hard limit on node count. However, practical limits exist:
 
-- **Token budgets** - Each node consumes context tokens. Large workflows with many interconnected nodes may exceed LLM context windows at runtime.
-- **Validation performance** - Cycle detection and reference resolution scale with graph size. Workflows with hundreds of nodes may take longer to validate.
-- **Visual clarity** - The studio canvas handles large graphs but readability degrades beyond 30-40 nodes. Consider splitting into sub-workflows for complex processes.
+- **Token budgets** — Each node consumes context tokens. Large workflows with many interconnected nodes may exceed LLM context windows at runtime.
+- **Validation performance** — Cycle detection and reference resolution scale with graph size. Workflows with hundreds of nodes may take longer to validate.
+- **Visual clarity** — The studio canvas handles large graphs but readability degrades beyond 30-40 nodes. Consider splitting into sub-workflows for complex processes.
 
 </Accordion>
 <Accordion title="How do I migrate from another tool?">
@@ -154,13 +159,10 @@ There is no hard limit on node count. However, practical limits exist:
 AgentFlow provides import adapters for common platforms:
 
 ```bash
-agentflow import --source langgraph --path ./my_graph.py
 agentflow import --source crewai --path ./crew.py
 ```
 
 The import pipeline reads the source format, maps constructs to AgentFlow equivalents, and generates the corresponding `.agentflow/` directory structure. Review the generated files after import since some platform-specific features may not have direct equivalents.
-
-See the [platform import guide](/docs/guides/importing) for detailed instructions per platform.
 
 </Accordion>
 </Accordions>

@@ -24,8 +24,7 @@ import type {
   NotificationAction,
 } from '@/lib/types'
 import { api } from '@/lib/api'
-import { gitApi } from '@/lib/api'
-import type { ScanResult, SyncConflict, RepoMapping, SyncDirection } from '@/lib/api'
+import type { RepoMapping } from '@/lib/api'
 import { loadPanelStates, savePanelStates, buildDefaultStates, type PanelState, type DockPosition } from '@/lib/panelRegistry'
 import { toast } from 'sonner'
 
@@ -33,7 +32,7 @@ import { toast } from 'sonner'
 export type ViewFilter = {
   instructions: boolean
   capabilities: boolean
-  runbooks: boolean
+  skills: boolean
   memory: boolean
   hooks: boolean
   customFiles: boolean
@@ -103,13 +102,9 @@ export interface UIState {
   rightPanelCollapsed: boolean
 }
 // ── Git state — excluded from undo ───────────────────────────────────────
-export type GitSyncStatus = 'idle' | 'syncing' | 'error' | 'conflicts'
 
 export interface GitState {
   repos: RepoMapping[]
-  syncStatus: GitSyncStatus
-  lastScanResult: ScanResult | null
-  pendingConflicts: SyncConflict[]
 }
 
 // ── Actions ─────────────────────────────────────────────────────────────
@@ -220,11 +215,7 @@ export interface Actions {
   closeFocus: () => void
 
   // Git
-  fetchGitStatus: () => Promise<void>
-  triggerSync: (params?: { repoName?: string; direction?: SyncDirection; dryRun?: boolean }) => Promise<void>
-  triggerScan: (params?: { dir?: string; depth?: number }) => Promise<void>
   connectRepo: (params: { url: string; name: string; role: string; branch: string; repoType: string }) => Promise<void>
-  resolveConflict: (path: string, strategy: string) => Promise<void>
 }
 
 // ── Full store type ─────────────────────────────────────────────────────
@@ -234,7 +225,7 @@ export type AppStore = DomainState & UIState & GitState & Actions
 const defaultFilter: ViewFilter = {
   instructions: true,
   capabilities: true,
-  runbooks: true,
+  skills: true,
   memory: false,
   hooks: false,
   customFiles: false,
@@ -320,9 +311,6 @@ export const useAppStore = create<AppStore>()(
 
         // ── Git state (excluded from undo) ──────────────────────────────
         repos: [],
-        syncStatus: 'idle' as GitSyncStatus,
-        lastScanResult: null,
-        pendingConflicts: [],
 
         // ── Panel registry ──────────────────────────────────────────────
         panels: loadPanelStates(),
@@ -891,52 +879,6 @@ export const useAppStore = create<AppStore>()(
 
         // ── Git actions ─────────────────────────────────────────────────
 
-        fetchGitStatus: async () => {
-          try {
-            await gitApi.getStatus()
-            const configResult = await gitApi.getConfig()
-            const conflicts = await gitApi.getConflicts()
-            set({
-              repos: configResult.repos,
-              pendingConflicts: conflicts,
-              syncStatus: conflicts.length > 0 ? 'conflicts' : 'idle',
-            })
-          } catch {
-            set({ syncStatus: 'error' })
-          }
-        },
-
-        triggerSync: async (params) => {
-          set({ syncStatus: 'syncing' })
-          try {
-            const result = await gitApi.sync(params ?? {})
-            set({
-              syncStatus: result.conflicts.length > 0 ? 'conflicts' : 'idle',
-              pendingConflicts: result.conflicts,
-            })
-            get().showNotification(
-              `Sync complete: ${result.filesAdded.length} added, ${result.filesModified.length} modified`,
-              'success',
-            )
-          } catch {
-            set({ syncStatus: 'error' })
-            get().showNotification('Sync failed', 'error')
-          }
-        },
-
-        triggerScan: async (params) => {
-          try {
-            const result = await gitApi.scan(params)
-            set({ lastScanResult: result })
-            get().showNotification(
-              `Scan found ${result.stats.totalResources} resources, ${result.stats.totalWorkflows} workflows`,
-              'success',
-            )
-          } catch {
-            get().showNotification('Scan failed', 'error')
-          }
-        },
-
         connectRepo: async (params) => {
           try {
             const { cloneAndList } = await import('@/lib/git-client')
@@ -950,7 +892,7 @@ export const useAppStore = create<AppStore>()(
               try { await ws.write(f.path, f.content) } catch {}
             }
             set(s => ({
-              repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType as 'public' | 'private' | 'custom', role: params.role, agentflowPath: '.agentflow' }],
+              repos: [...s.repos, { name: params.name, url: params.url, branch: params.branch, localPath: '/', repoType: params.repoType as 'public' | 'private' | 'custom', role: params.role as 'primary' | 'agentic' | 'shared', agentflowPath: '.agentflow' }],
             }))
             get().showNotification(`Cloned "${params.name}" — ${files.length} files`, 'success')
             await get().reload()
@@ -959,18 +901,6 @@ export const useAppStore = create<AppStore>()(
           }
         },
 
-        resolveConflict: async (path, strategy) => {
-          try {
-            await gitApi.resolve({ path, strategy })
-            set(s => ({
-              pendingConflicts: s.pendingConflicts.filter(c => c.path !== path),
-              syncStatus: s.pendingConflicts.length <= 1 ? 'idle' : 'conflicts',
-            }))
-            get().showNotification(`Resolved conflict: ${path}`, 'success')
-          } catch {
-            get().showNotification(`Failed to resolve conflict: ${path}`, 'error')
-          }
-        },
       }
     },
     {

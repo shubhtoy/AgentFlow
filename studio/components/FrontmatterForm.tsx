@@ -53,7 +53,7 @@ const { getFormSchema } = require('@agentflow/core/schemas/frontmatter-schemas')
 
 function buildFormSchemas(): Record<string, FrontmatterFieldDef[]> {
   const schemas: Record<string, FrontmatterFieldDef[]> = {}
-  for (const type of ['agents', 'node', 'capability', 'instruction', 'runbook', 'memory']) {
+  for (const type of ['agents', 'node', 'capability', 'instruction', 'skill', 'memory']) {
     schemas[type] = getFormSchema(type) as FrontmatterFieldDef[]
   }
   schemas.step = schemas.node
@@ -62,7 +62,7 @@ function buildFormSchemas(): Record<string, FrontmatterFieldDef[]> {
   schemas.untyped = [
     { key: 'name', label: 'Name', type: 'text', section: 'Identity' },
     { key: 'description', label: 'Description', type: 'textarea', section: 'Identity' },
-    { key: 'type', label: 'Type', type: 'select', options: ['instruction', 'capability', 'runbook', 'memory', 'none'], section: 'Identity' },
+    { key: 'type', label: 'Type', type: 'select', options: ['instruction', 'capability', 'skill', 'memory', 'none'], section: 'Identity' },
   ]
   return schemas
 }

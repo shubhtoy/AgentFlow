@@ -23,10 +23,9 @@ A workflow is a directed graph of **nodes** connected by **edges**. It defines t
 
 ### Node
 
-A node is a single stage in a workflow. It has a `SKILL.md` file that tells the agent what to do at that stage. There are three types:
+A node is a single stage in a workflow. It has a `SKILL.md` file that tells the agent what to do at that stage. There are two types:
 
-- **Step** — Does actual work. Has tools (capabilities) and instructions. This is where the agent reads code, writes files, runs tests, etc.
-- **Router** — Makes a decision. Has no tools or instructions — just conditions that determine which node to go to next.
+- **Step** — Does actual work. Has tools (capabilities) and instructions. This is where the agent reads code, writes files, runs tests, etc. A step with conditional edges automatically becomes a gateway (decision point) in the graph.
 - **Sub-workflow** — Delegates to another workflow entirely. The agent enters the sub-workflow, completes it, then returns.
 
 ### Resource
@@ -35,7 +34,7 @@ A resource is a reusable piece of context that nodes can reference. Resources li
 
 - **Capability** — A tool the agent can use (read files, run tests, search the web)
 - **Instruction** — A reusable how-to guide (how to write requirements, how to decompose tasks)
-- **Runbook** — A routing condition or human interaction template (approval gates, checkpoints)
+- **Skill** — A directory-based reusable component following the Agent Skills spec (SKILL.md plus optional references/, scripts/, assets/)
 - **Memory** — Persistent state that survives across sessions (user preferences, past decisions)
 - **Hook** — An event-driven automation rule (run linter on save, run tests on change)
 
@@ -45,7 +44,7 @@ A reference (`{{category/name}}`) is how nodes load resources. When the agent re
 
 ### Edge
 
-An edge (`{{-> nodes/target}}`) connects two nodes. It tells the agent where to go next. Conditional edges (`{{-> nodes/target | runbooks/condition}}`) only fire when a condition is met.
+An edge (`{{-> nodes/target}}`) connects two nodes. It tells the agent where to go next. Conditional edges (`{{-> nodes/target | condition text}}`) only fire when a condition is met.
 
 ---
 
@@ -65,9 +64,9 @@ An edge (`{{-> nodes/target}}`) connects two nodes. It tells the agent where to 
     requirements-elicitation.md
     task-decomposition.md
 
-  runbooks/                    # Routing conditions + human touchpoints
-    design-approved.md
-    review-design.md
+  skills/                    # Reusable skill components (directory-based)
+    design-approved/
+      SKILL.md
 
   memory/                      # Persistent state
     user.md
@@ -119,11 +118,11 @@ Tells the agent: "when you're done here, go to review-gate next."
 ### Conditional edge — go IF a condition is met
 
 ```markdown
-{{-> nodes/plan-tasks | runbooks/design-approved}}
-{{-> nodes/create-design | runbooks/design-rejected}}
+{{-> nodes/plan-tasks | The user explicitly approved the design}}
+{{-> nodes/create-design | The user rejected the design or requested changes}}
 ```
 
-The agent evaluates the runbook's `check` field to decide which edge to follow.
+The condition after `|` is inline text or an instruction reference. The agent evaluates it to decide which edge to follow.
 
 ### Data flow — read a previous node's output
 
@@ -257,24 +256,23 @@ Present to user, then proceed to review.
 {{<< output.gather-requirements}}
 ```
 
-### Router Node SKILL.md
+### Step Node with Conditional Edges (Gateway)
 
-A router makes a decision. No tools, no instructions — just conditions.
+A step with conditional edges automatically becomes a gateway — no separate router type needed.
 
 ```yaml
 ---
 name: review-design-gate
-type: router
+type: step
 description: User approves or rejects the design
 ---
 # Review Design Gate
 
-Present the design from {{<< output.create-design}} to the user
-via {{runbooks/review-design}}.
+Present the design from {{<< output.create-design}} to the user.
 
 ## Routing
-- If approved -> {{-> nodes/plan-tasks | runbooks/design-approved}}
-- If rejected -> {{-> nodes/create-design | runbooks/design-rejected}}
+- If approved -> {{-> nodes/plan-tasks | The user explicitly approved the design}}
+- If rejected -> {{-> nodes/create-design | The user rejected the design or requested changes}}
 ```
 
 ### Sub-workflow Node SKILL.md
@@ -369,12 +367,11 @@ Executes the project's test suite and returns structured results.
 
 ### Instruction — Workflow scope
 
-Loaded only by nodes that reference it.
+Loaded only by nodes that reference it. Scope is determined by the instruction's position in the directory structure.
 
 ```yaml
 ---
 name: requirements-elicitation
-scope: workflow
 description: How to transform requests into testable requirements
 ---
 # Requirements Elicitation
@@ -390,13 +387,11 @@ description: How to transform requests into testable requirements
 
 ### Instruction — Global scope
 
-Auto-loaded every session, regardless of which node is active.
+Instructions placed in the workspace-level `instructions/` directory are available to all workflows. Scope is positional — no `scope` or `inclusion` fields needed.
 
 ```yaml
 ---
 name: coding-standards
-scope: global
-inclusion: auto
 description: Project-wide coding conventions
 ---
 # Coding Standards
@@ -407,45 +402,34 @@ description: Project-wide coding conventions
 - Maximum file length: 300 lines
 ```
 
-### Runbook — Condition
+### Skill — Directory-based component
 
-Used in conditional edges. The `check` field must be unambiguous.
+Skills follow the Agent Skills spec — a directory with `SKILL.md` plus optional `references/`, `scripts/`, and `assets/`. Install community skills from the Discover tab.
+
+```
+skills/
+  design-approved/
+    SKILL.md
+    references/
+      approval-criteria.md
+```
 
 ```yaml
+# skills/design-approved/SKILL.md
 ---
 name: design-approved
-type: condition
-check: The user explicitly approved the design with no outstanding concerns
+description: Criteria for approving a technical design
 ---
 # Design Approved
 
 The user has reviewed the technical design and confirmed it meets their
 requirements. No changes requested.
-```
 
-### Runbook — Interaction
-
-A human touchpoint where the agent pauses for input.
-
-```yaml
----
-name: review-design
-type: approval
-timeout: 300
-description: Present design for user review
----
-# Review Design
-
-## What to Present
-- Architecture overview
-- Data models and types
-- API contracts
-- Testing strategy
-
-## User Options
-- **Approve** — proceed to implementation planning
-- **Reject** — provide feedback, return to design phase
-- **Edit** — make specific changes to the design
+## Criteria
+- Architecture overview is complete
+- Data models are defined
+- API contracts are specified
+- No outstanding concerns raised
 ```
 
 ### Memory
@@ -571,7 +555,6 @@ review-gate --agentflow--> design-agentflow (sub-wf) -> verify
 | Broken ref | Error | `{{ref}}` doesn't resolve to any file |
 | Missing entry node | Error | No `entry: true` node in workflow |
 | Infinite sub-workflow loop | Error | Workflow A -> sub-wf B -> sub-wf A |
-| Router with tools | Error | Router nodes must have zero capabilities |
 | Orphaned sub-workflow | Warning | `type: sub-workflow` but `workflow:` is empty |
 | Missing sub-workflow target | Warning | `workflow: X` but X doesn't exist |
 | Unresolved workflow ref | Warning | `{{workflows/X}}` doesn't match any workflow |

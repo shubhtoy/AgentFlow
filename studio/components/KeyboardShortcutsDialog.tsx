@@ -69,7 +69,7 @@ interface ConceptEntry {
 const CONCEPTS: ConceptEntry[] = [
   { key: 'instructions', label: 'Instructions', tooltip: 'Reusable agent instructions — project rules and workflow skills', ecosystemHint: 'Cursor Rules · Kiro Steering · SKILL.md · CLAUDE.md conventions', directory: 'instructions/' },
   { key: 'capabilities', label: 'Capabilities', tooltip: 'Tools the agent can use — MCP servers, built-ins, scripts', ecosystemHint: 'MCP tools · shell commands · built-in IDE actions', directory: 'capabilities/' },
-  { key: 'runbooks', label: 'Runbooks', tooltip: 'Human checkpoints and routing conditions', ecosystemHint: 'Approval gates · branch conditions · pause points', directory: 'runbooks/' },
+  { key: 'skills', label: 'Skills', tooltip: 'Human checkpoints and routing conditions', ecosystemHint: 'Approval gates · branch conditions · pause points', directory: 'skills/' },
   { key: 'memory', label: 'Memory', tooltip: 'Persistent context the agent remembers across sessions', ecosystemHint: 'Facts · decisions · lessons — any agent can read these', directory: 'memory/' },
   { key: 'hooks', label: 'Hooks', tooltip: 'Event-driven automation — runs when files change or tools execute. Click a hook to open the Protocol Panel editor.', ecosystemHint: 'Kiro Hooks · Claude Code Hooks · event triggers · JSON config', directory: 'hooks/' },
   { key: 'workflows', label: 'Workflows', tooltip: 'Agent workflows composed from skills wired together', ecosystemHint: 'Like Kiro Specs · composed Agent Skills', directory: '<workflow>/' },

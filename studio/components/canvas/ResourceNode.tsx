@@ -23,7 +23,7 @@ export interface ResourceNodeData {
 const categoryIcons: Record<string, typeof BookOpen> = {
   instructions: BookOpen,
   capabilities: Wrench,
-  runbooks: PlayCircle,
+  skills: PlayCircle,
   memory: Database,
   hooks: Webhook,
   customFiles: FileText,
@@ -33,6 +33,8 @@ function ResourceNodeComponent({ data, selected }: NodeProps & { data: ResourceN
   const Icon = categoryIcons[data.category] || FileText
   const [hovered, setHovered] = useState(false)
   const isCompact = data.compact !== false
+
+  const isCondition = data.label === 'Condition'
 
   if (isCompact) {
     return (
@@ -89,34 +91,35 @@ function ResourceNodeComponent({ data, selected }: NodeProps & { data: ResourceN
       )}
 
       <div className={cn(
-        'flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm w-[200px] overflow-hidden transition-all duration-200',
+        'flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm w-[260px] overflow-hidden transition-all duration-200',
+        isCondition && 'border-dashed border-amber-500/40 bg-amber-500/[0.03]',
         selected && 'ring-2 ring-primary border-primary',
         hovered && !selected && 'shadow-md border-muted-foreground/30',
       )}>
-        <div className="h-1 w-full" style={{ backgroundColor: data.color }} />
+        <div className={cn('h-1 w-full', isCondition && 'h-1.5')} style={{ backgroundColor: data.color }} />
 
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
-          <div className="size-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${data.color}18` }}>
-            <Icon size={13} style={{ color: data.color }} />
+        <div className="flex items-center gap-2 px-3.5 pt-2.5 pb-1.5">
+          <div className="size-7 rounded-md flex items-center justify-center shrink-0"
+            style={{ backgroundColor: `color-mix(in srgb, ${data.color} 12%, transparent)` }}>
+            <Icon size={14} style={{ color: data.color }} />
           </div>
-          <span className="truncate text-sm font-medium flex-1">{data.name}</span>
+          <span className="truncate text-[13px] font-medium flex-1">{data.name}</span>
         </div>
 
-        <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap">
-          <Badge variant="secondary" className="text-[9px] px-1.5 h-4">{data.label}</Badge>
-          {data.subType && (
-            <Badge variant="outline" className="text-[9px] px-1.5 h-4" style={{ borderColor: `${data.color}40`, color: data.color }}>
+        <div className="flex items-center gap-1 px-3.5 pb-1.5 flex-wrap">
+          <Badge variant="secondary" className="text-[10px] px-1.5 h-[18px]">{data.label}</Badge>
+          {data.subType && data.subType.toLowerCase() !== data.label.toLowerCase() && (
+            <Badge variant="outline" className="text-[10px] px-1.5 h-[18px]" style={{ borderColor: `color-mix(in srgb, ${data.color} 25%, transparent)`, color: data.color }}>
               {data.subType}
             </Badge>
           )}
           {data.inclusion && (
-            <Badge variant="outline" className="text-[9px] px-1.5 h-4">{data.inclusion}</Badge>
+            <Badge variant="outline" className="text-[10px] px-1.5 h-[18px]">{data.inclusion}</Badge>
           )}
         </div>
 
         {data.description && (
-          <p className="px-3 pb-2 text-[10px] text-muted-foreground leading-snug line-clamp-2">{data.description}</p>
+          <p className="px-3.5 pb-2 text-[11px] text-muted-foreground leading-relaxed line-clamp-3 break-words">{data.description}</p>
         )}
       </div>
 

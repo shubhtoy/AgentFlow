@@ -3,9 +3,6 @@ title: Explorer
 description: File tree of your .agentflow/ workspace.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
 
 The explorer panel shows the full directory tree of your `.agentflow/` workspace. Create, rename, delete files and folders directly from the tree. Drag-and-drop items to reorganize your workspace structure.
 
@@ -42,7 +39,7 @@ The explorer is a direct reflection of your `.agentflow/` directory. Every file 
     <Folder name="instructions">
       <File name="coding-standards.md" />
     </Folder>
-    <Folder name="runbooks">
+    <Folder name="skills">
       <File name="error-handling.md" />
     </Folder>
     <Folder name="memory" />
@@ -65,10 +62,10 @@ Each file and folder displays an icon indicating its type:
 | Skill badge | `SKILL.md` -- node definition |
 | Wrench | Capability file |
 | Document | Instruction file |
-| Flowchart | Runbook file |
+| Flowchart | Skill file |
 | Database | Memory file |
 | Lightning bolt | Hook file |
-| Folder (highlighted) | Reserved directories (`capabilities/`, `instructions/`, `runbooks/`, `memory/`) |
+| Folder (highlighted) | Reserved directories (`capabilities/`, `instructions/`, `skills/`, `memory/`) |
 
 Primary files like `AGENTS.md` and `SKILL.md` are visually highlighted so you can quickly identify the entry point of each workflow or node directory.
 
@@ -88,7 +85,7 @@ Press `Cmd+N` while the explorer is focused to create a new file in the currentl
 <Step>
 ### From the command palette
 
-Press `Cmd+K` and type "Create Capability", "Create Instruction", or "Create Runbook" to scaffold a new resource file with the correct frontmatter template.
+Press `Cmd+K` and type "Create Capability", "Create Instruction", or "Create Skill" to scaffold a new resource file with the correct frontmatter template.
 </Step>
 </Steps>
 

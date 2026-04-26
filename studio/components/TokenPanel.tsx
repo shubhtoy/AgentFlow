@@ -64,7 +64,7 @@ function useTokenBreakdown() {
 
     const shared: Record<string, CategoryTokens[]> = {}
     let sharedTotal = 0
-    for (const cat of ['instructions', 'capabilities', 'runbooks', 'memory'] as const) {
+    for (const cat of ['instructions', 'capabilities', 'skills', 'memory'] as const) {
       const items: CategoryTokens[] = []
       for (const [key, res] of Object.entries<any>(data[cat] || {})) {
         const t = countTokens(res.rawContent || '')

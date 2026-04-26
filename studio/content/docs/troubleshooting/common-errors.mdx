@@ -3,8 +3,6 @@ title: Common Errors
 description: Top validation and export errors with fixes.
 ---
 
-import { Accordion, Accordions } from "fumadocs-ui/components/accordion"
-import { Callout } from "fumadocs-ui/components/callout"
 
 <Callout type="info">
 Run `agentflow validate` before exporting to catch these errors early.
@@ -13,7 +11,7 @@ Run `agentflow validate` before exporting to catch these errors early.
 <Accordions>
 <Accordion title="broken_ref">
 
-**What it means:** Your workflow references a resource (instruction, capability, or runbook) that does not exist.
+**What it means:** Your workflow references a resource (instruction, capability, or skill) that does not exist.
 
 **Why it happens:** The filename is misspelled, or you are referencing a workflow-scoped resource from outside that workflow without using the correct path.
 
@@ -22,18 +20,6 @@ Run `agentflow validate` before exporting to catch these errors early.
 - Check the filename spelling in your `refs` array
 - Verify whether the resource is global (in `.agentflow/instructions/`) or workflow-scoped (inside the workflow directory)
 - Use the full relative path for workflow-scoped resources
-
-</Accordion>
-<Accordion title="missing_condition">
-
-**What it means:** A conditional edge exists but has no associated runbook defining the condition logic.
-
-**Why it happens:** You added a conditional edge in the graph but did not create the corresponding runbook file.
-
-**How to fix:**
-
-- Create a runbook file in `.agentflow/runbooks/` with `type: condition` in its frontmatter
-- Reference the runbook by name in the edge definition
 
 </Accordion>
 <Accordion title="no_entry_point">
@@ -80,7 +66,6 @@ Run `agentflow validate` before exporting to catch these errors early.
 **How to fix:**
 
 - Reduce the number of refs on the node
-- Use `scope: summary` on large references to include only summaries
 - Increase the `max_tokens` budget in the node frontmatter if appropriate
 
 </Accordion>
@@ -154,32 +139,32 @@ Run `agentflow validate` before exporting to catch these errors early.
 ```bash
 agentflow validate
 # Fix reported issues...
-agentflow export --target langgraph
+agentflow export --platform claude-code
 ```
 
 </Accordion>
 <Accordion title="Platform not found">
 
-**What it means:** The `--target` value does not match any known platform configuration.
+**What it means:** The `--platform` value does not match any known platform configuration.
 
-**Why it happens:** The platform name is misspelled, or you are targeting a custom platform whose JSON config file is missing.
+**Why it happens:** The platform name is misspelled, or you are targeting a custom platform whose YAML config file is missing.
 
 **How to fix:**
 
-- Check available platforms: `langgraph`, `claude`, `github-actions`, `openai`, `bedrock`, `crewai`, `autogen`
-- For custom platforms, verify the JSON config exists in `src/transport/`
+- Check available platforms in `configs/platforms/` (e.g., `claude-code`, `cursor`, `kiro`, `windsurf`, `agent-spec`)
+- For custom platforms, verify the YAML config exists in `configs/platforms/`
 - Platform names are case-sensitive and use hyphens, not underscores
 
 </Accordion>
 <Accordion title="Transform failed">
 
-**What it means:** The platform adapter encountered a node or edge type it cannot map to the target platform.
+**What it means:** The export engine encountered a node or edge type it cannot map to the target platform.
 
-**Why it happens:** The target platform does not support a construct used in your workflow. For example, some platforms do not support conditional loops or sub-workflows.
+**Why it happens:** The target platform does not support a construct used in your workflow. For example, some platforms do not support sub-workflows.
 
 **How to fix:**
 
-- Check the platform's JSON config for supported node types
+- Check the platform's YAML config for supported node types
 - Simplify the workflow to use only constructs the target supports
 - Consider using a different target platform that supports your workflow structure
 - Run with `--verbose` to see which specific node or edge caused the failure

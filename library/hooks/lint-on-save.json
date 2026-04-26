@@ -1,7 +1,6 @@
 {
   "name": "lint-on-save",
-  "version": "1.0.0",
-  "description": "Run linter automatically when source files are saved",
+  "description": "Run linter with auto-fix when source files are edited to maintain consistent code style",
   "event": "fileEdited",
   "condition": {
     "field": "path",
@@ -10,8 +9,7 @@
   },
   "action": {
     "type": "run-script",
-    "target": "npm run lint -- --fix",
-    "params": {}
+    "target": "npm run lint -- --fix"
   },
   "enabled": true,
   "priority": 100

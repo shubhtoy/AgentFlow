@@ -3,9 +3,6 @@ title: Tokens
 description: Context budget tracking per node.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 The Tokens panel shows token consumption for each node in your workflow, helping you stay within context budget limits and optimize prompt size.
 
@@ -32,7 +29,7 @@ Edge conditions, gateway logic, and graph navigation instructions that tell the 
 The node's own `SKILL.md` content: its title, description, instructions, and any inline conditions or output schemas. This is the content you directly control when editing a node.
 </Tab>
 <Tab value="References">
-Attached resources -- capabilities, instructions, runbooks, memory, and hooks. Each attached resource adds its full content to the prompt. This layer is often the largest contributor to token usage and the primary target for optimization.
+Attached resources -- capabilities, instructions, skills, memory, and hooks. Each attached resource adds its full content to the prompt. This layer is often the largest contributor to token usage and the primary target for optimization.
 </Tab>
 <Tab value="Working">
 Dynamic content injected at runtime: conversation history, tool call results, user inputs, and memory retrievals. This layer fluctuates between executions and cannot be precisely predicted at design time, but the panel shows estimated maximums based on your configuration.

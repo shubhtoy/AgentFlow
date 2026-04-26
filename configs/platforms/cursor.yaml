@@ -1,0 +1,52 @@
+id: cursor
+name: Cursor
+website: https://cursor.com
+
+paths:
+  root: .cursor
+  rules: .cursor/rules/
+  mcp: .cursor/mcp.json
+
+mapping:
+  identity:
+    target: .cursor/rules/identity.mdc
+    transform: to-mdc
+    frontmatter:
+      description: 'Workspace identity and agent persona'
+      alwaysApply: true
+
+  instructions:
+    target: .cursor/rules/{name}.mdc
+    transform: to-mdc
+    frontmatter:
+      description: 'from:instructions.description'
+      globs: 'from:instructions.platforms.cursor.globs'
+      alwaysApply: 'from:instructions.platforms.cursor.alwaysApply'
+
+  skills:
+    target: .cursor/rules/{name}.mdc
+    transform: flatten-skill
+    frontmatter:
+      description: 'from:skills.description'
+
+  capabilities:
+    mcp:
+      target: .cursor/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: rules
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .cursor/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'

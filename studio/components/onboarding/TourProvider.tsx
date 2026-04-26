@@ -27,7 +27,7 @@ const TOUR_STEPS: TourStepDef[] = [
   {
     target: 'explorer',
     title: 'Explorer',
-    description: 'Browse and manage all your workflow files — nodes, capabilities, instructions, runbooks, and memory. Drag resources onto nodes to attach them.',
+    description: 'Browse and manage all your workflow files — nodes, capabilities, instructions, skills, and memory. Drag resources onto nodes to attach them.',
     side: 'right',
     prepare: 'agentflow:show-files',
   },

@@ -3,27 +3,155 @@ title: CLI
 description: All AgentFlow CLI commands with syntax and options.
 ---
 
+<Callout type='info'>
+The most commonly used commands are `agentflow dev` (start studio), `agentflow validate` (check your workflow), and `agentflow export` (ship it).
+</Callout>
+
+<Tabs items={['Core', 'Export-Import', 'Git', 'MCP', 'Library']}>
+<Tab value='Core'>
+
+## Core Commands
+
 | Command | Description | Key Options |
 | --- | --- | --- |
+| `dev [dir]` | Start studio | `--agent`, `-p` port |
 | `parse [dir]` | Parse workspace to JSON | `-o/--output`, `--metadata-only` |
 | `validate [dir]` | Validate refs and schemas | `--strict` |
-| `export [dir]` | Multi-format export | `-f` (json/zip/dir/share/raw/parsed), `--platform` (langgraph/claude/github-actions/openai/bedrock/crew/custom), `-w` workflow |
-| `import` | Import from ZIP/JSON/URL/platform | `--from`, `--platform`, `--auto-detect`, `--source`, `--overwrite`, `--dry-run`, `-t` target |
 | `graph [dir]` | Print ASCII graph | |
 | `init [dir]` | Scaffold new workspace | |
-| `add <type> <name>` | Install from library | type: workflow/instruction/capability/runbook/memory |
-| `search <query>` | Unified search (local + MCP) | `--local-only`, `--mcp-only` |
-| `library <action>` | Library management (index, list, search) | `--type`, `--tags` |
-| `dev [dir]` | Start studio | `--agent`, `-p` port |
 | `tokens [dir]` | Token estimates | `-w`, `-n`, `--path-to`, `-f`, `--full`, `--no-shared`, `--no-refs`, `--json` |
+
+### Usage Examples
+
+```bash
+# Start the studio on port 4000
+agentflow dev --port 4000
+
+# Validate in strict mode (recommended for CI)
+agentflow validate --strict
+
+# Parse and output JSON
+agentflow parse -o workflow.json
+
+# Print the workflow graph
+agentflow graph
+
+# Scaffold a new workspace
+agentflow init my-project
+
+# Estimate tokens for a specific workflow
+agentflow tokens -w build-feature --json
+```
+
+</Tab>
+<Tab value='Export-Import'>
+
+## Export & Import
+
+| Command | Description | Key Options |
+| --- | --- | --- |
+| `export [dir]` | Multi-format export | `-f` (json/zip/dir/share/raw/parsed), `--platform` (langgraph/claude/github-actions/openai/bedrock/crew/custom), `-w` workflow |
+| `import` | Import from ZIP/JSON/URL/platform | `--from`, `--platform`, `--auto-detect`, `--source`, `--overwrite`, `--dry-run`, `-t` target |
+
+### Usage Examples
+
+```bash
+# Export for LangGraph
+agentflow export --platform langgraph -f zip
+
+# Export a specific workflow as JSON
+agentflow export -w build-feature -f json
+
+# Import from a URL with dry-run
+agentflow import --from https://example.com/workflow.zip --dry-run
+
+# Import from Claude format
+agentflow import --platform claude --source ./claude-export/
+```
+
+</Tab>
+<Tab value='Git'>
+
+## Git Commands
+
+| Command | Description | Key Options |
+| --- | --- | --- |
 | `git init <url>` | Clone/attach repo | `--name`, `--role`, `--branch`, `--repo-type` |
 | `git scan [dir]` | Scan for .agentflow dirs | `--depth` |
 | `git sync [name]` | Sync local/remote | `--direction`, `--dry-run` |
 | `git status [name]` | Show repo status | |
 | `git resolve <path>` | Resolve conflict | `--strategy` (local_wins/remote_wins) |
 | `git config` | View/edit git config | |
+
+### Usage Examples
+
+```bash
+# Attach a git repo
+agentflow git init https://github.com/org/repo.git
+
+# Check status
+agentflow git status
+
+# Sync with remote (dry-run first)
+agentflow git sync --dry-run
+agentflow git sync
+
+# Resolve a conflict favoring local changes
+agentflow git resolve path/to/file.md --strategy local_wins
+```
+
+</Tab>
+<Tab value='MCP'>
+
+## MCP Commands
+
+| Command | Description | Key Options |
+| --- | --- | --- |
 | `mcp search <query>` | Search MCP registry | `--limit` |
 | `mcp add <server>` | Add MCP server | `--required`, `--env` |
 | `mcp remove <server>` | Remove server | `--remove-tools` |
 | `mcp discover <server>` | Discover tools | `--timeout`, `--overwrite` |
 | `mcp list` | List configured servers | |
+
+### Usage Examples
+
+```bash
+# Search for MCP servers
+agentflow mcp search "database"
+
+# Add a server with env vars
+agentflow mcp add my-server --env API_KEY=xxx --required
+
+# Discover available tools from a server
+agentflow mcp discover my-server
+
+# List all configured servers
+agentflow mcp list
+```
+
+</Tab>
+<Tab value='Library'>
+
+## Library Commands
+
+| Command | Description | Key Options |
+| --- | --- | --- |
+| `add <type> <name>` | Install from library | type: workflow/instruction/capability/skill/memory |
+| `search <query>` | Unified search (local + MCP) | `--local-only`, `--mcp-only` |
+| `library <action>` | Library management (index, list, search) | `--type`, `--tags` |
+
+### Usage Examples
+
+```bash
+# Add a workflow from the library
+agentflow add workflow code-review
+
+# Search for capabilities
+agentflow search "api testing" --local-only
+
+# List all library items by type
+agentflow library list --type instruction
+```
+
+</Tab>
+</Tabs>

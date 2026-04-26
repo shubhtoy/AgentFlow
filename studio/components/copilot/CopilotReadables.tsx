@@ -151,7 +151,7 @@ function summarizeGraph(data: any) {
     resources: {
       capabilities: Object.keys(data.capabilities ?? {}),
       instructions: Object.keys(data.instructions ?? {}),
-      runbooks: Object.keys(data.runbooks ?? {}),
+      skills: Object.keys(data.skills ?? {}),
       memory: Object.keys(data.memory ?? {}),
       hooks: Object.keys(data.hooks ?? {}),
     },

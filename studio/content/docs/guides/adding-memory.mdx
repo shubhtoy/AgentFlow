@@ -3,17 +3,13 @@ title: Adding Memory
 description: Use memory files to persist decisions, user preferences, and project facts across workflow runs.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { Mermaid } from '@/components/docs/mdx-components';
 
-Memory is the only resource category the agent can write to during execution. While instructions, capabilities, and runbooks are read-only context, memory files accumulate knowledge across runs — architecture decisions, user preferences, and project facts.
+Memory is the only resource category the agent can write to during execution. While instructions, capabilities, and skills are read-only context, memory files accumulate knowledge across runs — architecture decisions, user preferences, and project facts.
 
 ## How memory flows
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
   subgraph "Run 1"
     A1[Node A] -->|writes| M["memory/decisions.md"]
     A1 -->|writes| U["memory/user.md"]
@@ -28,7 +24,7 @@ Memory is the only resource category the agent can write to during execution. Wh
     C1 -->|reads all| F
     C1 -->|reads all| U
   end
-`} />
+```
 
 ## What you will create
 
@@ -183,7 +179,7 @@ Load memory into a node's context using `{{memory/name}}`:
     # review-gate/SKILL.md
     ---
     name: review-gate
-    type: router
+    type: step
     context:
       inputs:
         - ref: memory/user
@@ -195,8 +191,8 @@ Load memory into a node's context using `{{memory/name}}`:
     Present the design to the user. Reference their review
     preferences from {{memory/user}}.
 
-    {{-> nodes/implement | runbooks/design-approved}}
-    {{-> nodes/create-design | runbooks/design-rejected}}
+    {{-> nodes/implement | The user explicitly approves the design}}
+    {{-> nodes/create-design | The user rejects the design or requests changes}}
     ```
 
     The `scope: summary` loads a condensed version, saving tokens.
@@ -248,7 +244,7 @@ One decision or fact per entry. Do not combine unrelated items.
 | Verification | `facts` | `facts` |
 
 <Callout type="warn">
-Router nodes should read memory sparingly and never write to it. Routers evaluate conditions and route — nothing more.
+Gate nodes (steps with conditional edges) should read memory sparingly and never write to it. Gates evaluate conditions and route — nothing more.
 </Callout>
 </Step>
 

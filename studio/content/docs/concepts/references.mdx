@@ -3,10 +3,6 @@ title: References
 description: The {{...}} syntax — how nodes declare dependencies and wire together.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Mermaid } from '@/components/docs/mdx-components'
 
 References are the `{{...}}` expressions inside SKILL.md files. They serve two purposes: declaring what context a node needs (resource mentions, data flow) and declaring where execution goes next (edges).
 
@@ -26,8 +22,8 @@ The parser reads all references to build the workflow graph and determine each n
     default: '—',
   },
   'Conditional edge': {
-    description: 'Declares conditional flow with a runbook',
-    type: '{{-> nodes/target | runbooks/condition}}',
+    description: 'Declares conditional flow with a skill',
+    type: '{{-> nodes/target | skills/condition}}',
     default: '—',
   },
   'Data flow': {
@@ -54,7 +50,7 @@ Resource mentions load a file from one of the five resource categories into the 
 ```markdown
 {{instructions/code-style}}        → loads instructions/code-style.md
 {{capabilities/write-file}}        → loads capabilities/write-file.md
-{{runbooks/design-approved}}       → loads runbooks/design-approved.md
+{{skills/design-approved}}       → loads skills/design-approved.md
 {{memory/decisions}}               → loads memory/decisions.md
 ```
 
@@ -99,20 +95,20 @@ A node can have multiple unconditional edges (fan-out), but this is uncommon. Mo
 
 ### Conditional edges
 
-Go to the target node only if a condition is met. The condition is defined in a runbook file:
+Go to the target node only if a condition is met. The condition is defined in a skill file:
 
 ```markdown
-{{-> nodes/plan-tasks | runbooks/design-approved}}
-{{-> nodes/create-design | runbooks/design-rejected}}
+{{-> nodes/plan-tasks | skills/design-approved}}
+{{-> nodes/create-design | skills/design-rejected}}
 ```
 
-The pipe `|` separates the target from the condition. The runbook must have `type: condition` in its frontmatter. Router nodes typically have multiple conditional edges — one for each possible outcome.
+The pipe `|` separates the target from the condition. The condition can be plain text or an instruction reference like `instructions/approval-criteria`. Nodes with multiple conditional edges are automatically rendered as gateways.
 
 ### Edge validation
 
 The validator checks several edge-related rules:
 
-- `missing_condition` — conditional edge references a runbook that doesn't exist
+- `missing_condition` — conditional edge references a skill that doesn't exist
 - `router_non_conditional` — router has unconditional edges (routers should always use conditions)
 - `router_single_exit` — router with only one outgoing edge (probably a mistake)
 
@@ -193,17 +189,17 @@ The validator emits `missing_sub_workflow_target` if the referenced workflow dir
 
 ## How Reference Types Connect
 
-<Mermaid chart={`
+```mermaid
 graph LR
     SKILL["SKILL.md"]
 
     SKILL -->|"{{category/name}}"| RES["Resource files"]
     SKILL -->|"{{-> nodes/target}}"| NODE["Target node"]
-    SKILL -->|"{{-> nodes/target &#124; runbooks/cond}}"| COND["Conditional target"]
+    SKILL -->|"{{-> nodes/target &#124; skills/cond}}"| COND["Conditional target"]
     SKILL -->|"{{<< output.node}}"| DATA["Prior node output"]
-    SKILL -->|"{{$$variable}}"| VAR["Workspace config"]
+    SKILL -->|"{{$variable}}"| VAR["Workspace config"]
     SKILL -->|"{{workflows/name}}"| WF["Sub-workflow AGENTS.md"]
-`} />
+```
 
 ## Putting It All Together
 

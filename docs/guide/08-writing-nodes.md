@@ -154,13 +154,13 @@ type: router
 # Review Requirements Gate
 
 Present the requirements document from {{<< output.gather-requirements}}
-to the user via {{runbooks/review-requirements}}.
+to the user via {{skills/review-requirements}}.
 
 ## Context Budget
 
 Lightweight router (~500 tokens). Resolves:
-- {{runbooks/review-requirements}} (~200 tok, the interaction prompt)
-- Two condition runbooks (~50 tok each)
+- {{skills/review-requirements}} (~200 tok, the interaction prompt)
+- Two condition skills (~50 tok each)
 
 **No instructions or capabilities needed** — this node only routes.
 
@@ -174,8 +174,8 @@ Show the user:
 
 ## Routing
 
-- If approved → {{-> nodes/create-design | runbooks/requirements-approved}}
-- If rejected → {{-> nodes/gather-requirements | runbooks/requirements-rejected}}
+- If approved → {{-> nodes/create-design | skills/requirements-approved}}
+- If rejected → {{-> nodes/gather-requirements | skills/requirements-rejected}}
   — incorporate the user's feedback and revise
 ```
 

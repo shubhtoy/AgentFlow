@@ -1,0 +1,47 @@
+id: kimi
+name: Kimi Code
+website: https://kimi.ai
+
+paths:
+  root: .kimi
+  agents: .kimi/agents/
+
+mapping:
+  identity:
+    target: .kimi/agents/identity.yaml
+    transform: to-yaml-agent
+    fields:
+      name: 'from:identity.name'
+      role: 'from:identity.role'
+      personality: 'from:identity.personality'
+      constraints: 'from:identity.constraints'
+
+  instructions:
+    target: .kimi/agents/{name}.yaml
+    transform: to-yaml-agent
+
+  skills:
+    target: .kimi/agents/{name}.yaml
+    transform: to-yaml-agent
+
+  capabilities:
+    mcp:
+      target: .kimi/mcp.json
+      transform: merge-mcp-config
+    non-mcp:
+      embed: identity
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: .kimi/mcp.json
+  format: mcp-standard
+  schema:
+    mcpServers:
+      '{name}':
+        command: '{command}'
+        args: '{args}'

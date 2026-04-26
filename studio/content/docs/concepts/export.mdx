@@ -3,10 +3,6 @@ title: Export
 description: How AgentFlow exports workflows to Claude, Cursor, Kiro, and other platforms.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
 
 AgentFlow workflows are platform-agnostic — they're defined as markdown files in directories. The export system transforms them into the format each target platform expects.
 
@@ -18,29 +14,15 @@ One workspace, seven export targets.
   <Tab value="Raw">
     Files as-is, no transformation. Template variables and references are left unresolved.
 
-    ```bash
-    agentflow export --format raw
-    ```
-
     Use when you want the source files for manual processing or custom tooling.
   </Tab>
   <Tab value="Parsed">
     References resolved to file paths. Template variables expanded. The output is a self-contained set of files with all references inlined.
 
-    ```bash
-    agentflow export --format parsed
-    ```
-
     Use when you want resolved content but don't need platform-specific structure.
   </Tab>
   <Tab value="Platform">
     Full transformation to a target platform's expected format. Directory structure, file naming, and content format all match the platform's conventions.
-
-    ```bash
-    agentflow export --platform claude-code
-    agentflow export --platform cursor
-    agentflow export --platform kiro
-    ```
 
     Use when deploying to a specific agent platform.
   </Tab>
@@ -51,42 +33,44 @@ One workspace, seven export targets.
 <TypeTable type={{
   'Claude Code': {
     description: 'AGENTS.md + SKILL.md in .claude/ directory',
-    type: 'claude-code.json',
+    type: 'claude-code',
     default: '.claude/',
   },
   'Cursor': {
     description: 'Rules (.mdc) in .cursor/ directory',
-    type: 'cursor.json',
+    type: 'cursor',
     default: '.cursor/',
   },
   'Kiro': {
     description: 'Specs + steering in .kiro/ directory',
-    type: 'kiro.json',
+    type: 'kiro',
     default: '.kiro/',
   },
   'Windsurf': {
     description: 'Rules (.md) in .windsurf/ directory',
-    type: 'windsurf.json',
+    type: 'windsurf',
     default: '.windsurf/',
   },
   'VS Code Copilot': {
     description: 'Instructions (.md) in .github/copilot/',
-    type: 'vscode-copilot.json',
+    type: 'vscode-copilot',
     default: '.github/copilot/',
   },
   'OpenClaw': {
     description: 'Single openclaw.yaml file',
-    type: 'openclaw.json',
+    type: 'openclaw',
     default: '—',
   },
   'Agent Spec': {
-    description: 'Single agent-spec.json file',
-    type: 'agent-spec.json',
+    description: 'Single agent-spec.json file — the primary interchange format',
+    type: 'agent-spec',
     default: '—',
   },
 }} />
 
 ## The Export Pipeline
+
+Export is handled server-side via the `/api/export` endpoint. The pipeline follows four stages:
 
 <Steps>
   <Step>
@@ -102,7 +86,7 @@ One workspace, seven export targets.
   <Step>
     ### Transform
 
-    Apply platform-specific transforms: file naming conventions, content format, directory structure. Each platform has a JSON config that defines these transforms.
+    Apply platform-specific transforms defined in YAML config files in `configs/platforms/`. Each platform config defines file naming conventions, content format, and directory structure.
 
     | Source | Transformation |
     |--------|---------------|
@@ -119,6 +103,10 @@ One workspace, seven export targets.
     Output the transformed files to the target directory. The original `.agentflow/` workspace is never modified.
   </Step>
 </Steps>
+
+<Callout type="info" title="💡 Adding new platforms">
+  Adding a new platform = adding a YAML config in `configs/platforms/`. No code changes needed.
+</Callout>
 
 ## Platform Output Examples
 
@@ -158,35 +146,22 @@ One workspace, seven export targets.
 
 ## Using Export
 
-### From the CLI
+### From the studio
+
+Open the Export dialog (`Cmd+Shift+E`) → select format and platform → download or copy. The studio calls the `/api/export` endpoint server-side.
+
+### From the API
 
 ```bash
 # Export to a specific platform
-agentflow export --platform claude-code
-
-# Export to a specific directory
-agentflow export --platform cursor --output ./my-project
+curl -X POST /api/export -d '{"platform": "claude-code", "workflow": "build-feature"}'
 
 # Export in parsed format (no platform transform)
-agentflow export --format parsed
-```
-
-### From the studio
-
-Open the Export dialog (`Cmd+Shift+E`) → select format and platform → download or copy.
-
-### Programmatically
-
-```javascript
-const { parse } = require('@agentflow/parser')
-const { exportWorkflow } = require('@agentflow/exporter')
-
-const data = parse('.agentflow/')
-const output = exportWorkflow(data, { platform: 'claude-code' })
+curl -X POST /api/export -d '{"format": "parsed", "workflow": "build-feature"}'
 ```
 
 <Callout type="info" title="Custom platforms">
-  You can create your own platform config by adding a JSON file to `src/transport/platforms/`. See [Custom Platform](/docs/guides/custom-platform) for a step-by-step guide.
+  You can create your own platform config by adding a YAML file to `configs/platforms/`. See [Custom Platform](/docs/guides/custom-platform) for a step-by-step guide.
 </Callout>
 
 ## Explore the Workflow
@@ -200,12 +175,12 @@ The canvas below shows the build-feature workflow that gets exported. Each node,
 
 ## The Transform Pipeline
 
-The platform export is not a single operation — it is a multi-stage pipeline that processes each export rule defined in the platform configuration.
+The platform export is a multi-stage pipeline that processes each export rule defined in the platform's YAML configuration.
 
-<Mermaid chart={`
+```mermaid
 graph TD
     A[Parse workspace graph] --> B[Scope to target workflow]
-    B --> C[Load platform config]
+    B --> C[Load platform YAML config]
     C --> D[For each exportRule]
     D --> E[Resolve source file]
     E --> F[Apply transform function]
@@ -213,7 +188,7 @@ graph TD
     G --> D
     D --> H[Validate output paths]
     H --> I[Generate fidelity report]
-`} />
+```
 
 ### Parse workspace graph
 
@@ -225,7 +200,7 @@ If exporting a single workflow, the graph is scoped to only that workflow's node
 
 ### Load platform config
 
-Each platform has a JSON configuration file (e.g., `claude-code.json`) that defines export rules. Each rule maps a source pattern to a target path with an optional transform function.
+Each platform has a YAML configuration file (e.g., `configs/platforms/claude-code.yaml`) that defines export rules. Each rule maps a source pattern to a target path with an optional transform function.
 
 ### Process export rules
 

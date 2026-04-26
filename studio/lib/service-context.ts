@@ -29,7 +29,7 @@ export function getServices() {
   const { createGitService } = require('@agentflow/cli/services/git-service')
   const { createScaffoldGenService } = require('@agentflow/cli/services/scaffold-gen-service')
   const { createMCPBridge } = require('@agentflow/cli/services/mcp-bridge')
-  const { createExportService } = require('@agentflow/cli/services/export-service')
+  const { exportForPlatform, toAgentSpec, listPlatforms } = require('@agentflow/cli/export')
   const { createImportService } = require('@agentflow/cli/services/import-service')
   const { HookRegistry } = require('@agentflow/cli/services/hook-registry')
   const { EventHookEngine } = require('@agentflow/core/services/event-hook-engine')
@@ -54,7 +54,7 @@ export function getServices() {
     git: createGitService(ctx),
     scaffoldGen: createScaffoldGenService(ctx),
     mcpBridge,
-    exportSvc: createExportService(ctx),
+    exportSvc: { exportForPlatform, toAgentSpec, listPlatforms },
     importSvc: createImportService(ctx),
     hookRegistry,
     hookEngine,

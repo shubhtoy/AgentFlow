@@ -3,11 +3,6 @@ title: Directory as Architecture
 description: Why folder structure replaces framework code for agent workflows.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
 
 Most agent orchestration tools require you to write code — define agents as classes, wire them together with function calls, manage state through APIs. AgentFlow takes a different approach: the folder structure IS the architecture. No framework code, no orchestration layer — just folders, markdown files, and references.
 
@@ -86,7 +81,7 @@ An AgentFlow workspace encodes all orchestration decisions in its folder structu
       <File name="write-file.md" />
       <File name="run-tests.md" />
     </Folder>
-    <Folder name="runbooks">
+    <Folder name="skills">
       <File name="tests-pass.md" />
     </Folder>
   </Folder>
@@ -192,10 +187,11 @@ This entire workflow — 9 nodes, conditional routing, approval gates, data flow
 
 The core insight of AgentFlow is that your folder structure IS the program. The parser doesn't interpret code — it reads directories. Here is the exact flow:
 
-<Mermaid chart={`graph TD
+```mermaid
+graph TD
     A[parseRoot scans .agentflow/] --> B[Classify files by directory]
     B --> C{Is it a reserved directory?}
-    C -->|Yes: instructions, capabilities, runbooks, memory, hooks| D[Register as resource category]
+    C -->|Yes: instructions, capabilities, skills, memory, hooks| D[Register as resource category]
     C -->|No| E[Identify as workflow directory]
     E --> F[parseWorkflow reads AGENTS.md descriptor]
     F --> G[parseNode reads each child directory]
@@ -203,11 +199,11 @@ The core insight of AgentFlow is that your folder structure IS the program. The 
     H --> I[extractRefs finds all references]
     I --> J[Build directed graph from edges]
     J --> K[Validate: cycles, missing refs, orphan nodes]
-`} />
+```
 
 Each stage of this pipeline maps directly to a filesystem operation:
 
-1. **parseRoot** performs a single directory listing of `.agentflow/`. It separates reserved directories (instructions, capabilities, runbooks, memory, hooks) from everything else. Non-reserved directories are workflows.
+1. **parseRoot** performs a single directory listing of `.agentflow/`. It separates reserved directories (instructions, capabilities, skills, memory, hooks) from everything else. Non-reserved directories are workflows.
 
 2. **parseWorkflow** reads the `AGENTS.md` file inside each workflow directory. This file provides the workflow's name, description, and metadata. The parser then lists subdirectories — each one is a node.
 

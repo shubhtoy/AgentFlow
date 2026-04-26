@@ -3,21 +3,18 @@ title: Git Integration
 description: Sync your AgentFlow workflows with Git repositories using built-in version control support.
 ---
 
-import { Accordion, Accordions } from "fumadocs-ui/components/accordion"
-import { Step, Steps } from "fumadocs-ui/components/steps"
-import { Tab, Tabs } from "fumadocs-ui/components/tabs"
-import { Mermaid } from '@/components/docs/mdx-components'
 
 ## Overview
 
 AgentFlow includes built-in Git integration that lets you connect workflows to remote repositories, automatically detect `.agentflow/` directories, configure sync rules, and handle conflicts — all from the CLI or the Studio GitPanel.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
   A["Local .agentflow/"] -->|git push| B["Remote Repository"]
   B -->|git pull| A
   C["Studio GitPanel"] -->|commit + sync| B
   D["CLI: agentflow git sync"] -->|commit + sync| B
-`} />
+```
 
 ## Getting Started
 

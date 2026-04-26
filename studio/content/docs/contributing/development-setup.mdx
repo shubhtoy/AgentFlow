@@ -3,13 +3,9 @@ title: Development Setup
 description: Clone, install, run, and test.
 ---
 
-import { Steps, Step } from "fumadocs-ui/components/steps"
-
-## Prerequisites
-
-- Node.js 20 or later
-- npm 9 or later
-- Git
+<Callout type="info">
+  Requires **Node.js 20+**, **npm 9+**, and **Git**.
+</Callout>
 
 ## Setup
 
@@ -18,19 +14,18 @@ import { Steps, Step } from "fumadocs-ui/components/steps"
     ### Clone the repository
 
     ```bash
-    git clone https://github.com/agentflow/agentflow.git
+    git clone https://github.com/shubhtoy/agentflow.git
     cd agentflow
     ```
   </Step>
   <Step>
     ### Install dependencies
 
-    Install root dependencies first, then studio dependencies:
+    From the project root, a single install handles all workspaces and the studio:
 
     ```bash
     npm install
-    cd studio && npm install
-    cd ..
+    cd studio && npm install && cd ..
     ```
   </Step>
   <Step>
@@ -41,140 +36,161 @@ import { Steps, Step } from "fumadocs-ui/components/steps"
     ```bash
     npm run dev
     ```
+
+    This starts the studio at `http://localhost:3000`. The prebuild script (`scripts/build-library-index.js`) runs automatically before dev and build, generating `library/index.json`.
   </Step>
   <Step>
     ### Run tests
-
-    From the project root:
 
     ```bash
     npm test
     ```
   </Step>
-  <Step>
-    ### Run the studio
-
-    To start the visual editor independently:
-
-    ```bash
-    cd studio && npm run dev
-    ```
-
-    Open `http://localhost:3000` in your browser.
-  </Step>
 </Steps>
 
-## Project Structure Deep Dive
+<Callout type="info">
+💡 `studio/public/library` is a symlink to `../../library`. Changes to `library/` are immediately reflected in the studio.
+</Callout>
 
-### `src/` - Core Engine
+## Project Structure
 
-The core engine is a pure Node.js library with no framework dependencies. It handles parsing markdown into an AST, validating workflow structure, and exporting to target platforms. This directory has zero browser dependencies and can run in any Node.js environment.
+The project is a monorepo with npm workspaces. The codebase is fully TypeScript.
 
-- `parser.js` / `parser-core.js` - Reads `.md` files, extracts frontmatter, builds the workflow graph AST
-- `validator.js` - Runs structural and semantic checks (broken refs, cycles, schema violations)
-- `exporter.js` - Orchestrates the export pipeline from AST to platform-specific output
-- `taxonomy.js` - Defines the fixed resource categories (instructions, capabilities, runbooks, memory, hooks)
-- `library.js` - Handles installing and managing library templates
-- `errors.js` - Centralized error codes and message formatting
-- `pretty-printer.js` - Formats AST back to markdown for round-trip editing
+<Files>
+  <Folder name="packages/core" description="Core engine — parser, validator, taxonomy, schemas">
+    <Folder name="src">
+      <File name="parser-core.ts" />
+      <File name="parser-browser.ts" />
+      <File name="validator.ts" />
+      <File name="taxonomy.ts" />
+      <File name="errors.ts" />
+      <Folder name="schemas" />
+      <Folder name="services" />
+      <Folder name="mcp" />
+      <Folder name="types" />
+    </Folder>
+  </Folder>
+  <Folder name="packages/cli" description="CLI — commands, git ops, export engine, library management">
+    <Folder name="bin">
+      <File name="cli.js" />
+    </Folder>
+    <Folder name="src">
+      <File name="parser.ts" />
+      <File name="library.ts" />
+      <File name="pretty-printer.ts" />
+      <Folder name="export" />
+      <Folder name="services" />
+      <Folder name="git" />
+      <Folder name="mcp" />
+    </Folder>
+  </Folder>
+  <Folder name="studio" description="Visual editor — Next.js 16 App Router">
+    <Folder name="app" />
+    <Folder name="components" />
+    <Folder name="lib" />
+    <Folder name="hooks" />
+    <Folder name="store" />
+  </Folder>
+  <Folder name="configs" description="Platform export configs (YAML)">
+    <Folder name="platforms" />
+  </Folder>
+  <Folder name="library" description="Reusable skills, capabilities, instructions, memory, hooks" />
+  <Folder name="scripts" description="Build scripts (library indexer)" />
+  <Folder name="tests" description="Vitest test suite" />
+</Files>
 
-### `src/services/` - Application Logic
+### `packages/core` — Core Engine
 
-Services wrap the core engine with higher-level operations. Each service is a plain object with async methods that return `ok`/`fail` results. Services are stateless and receive all dependencies through the context object.
+A pure TypeScript library with no framework dependencies. Handles parsing markdown into an AST, validating workflow structure, and defining the taxonomy. Zero browser dependencies — safe to run in the browser.
 
-### `src/transport/` - Platform Adapters
+- `parser-core.ts` — Reads `.md` files, extracts frontmatter, builds the workflow graph AST. Nodes are `step` or `sub-workflow` types; router behavior is inferred
+- `parser-browser.ts` — Thin browser-safe shim delegating to the core parser
+- `validator.ts` — Structural and semantic checks (broken refs, cycles, schema violations)
+- `taxonomy.ts` — Fixed resource categories: instructions, capabilities, skills, memory, hooks
+- `errors.ts` — Centralized error codes and message formatting
+- `services/` — Higher-level operations wrapping the core engine
+- `mcp/` — MCP registry client
 
-Contains JSON configuration files for each supported export target plus the generic adapter that interprets them. The pipeline files handle the full export/import orchestration including file I/O and path resolution.
+### `packages/cli` — CLI
 
-### `src/git/` - Git Operations
+Command-line interface for AgentFlow. Bootstraps commands, loads configuration, and dispatches to service handlers.
 
-Manages repository state, scanning for changes, configuration, and remote synchronization. Used by both the CLI and the studio for git-related features.
+- `bin/cli.js` — Entry point, argument parsing, command dispatch
+- `parser.ts` — CLI-specific parsing extensions
+- `library.ts` — Installing and managing library content
+- `pretty-printer.ts` — Formats AST back to markdown for round-trip editing
+- `export/` — Export engine and transform pipeline. Reads YAML configs from `configs/platforms/`
+- `services/` — Application logic for CLI commands
+- `git/` — Repository state, change scanning, remote sync
+- `mcp/` — MCP integration for CLI context
 
-### `src/mcp/` - MCP Integration
+### `studio/` — Visual Editor
 
-Handles Model Context Protocol server lifecycle, tool discovery, and bridging external tools into the workflow context.
+A Next.js 16 application using the App Router.
 
-### `studio/` - Visual Editor
-
-A Next.js 14 application using the App Router. Key subdirectories:
-
-- `components/` - React components for the canvas, panels, dialogs, and editors
-- `app/` - Next.js route handlers and page components
-- `lib/` - Shared utilities, API clients, and type definitions
-- `hooks/` - Custom React hooks for workflow operations and UI state
-- `store/` - Zustand stores for workflow state, UI state, and settings
-
-### `library/` - Reusable Templates
-
-Pre-built content that users can install into their workspace. Organized by resource category. Each item is a standalone markdown file with complete frontmatter.
-
-### `bin/` - CLI Entry Point
-
-The `cli.js` file bootstraps the command-line interface. It parses arguments, loads configuration, creates the service layer, and dispatches to the appropriate command handler.
-
-### `tests/` - Test Suite
-
-Unit and integration tests organized to mirror the `src/` directory structure.
+- `components/` — React components for canvas, panels, dialogs, editors
+- `app/` — Route handlers and page components
+- `lib/` — Shared utilities, API clients, type definitions
+- `hooks/` — Custom React hooks for workflow operations and UI state
+- `store/` — Zustand stores for workflow state, UI state, settings
 
 ## Running Tests
 
-The project uses Vitest as its test framework. Tests live in the `tests/` directory and follow the naming convention `*.test.js`.
+The project uses Vitest. Tests live in `tests/` and follow the `*.test.js` convention.
 
-### Run all tests
+<Tabs items={["All tests", "Watch mode", "Single file", "Coverage"]}>
+  <Tab value="All tests">
+    ```bash
+    npm test
+    ```
+  </Tab>
+  <Tab value="Watch mode">
+    ```bash
+    npm run test:watch
+    ```
+  </Tab>
+  <Tab value="Single file">
+    ```bash
+    npx vitest run tests/parser.test.js
+    ```
+  </Tab>
+  <Tab value="Coverage">
+    ```bash
+    npx vitest run --coverage
+    ```
+  </Tab>
+</Tabs>
 
-```bash
-npm test
-```
-
-### Run tests in watch mode
-
-```bash
-npm run test:watch
-```
-
-### Run a specific test file
-
-```bash
-npx vitest run tests/parser.test.js
-```
-
-### Run tests with coverage
-
-```bash
-npx vitest run --coverage
-```
-
-Tests use in-memory file system mocks so they do not touch the real filesystem. Service tests use a mock context with stubbed dependencies.
+Tests use in-memory file system mocks and do not touch the real filesystem.
 
 ## Common Development Tasks
 
 ### Adding a New CLI Command
 
-1. Create a new handler function in `src/services/` or an existing service file
-2. Register the command in `bin/cli.js` by adding a new case to the command dispatcher
-3. Add argument parsing for any flags the command accepts
+1. Create a handler in `packages/cli/src/services/`
+2. Register the command in `packages/cli/bin/cli.js`
+3. Add argument parsing for any flags
 4. Return an `ok`/`fail` result from the handler
-5. Add a test in `tests/` covering the success and failure paths
+5. Add a test in `tests/`
 
-```js
-// In bin/cli.js - register the command
+```ts
+// In packages/cli/bin/cli.js
 case "my-command":
   return services.myService.run(args)
 ```
 
 ### Adding a New API Route
 
-1. Create a new route file in `studio/app/api/` following the Next.js App Router convention
-2. Import the service layer and call the appropriate service method
-3. Return a JSON response using `NextResponse.json()`
-4. Handle errors by checking the `ok` field on the service result
+1. Create a route file in `studio/app/api/` following the App Router convention
+2. Import the service layer and call the appropriate method
+3. Return JSON via `NextResponse.json()`
 
-```js
-// studio/app/api/my-route/route.js
+```ts
+// studio/app/api/my-route/route.ts
 import { createServiceLayer } from "@/lib/services"
 import { NextResponse } from "next/server"
 
-export async function POST(request) {
+export async function POST(request: Request) {
   const body = await request.json()
   const services = createServiceLayer(getContext())
   const result = await services.myService.run(body)
@@ -188,11 +204,9 @@ export async function POST(request) {
 
 ### Adding a New Component
 
-1. Create the component file in `studio/components/`
+1. Create the component in `studio/components/`
 2. Use TypeScript props interface for type safety
-3. Follow the existing pattern of co-locating styles with Tailwind classes
-4. If the component needs workflow state, use the Zustand store via the appropriate hook
-5. Export the component and use it in the relevant page or panel
+3. Use Tailwind for styling, Zustand hooks for workflow state
 
 ```tsx
 // studio/components/my-component.tsx

@@ -3,11 +3,6 @@ title: Selective Context
 description: How AgentFlow assembles per-node context windows from references.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { File, Folder, Files } from 'fumadocs-ui/components/files'
-import { Step, Steps } from 'fumadocs-ui/components/steps'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 Most AI agent systems load everything into a single prompt — all instructions, all tools, all history. This works for simple tasks, but breaks down as workflows grow. The model loses focus, costs increase, and instructions from unrelated steps interfere with each other.
 
@@ -16,6 +11,10 @@ Selective context solves this. Instead of one large prompt, each step in a workf
 AgentFlow implements selective context through its `{{reference}}` syntax and a 5-layer hierarchy that organizes all context by scope and lifecycle.
 
 ## Layers
+
+<Callout type="info" title="💡 The 5-layer model and progressive disclosure">
+  Context is assembled progressively: automatic layers (identity, routing, contract) load without explicit references, while on-demand layers (reference material, working artifacts) load only when a node's SKILL.md explicitly references them. This progressive disclosure ensures each node sees exactly what it needs — nothing more.
+</Callout>
 
 Every node in an AgentFlow workflow receives context from five distinct layers. Each layer has a clear purpose, a specific file source, and defined loading rules.
 
@@ -48,7 +47,7 @@ Every node in an AgentFlow workflow receives context from five distinct layers. 
   <Tab value="On-demand (3–4)">
     The last two layers load only when a node explicitly references them through `{{syntax}}`. This is where selective context happens — you choose exactly what each node sees.
 
-    **Layer 3 — Reference Material** includes instructions, capabilities, and runbooks. These files are stable across runs — they represent your conventions, tool definitions, and decision criteria. Loaded via `{{category/name}}`.
+    **Layer 3 — Reference Material** includes instructions, capabilities, and skills. These files are stable across runs — they represent your conventions, tool definitions, and decision criteria. Loaded via `{{category/name}}`.
 
     **Layer 4 — Working Artifacts** includes outputs from other nodes and memory files. These change every run — they represent the actual work product flowing through the workflow. Loaded via `{{<< output.node-name}}`.
 
@@ -121,7 +120,7 @@ These files exist in the workspace but are excluded from this node's context —
     <File name="read-code.md" />
     <File name="search-codebase.md" />
   </Folder>
-  <Folder name="runbooks">
+  <Folder name="skills">
     <File name="tests-pass.md" />
     <File name="design-approved.md" />
   </Folder>
@@ -220,7 +219,7 @@ Take a 10-node workflow with these workspace resources:
 
 - 5 instruction files (~400 tokens each = 2,000 tokens)
 - 3 capability definitions (~250 tokens each = 750 tokens)
-- 4 runbook files (~300 tokens each = 1,200 tokens)
+- 4 skill files (~300 tokens each = 1,200 tokens)
 - 10 SKILL.md files (~400 tokens each = 4,000 tokens)
 - Root AGENTS.md (~200 tokens)
 - Workflow AGENTS.md (~150 tokens)
@@ -230,11 +229,12 @@ Take a 10-node workflow with these workspace resources:
 
 **Selective total: ~2,500-4,000 tokens per node.** Each node loads only its own SKILL.md, the two identity files, and 2-4 referenced resources. Over 10 nodes, you spend 25,000-40,000 tokens total — a 4-6x reduction.
 
-<Mermaid chart={`graph LR
+```mermaid
+graph LR
     subgraph Monolithic["Monolithic: 15,500 tokens per node"]
         M1[All 5 instructions\n2,000 tok]
         M2[All 3 capabilities\n750 tok]
-        M3[All 4 runbooks\n1,200 tok]
+        M3[All 4 skills\n1,200 tok]
         M4[All prior outputs\n7,200 tok]
         M5[All SKILL files\n4,000 tok]
         M6[Identity files\n350 tok]
@@ -242,12 +242,12 @@ Take a 10-node workflow with these workspace resources:
     subgraph Selective["Selective: 2,500-4,000 tokens per node"]
         S1[1-2 instructions\n400-800 tok]
         S2[1-2 capabilities\n250-500 tok]
-        S3[0-1 runbooks\n0-300 tok]
+        S3[0-1 skills\n0-300 tok]
         S4[1-2 prior outputs\n800-1,600 tok]
         S5[This SKILL.md\n400 tok]
         S6[Identity files\n350 tok]
     end
-`} />
+```
 
 ### The Math Per Node
 
@@ -260,7 +260,7 @@ Here is the breakdown for a typical `implement` node under both approaches:
 | Other nodes' SKILL.md files | 3,600 | 0 | Not referenced, not loaded |
 | All instructions | 2,000 | 400 | Only code-style referenced |
 | All capabilities | 750 | 400 | Only write-file and run-tests |
-| All runbooks | 1,200 | 0 | No runbook referenced |
+| All skills | 1,200 | 0 | No skill referenced |
 | All prior outputs | 7,200 | 800 | Only design output referenced |
 | **Total** | **15,500** | **2,350** | **85% reduction** |
 

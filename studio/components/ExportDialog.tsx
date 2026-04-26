@@ -159,17 +159,20 @@ export function ExportDialogContent({ onClose }: { onClose?: () => void } = {}) 
     let cancelled = false
     setPlatformLoading(true)
     ;(async () => {
-      const { exportPlatformClientSide } = await import('@/lib/export-client')
       const { requireWorkspace } = await import('@/lib/workspace')
       const w = await requireWorkspace()
       const files = await w.readAll()
-      const { parseFromFiles } = await import('@agentflow/core/parser-core')
-      const graph = parseFromFiles(Object.fromEntries(files.map(f => [f.path, f.content]))) as unknown as WorkflowGraph
-      const result = await exportPlatformClientSide(selectedPlatform, graph, { workflowId: workflow })
+      const fileMap = Object.fromEntries(files.map(f => [f.path, f.content]))
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: fileMap, format: selectedPlatform, workflowId: workflow }),
+      })
       if (cancelled) return
-      if (result.ok) {
-        setPlatformPreview(result.data as any)
-        const keys = Object.keys(result.data.files).sort()
+      if (res.ok) {
+        const result = await res.json()
+        setPlatformPreview(result as any)
+        const keys = Object.keys(result.files).sort()
         if (keys.length) setSelectedFile(keys[0])
       } else {
         setPlatformPreview(null)
@@ -211,16 +214,19 @@ export function ExportDialogContent({ onClose }: { onClose?: () => void } = {}) 
       const exportWf = effectiveWorkflow
       const filename = exportScope === 'workspace' ? `workspace-${format}` : `${workflow}-${format}`
       if (format === 'platform' && selectedPlatform) {
-        const { exportPlatformClientSide } = await import('@/lib/export-client')
         const w = await (await import('@/lib/workspace')).requireWorkspace()
         const wsFiles = await w.readAll()
-        const { parseFromFiles } = await import('@agentflow/core/parser-core')
-        const graph = parseFromFiles(Object.fromEntries(wsFiles.map(f => [f.path, f.content]))) as unknown as WorkflowGraph
-        const result = await exportPlatformClientSide(selectedPlatform, graph, { workflowId: exportWf })
-        if (!result.ok) throw new Error((result as { ok: false; error: string }).error)
+        const fileMap = Object.fromEntries(wsFiles.map(f => [f.path, f.content]))
+        const res = await fetch('/api/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: fileMap, format: selectedPlatform, workflowId: exportWf }),
+        })
+        if (!res.ok) throw new Error('Export failed')
+        const result = await res.json()
         const JSZip = (await import('jszip')).default
         const zip = new JSZip()
-        for (const [fp, content] of Object.entries(result.data.files)) zip.file(fp, content)
+        for (const [fp, content] of Object.entries(result.files)) zip.file(fp, content as string)
         const blob = await zip.generateAsync({ type: 'blob' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')

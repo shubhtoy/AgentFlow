@@ -25,10 +25,10 @@ A complete, practical guide to designing, writing, and validating AI agent workf
 6. [Writing Your Root AGENTS.md](06-root-agents-md.md) — Identity, frontmatter, body structure
 7. [Designing Workflows](07-designing-workflows.md) — Workflow descriptors, node summaries, routing maps
 8. [Writing Nodes (SKILL.md)](08-writing-nodes.md) — Steps, routers, sub-workflows, context budgets
-9. [Resource Authoring](09-resource-authoring.md) — Capabilities, instructions, runbooks, memory
+9. [Resource Authoring](09-resource-authoring.md) — Capabilities, instructions, skills, memory
 10. [Hooks & Event Automation](10-hooks.md) — Events, conditions, actions, pre-shipped hooks
 11. [MCP Integration](11-mcp-integration.md) — Server config, capability linking, defaults
-12. [The Pre-Shipped Library](12-library.md) — Capabilities, instructions, runbooks, hooks, memory, workflows
+12. [The Pre-Shipped Library](12-library.md) — Capabilities, instructions, skills, hooks, memory, workflows
 13. [Graph Design Patterns](13-graph-patterns.md) — Linear, review gates, rejection loops, iteration
 14. [Validation & Quality](14-validation.md) — Checks, severity levels, common errors
 15. [Branding & Customization](15-branding.md) — Config file, env vars, schema

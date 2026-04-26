@@ -58,7 +58,7 @@ function RefBadge({ raw, invalid, onClick }: { raw: string; invalid?: boolean; o
         break
       }
       case '$resources': {
-        const cats = ['instructions', 'capabilities', 'runbooks', 'memory'] as const
+        const cats = ['instructions', 'capabilities', 'skills', 'memory'] as const
         const lines: string[] = []
         for (const cat of cats) {
           const items = Object.keys((data as any)[cat] || {})
@@ -68,7 +68,7 @@ function RefBadge({ raw, invalid, onClick }: { raw: string; invalid?: boolean; o
         break
       }
       case '$directory': {
-        const cats = ['instructions', 'capabilities', 'runbooks', 'memory', 'hooks'] as const
+        const cats = ['instructions', 'capabilities', 'skills', 'memory', 'hooks'] as const
         resolved = cats.map(c => `- \`${c}/\` — ${Object.keys((data as any)[c] || {}).length} files`).join('\n')
         break
       }

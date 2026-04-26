@@ -1,0 +1,40 @@
+id: aider
+name: Aider
+website: https://aider.chat
+
+paths:
+  root: .
+  conventions: CONVENTIONS.md
+
+mapping:
+  identity:
+    target: CONVENTIONS.md
+    transform: concatenate
+    sources:
+      - identity
+      - instructions
+
+  instructions:
+    target: null
+    note: Merged into CONVENTIONS.md via identity concatenation
+
+  skills:
+    target: CONVENTIONS.md
+    transform: concatenate
+    append: true
+
+  capabilities:
+    mcp:
+      target: null
+    non-mcp:
+      embed: conventions
+
+  memory:
+    target: null
+
+  hooks:
+    target: null
+
+mcp:
+  configPath: null
+  format: null

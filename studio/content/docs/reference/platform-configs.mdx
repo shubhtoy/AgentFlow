@@ -1,15 +1,31 @@
 ---
 title: Platform Configs
-description: All 7 platform export mappings and what each produces.
+description: All 7 platform export mappings defined as YAML configs.
 ---
 
-import { Tab, Tabs } from "fumadocs-ui/components/tabs"
-import { File, Folder, Files } from "fumadocs-ui/components/files"
-import { Callout } from "fumadocs-ui/components/callout"
 
-Each platform export maps AgentFlow concepts to the native configuration format of the target platform.
+Each platform export is defined by a YAML configuration file in `configs/platforms/`. The config maps AgentFlow concepts to the native configuration format of the target platform. Adding a new platform requires only a new YAML config — no code changes.
 
-<Tabs items={["claude-code", "cursor", "kiro", "windsurf", "vscode-copilot", "openclaw", "agent-spec"]}>
+<Tabs items={["agent-spec", "claude-code", "cursor", "kiro", "windsurf", "vscode-copilot", "openclaw"]}>
+<Tab value="agent-spec">
+
+## agent-spec
+
+The primary interchange format. Exports the full workflow graph as an Agent Spec JSON file — recommended for cross-platform workflow sharing.
+
+<Files>
+  <File name="agent-spec.json" />
+</Files>
+
+**Key Transforms:**
+
+- Complete workflow graph serialized to Agent Spec format
+- All nodes, edges, conditions, and metadata included
+- Resources inlined or referenced per spec requirements
+
+**Fidelity:** High. Full graph representation without loss.
+
+</Tab>
 <Tab value="claude-code">
 
 ## claude-code
@@ -190,31 +206,6 @@ Exports to OpenClaw's hook-based structure.
 **Fidelity:** Medium. Hook-centric model requires flattening workflow graphs.
 
 **Import Support:** Yes. Can import existing OpenClaw configurations into AgentFlow.
-
-</Tab>
-<Tab value="agent-spec">
-
-## agent-spec
-
-Exports the full workflow graph as an Oracle Open Agent Spec JSON file.
-
-<Files>
-  <File name="agent-spec.json" />
-</Files>
-
-**Key Transforms:**
-
-- Complete workflow graph serialized to Open Agent Spec format
-- All nodes, edges, conditions, and metadata included
-- Resources inlined or referenced per spec requirements
-
-**Fidelity:** High. Full graph representation without loss.
-
-**Import Support:** No. Export only.
-
-<Callout type="warn">
-This format is export-only. AgentFlow cannot import from agent-spec.json files.
-</Callout>
 
 </Tab>
 </Tabs>

@@ -11,7 +11,7 @@ import type { ResourceCategory, ParsedFile } from '@/lib/types'
 const CATEGORIES: { key: ResourceCategory; icon: typeof BookOpen }[] = [
   { key: 'instructions', icon: BookOpen },
   { key: 'capabilities', icon: Wrench },
-  { key: 'runbooks', icon: PlayCircle },
+  { key: 'skills', icon: PlayCircle },
   { key: 'memory', icon: Database },
 ]
 

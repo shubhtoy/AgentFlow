@@ -3,10 +3,6 @@ title: Writing Resources
 description: When and why to use each resource type, with real examples and platform support.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-import { TypeTable } from 'fumadocs-ui/components/type-table'
-import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
 
 Resources are the reusable building blocks that nodes pull into their context via `{{category/name}}`. Each category serves a different purpose and has different rules about when to use it.
 
@@ -16,8 +12,7 @@ Resources are the reusable building blocks that nodes pull into their context vi
 |----------------|-----|---------|
 | Set coding conventions | **Instruction** | `{{instructions/code-style}}` |
 | Give the agent a tool | **Capability** | `{{capabilities/write-file}}` |
-| Define a routing condition | **Runbook** (condition) | `{{runbooks/tests-pass}}` |
-| Add a human checkpoint | **Runbook** (approval) | `{{runbooks/review-design}}` |
+| Add a reusable agent behavior | **Skill** | `{{skills/design-review}}` |
 | Persist decisions across runs | **Memory** | `{{memory/decisions}}` |
 | Automate on file changes | **Hook** | `hooks/lint-on-save.json` |
 
@@ -33,7 +28,6 @@ Resources are the reusable building blocks that nodes pull into their context vi
 ---
 name: implementation-discipline
 type: instruction
-scope: workflow
 domain: development
 description: Best practices for writing production-quality code
 tags: [coding, best-practices, quality]
@@ -136,54 +130,48 @@ Notice how the instruction itself references other resources — capabilities an
   </Tab>
 </Tabs>
 
-## Runbooks
+## Skills
 
-**What:** Decision criteria for routers and human interaction protocols.
+**What:** Directory-based reusable components following the Agent Skills spec. Each skill is a directory with a `SKILL.md` plus optional `references/`, `scripts/`, and `assets/`.
 
-**When:** Every conditional edge needs a runbook. Every human checkpoint needs one.
+**When:** When you need reusable agent behavior that can be shared across workflows or installed from the community.
 
-**Two main types:**
+<Callout type="info">
+💡 Skills follow the Agent Skills spec — a directory with SKILL.md plus optional references/, scripts/, and assets/. Install community skills from the Discover tab.
+</Callout>
 
-<Tabs items={['Conditions', 'Interactions']}>
-  <Tab value="Conditions">
-    Used by router nodes to decide which edge to take:
+```
+skills/
+  design-review/
+    SKILL.md
+    references/
+      review-checklist.md
+    assets/
+      template.md
+```
 
-    ```yaml
-    ---
-    type: condition
-    name: tests-pass
-    check: All tests pass and no diagnostics errors remain
-    ---
+```yaml
+# skills/design-review/SKILL.md
+---
+name: design-review
+description: Review a technical design against quality criteria
+---
+# Design Review
 
-    # Tests Pass
+Review the technical design document against the following criteria.
 
-    **True when:** All tests pass, no lint errors, no type errors.
-    **False when:** Any test fails or diagnostics report errors.
-    ```
+## Checklist
+- Architecture overview is complete
+- Data models are well-defined
+- API contracts are specified
+- Testing strategy is included
+- No outstanding concerns
 
-    The `check` field is a one-line summary the agent evaluates. The body provides detailed criteria.
-  </Tab>
-  <Tab value="Interactions">
-    Define human-agent interaction protocols:
+## References
+See {{references/review-checklist}} for detailed criteria.
+```
 
-    ```yaml
-    ---
-    type: approval
-    name: review-design
-    timeout: 300
-    ---
-
-    # Review Design
-
-    Present the design document to the user.
-
-    **Show:** Architecture overview, key decisions, trade-offs.
-    **Options:** Approve, Reject with feedback, Request changes.
-    ```
-
-    Types: `approval` (present + approve/reject), `confirm` (yes/no), `escalation` (hand to human).
-  </Tab>
-</Tabs>
+Skills support progressive disclosure — start with just a `SKILL.md` and add `references/`, `scripts/`, and `assets/` as the skill grows in complexity.
 
 ## Memory
 
@@ -212,6 +200,8 @@ Memory files grow over time. The agent appends new entries as it makes decisions
 
 ## Scoping Rules
 
+Scope is determined by position in the directory structure — no `scope` or `inclusion` fields needed.
+
 | Level | Location | Visible to |
 |-------|----------|-----------|
 | **Global** | `.agentflow/instructions/` | All workflows, all nodes |
@@ -228,7 +218,7 @@ Not all resource types export the same way to every platform:
 |----------|------------|--------|------|----------|---------|
 | Instructions | Inline | Rules | Steering | Rules | Instructions |
 | Capabilities | Tools | Tools | Tools | Tools | Tools |
-| Runbooks | Inline | Rules | Specs | Rules | Instructions |
+| Skills | Inline | Rules | Specs | Rules | Instructions |
 | Memory | Context | Context | Context | Context | Context |
 | Hooks | Native | As instructions | Native | As instructions | Native |
 

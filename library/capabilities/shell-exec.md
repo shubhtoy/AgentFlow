@@ -26,6 +26,7 @@ narrativeTemplate:
 Execute arbitrary shell commands in the workspace context. This is the escape hatch for operations not covered by dedicated capabilities.
 
 ## When to use
+
 - Running build commands (`npm run build`, `make`, `cargo build`)
 - Running linters or formatters (`eslint --fix`, `prettier --write`)
 - Installing dependencies (`npm install`, `pip install`)
@@ -33,6 +34,7 @@ Execute arbitrary shell commands in the workspace context. This is the escape ha
 - Any CLI tool not wrapped by another capability
 
 ## Safety
+
 - Commands run in the workspace root by default
-- Never run destructive commands (`rm -rf /`, `DROP DATABASE`) without explicit user confirmation
+- Never run destructive commands without explicit user confirmation
 - Prefer dedicated capabilities (run-tests, get-diagnostics) over raw shell when available

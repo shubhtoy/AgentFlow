@@ -1,13 +1,10 @@
 ---
 title: Export Formats
-description: Raw, parsed, and platform export output.
+description: Raw, parsed, platform, and Agent Spec export output.
 ---
 
-import { Tab, Tabs } from "fumadocs-ui/components/tabs"
-import { File, Folder, Files } from "fumadocs-ui/components/files"
-import { Callout } from "fumadocs-ui/components/callout"
 
-AgentFlow supports multiple export formats, each with different levels of resolution and transformation.
+AgentFlow supports multiple export formats, each with different levels of resolution and transformation. Export is handled server-side via the `/api/export` endpoint.
 
 <Tabs items={["Raw", "Parsed", "Default", "Platform", "JSON", "Share", "ZIP"]}>
 <Tab value="Raw">
@@ -112,7 +109,7 @@ agentflow export --format json
 
 <Cards>
 <Card title="graph">Complete node and edge graph of the workflow.</Card>
-<Card title="resources">All resolved instructions, capabilities, and runbooks.</Card>
+<Card title="resources">All resolved instructions, capabilities, and skills.</Card>
 <Card title="metadata">Workspace identity, version, and configuration.</Card>
 <Card title="entry_points">Top-level workflows that can be invoked.</Card>
 <Card title="errors">Validation errors or unresolved references.</Card>

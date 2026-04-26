@@ -30,7 +30,7 @@ tags:
 │   ├── coding-standards.md            global instruction (auto-loaded)
 │   └── ...
 │
-├── runbooks/                        ← Conditions + human touchpoints
+├── skills/                        ← Conditions + human touchpoints
 │   ├── design-approved.md             condition (for routing)
 │   ├── review-design.md               interaction (human approval)
 │   └── ...
@@ -67,7 +67,7 @@ These top-level names have special meaning. The parser uses them for automatic t
 |-----------|--------------|------------------------------------------------|
 | `capabilities/` | capability | Tool definitions (builtin, script, MCP) |
 | `instructions/` | instruction | Reusable instruction modules |
-| `runbooks/` | runbook | Conditions or interactions |
+| `skills/` | skill | Conditions or interactions |
 | `memory/` | memory | Persistent state files |
 | `hooks/` | hook | Event automation (JSON only) |
 
