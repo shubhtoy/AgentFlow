@@ -1,11 +1,22 @@
 /**
  * Singleton service layer for Next.js API routes.
- * Mirrors the Fastify createServiceLayer but initialized lazily.
+ * Uses static ESM imports so Next.js transpilePackages can process @agentflow/* .ts sources.
  */
 
-const path = require('path')
-const { getWorkspaceRoot } = require('@/lib/runtime')
-const { createLocalAdapter } = require('@/lib/workspace/local-adapter')
+import { getWorkspaceRoot } from '@/lib/runtime'
+import { createLocalAdapter } from '@/lib/workspace/local-adapter'
+import { createWorkflowService } from '@agentflow/cli/services/workflow-service'
+import { createValidationService } from '@agentflow/cli/services/validation-service'
+import { createTemplateService } from '@agentflow/cli/services/template-service'
+import { createGitService } from '@agentflow/cli/services/git-service'
+import { createScaffoldGenService } from '@agentflow/cli/services/scaffold-gen-service'
+import { createMCPBridge } from '@agentflow/cli/services/mcp-bridge'
+import { exportForPlatform, toAgentSpec, listPlatforms } from '@agentflow/cli/export'
+import { createImportService } from '@agentflow/cli/services/import-service'
+import { HookRegistry } from '@agentflow/cli/services/hook-registry'
+import { EventHookEngine } from '@agentflow/core/services/event-hook-engine'
+import { createInstructionManager } from '@agentflow/cli/services/instruction-manager'
+import { loadBrandConfig } from '@agentflow/cli/branding'
 
 const ROOT_DIR = getWorkspaceRoot()
 const _workspace = createLocalAdapter(ROOT_DIR)
@@ -22,19 +33,6 @@ let _services: any = null
 
 export function getServices() {
   if (_services) return _services
-
-  const { createWorkflowService } = require('@agentflow/cli/services/workflow-service')
-  const { createValidationService } = require('@agentflow/cli/services/validation-service')
-  const { createTemplateService } = require('@agentflow/cli/services/template-service')
-  const { createGitService } = require('@agentflow/cli/services/git-service')
-  const { createScaffoldGenService } = require('@agentflow/cli/services/scaffold-gen-service')
-  const { createMCPBridge } = require('@agentflow/cli/services/mcp-bridge')
-  const { exportForPlatform, toAgentSpec, listPlatforms } = require('@agentflow/cli/export')
-  const { createImportService } = require('@agentflow/cli/services/import-service')
-  const { HookRegistry } = require('@agentflow/cli/services/hook-registry')
-  const { EventHookEngine } = require('@agentflow/core/services/event-hook-engine')
-  const { createInstructionManager } = require('@agentflow/cli/services/instruction-manager')
-  const { loadBrandConfig } = require('@agentflow/cli/branding')
 
   const brandConfig = loadBrandConfig(ROOT_DIR)
   const ctx = { rootDir: ROOT_DIR, logger: consoleLogger, brandConfig }
