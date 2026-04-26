@@ -1,5 +1,6 @@
 ---
 name: review-plan
+type: step
 description: Present implementation plan for user approval
 ---
 

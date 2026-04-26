@@ -1,5 +1,6 @@
 ---
 name: gather-requirements
+type: step
 description: Elicit and document feature requirements through structured interview
 entry: true
 context:

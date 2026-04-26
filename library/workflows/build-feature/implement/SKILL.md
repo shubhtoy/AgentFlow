@@ -1,5 +1,6 @@
 ---
 name: implement
+type: step
 description: Execute implementation tasks with TDD, continuous verification, and clean commits
 context:
   max_tokens: 16000

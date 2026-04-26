@@ -5,12 +5,12 @@ import {
 import { handle } from 'hono/vercel'
 import nodePath from 'path'
 import { getWorkspaceRoot } from '@/lib/runtime'
+import { loadMcpConfig, resolveEnvTokens } from '@agentflow/cli/mcp/config-manager'
 
 // ── MCP servers from .agentflow/mcp.json ──
 
 function getMcpServers() {
   try {
-    const { loadMcpConfig, resolveEnvTokens } = require('@agentflow/cli/mcp/config-manager')
     const rootDir = nodePath.dirname(getWorkspaceRoot())
     const { servers } = loadMcpConfig(rootDir)
     const entries: any[] = []

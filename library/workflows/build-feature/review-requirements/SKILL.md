@@ -1,5 +1,6 @@
 ---
 name: review-requirements
+type: step
 description: Present requirements for user approval with structured communication
 context:
   inputs: [output.gather-requirements]

@@ -70,7 +70,7 @@ export const FRONTMATTER_SCHEMAS: FrontmatterSchemas = {
     model:       { type: 'string', label: 'Preferred Model', formType: 'text', section: 'Behavior', hint: 'e.g. claude-sonnet-4-20250514, gpt-4o' },
     context:     { type: 'object', label: 'Context Budget', formType: 'group', section: 'Context', children: {
       max_tokens: { type: 'integer', label: 'Max Tokens', formType: 'text', hint: 'Token budget for this node\'s context window' },
-      inputs:     { type: 'object[]', label: 'Inputs (YAML)', formType: 'textarea', hint: 'External inputs: [{ref, scope}]' },
+      inputs:     { type: 'string[]', label: 'Inputs (YAML)', formType: 'textarea', hint: 'External inputs: [\"output.node-name\"] or [{ref, scope}]' },
       exclude:    { type: 'string[]', label: 'Exclude (YAML)', formType: 'textarea', hint: 'Patterns to exclude from context' },
     }},
     outputs:     { type: 'object[]', label: 'Outputs', formType: 'object-list', section: 'Data Flow', children: {

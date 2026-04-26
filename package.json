@@ -5,7 +5,8 @@
   "description": "Directory-based agent workflow orchestration.",
   "workspaces": [
     "packages/core",
-    "packages/cli"
+    "packages/cli",
+    "studio"
   ],
   "scripts": {
     "dev": "npm run dev --prefix studio",

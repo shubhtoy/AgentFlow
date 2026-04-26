@@ -49,7 +49,7 @@ export interface FrontmatterFieldDef {
 }
 
 // Schema derived from single source of truth: src/schemas/frontmatter-schemas.js
-const { getFormSchema } = require('@agentflow/core/schemas/frontmatter-schemas')
+import { getFormSchema } from '@agentflow/core/schemas/frontmatter-schemas'
 
 function buildFormSchemas(): Record<string, FrontmatterFieldDef[]> {
   const schemas: Record<string, FrontmatterFieldDef[]> = {}

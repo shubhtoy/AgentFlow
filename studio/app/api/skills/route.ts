@@ -8,7 +8,7 @@ const { execSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
-const { parseFrontmatter: parseFM } = require('@agentflow/core/parser-core')
+import { parseFrontmatter as parseFM } from '@agentflow/core/parser-core'
 
 function classifySkill(content: string): string {
   const lower = content.toLowerCase()

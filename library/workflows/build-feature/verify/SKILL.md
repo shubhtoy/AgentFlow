@@ -1,5 +1,6 @@
 ---
 name: verify
+type: step
 description: Verify implementation against original requirements — tests, coverage, behavior
 context:
   max_tokens: 8000

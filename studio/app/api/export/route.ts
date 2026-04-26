@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-
-const { parseFromFiles } = require('@agentflow/core/parser-core')
-const { toAgentSpec } = require('@agentflow/cli/export')
-const { exportForPlatform, listPlatforms } = require('@agentflow/cli/export')
+import { parseFromFiles } from '@agentflow/core/parser-core'
+import { toAgentSpec, exportForPlatform, listPlatforms } from '@agentflow/cli/export'
 
 /** GET /api/export — list available platform IDs */
 export async function GET() {

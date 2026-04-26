@@ -9,17 +9,36 @@ AgentFlow lets you build AI agent workflows visually. Each workflow is a graph o
 ## Quick Start
 
 ```bash
-npm install
-cd studio && npm install
-npm run dev
+git clone https://github.com/shubhtoy/agentflow.git
+cd agentflow
+npm ci               # fast, lockfile-exact install (~17s)
+cp .env.example studio/.env.local
+# edit studio/.env.local — add your API keys
+npm run dev          # starts the studio at http://localhost:3000
 ```
 
-Open `http://localhost:3000`.
+> **Adding new dependencies?** Run `npm install <pkg> --workspace=studio` (or `--workspace=packages/core`), which updates `package-lock.json`. Then `npm ci` will work for everyone.
+
+### Requirements
+
+- Node.js 18+ (20 recommended)
+- npm 9+
 
 ## Project Structure
 
 ```
-.agentflow/           # Your workspace (workflows, resources, config)
+packages/
+  core/               # Parser, validator, schemas (TypeScript, no build step)
+  cli/                # CLI services, exporters, MCP bridge (TypeScript, no build step)
+studio/               # Visual editor (Next.js + ReactFlow)
+library/              # Reusable templates, skills, instructions, hooks
+tests/                # Unit, integration, property tests (vitest)
+```
+
+### Workspace layout (`.agentflow/` directory)
+
+```
+.agentflow/
   AGENTS.md           # Workspace identity
   build-feature/      # A workflow
     AGENTS.md         # Workflow descriptor
@@ -27,13 +46,9 @@ Open `http://localhost:3000`.
     step-2/SKILL.md
   instructions/       # Reusable instructions
   capabilities/       # Tool definitions
-  skills/           # Conditions & interactions
+  skills/             # Conditions & interactions
   memory/             # Persistent context
   hooks/              # Event triggers
-
-src/                  # Core engine (parser, validator, exporter)
-studio/               # Visual editor (Next.js + ReactFlow)
-library/              # Reusable templates & skills
 ```
 
 ## Features
@@ -46,9 +61,23 @@ library/              # Reusable templates & skills
 - **Git integration** — sync, commit, push from the studio
 - **AI copilot** — chat with your workflow, get suggestions
 
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the studio (Next.js dev server) |
+| `npm run build` | Production build |
+| `npm test` | Run all tests (vitest) |
+| `npm run lint` | Lint packages |
+| `npm run format` | Format with prettier |
+
 ## Environment Variables
 
-Copy `.env.example` to `studio/.env.local` and fill in your API keys.
+Copy `.env.example` to `studio/.env.local` and fill in your API keys. The studio will start without them, but AI features (copilot, chat) require at least one LLM provider key.
+
+## Deployment
+
+The studio deploys to Vercel. Set the Root Directory to `studio/` in Vercel project settings — the `installCommand` in `studio/vercel.json` handles the monorepo install automatically.
 
 ## License
 

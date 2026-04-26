@@ -54,7 +54,9 @@ export function LibraryPreview({ entry, open, onClose, onAdd, isInstalled }: Lib
   useEffect(() => {
     if (!entry || !open) { setContent(null); return }
     setLoading(true)
-    fetch(`/library/${entry.type.endsWith('s') ? entry.type : entry.type + 's'}/${entry.name}.md`)
+    const dir = entry.type === 'memory' ? 'memory' : entry.type.endsWith('s') ? entry.type : entry.type + 's'
+    const ext = entry.type === 'hook' ? '.json' : '.md'
+    fetch(`/library/${dir}/${entry.name}${ext}`)
       .then(r => r.ok ? r.text() : null)
       .then(d => setContent(d ?? 'No content available.'))
       .catch(() => setContent('Failed to load content.'))

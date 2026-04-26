@@ -87,7 +87,7 @@ export async function importWorkflow(name: string): Promise<{ files: { path: str
 
 /** Import a single resource (handles both single-file and directory-based) */
 export async function importResource(type: string, name: string): Promise<{ files: { path: string; content: string }[] }> {
-  const dir = type.endsWith('s') ? type : type + 's'
+  const dir = type === 'memory' ? 'memory' : type.endsWith('s') ? type : type + 's'
   const index = await getIndex()
 
   // Directory-based (skills) — find all files under dir/name/

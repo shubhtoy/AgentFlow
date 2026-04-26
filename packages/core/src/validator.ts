@@ -459,7 +459,8 @@ export function validate(
           })
         }
       }
-      const inputs = (ctx.inputs || []) as { ref?: string }[]
+      const rawInputs = (ctx.inputs || []) as (string | { ref?: string })[]
+      const inputs = rawInputs.map(i => typeof i === 'string' ? { ref: i } : i)
       for (const input of inputs) {
         if (!input.ref || input.ref.startsWith('<<')) continue
         const parts = input.ref.split('/')
@@ -677,17 +678,16 @@ export function validate(
     }
   }
 
-  // 8. Misplaced resources inside workflow dirs
+  // 8. Misplaced resources inside workflow dirs (skip workflow-scoped resources — those are intentional)
   const reservedSet = new Set(RESERVED_DIRS)
   const wfIds = new Set(Object.keys(workflows))
   for (const file of allFiles) {
     const parts = (file.relativePath || '').split('/')
     if (parts.length >= 3 && wfIds.has(parts[0]) && reservedSet.has(parts[1])) {
-      softIssues.push({
-        type: 'misplaced_resource', workflow: parts[0], dir: parts[1],
-        file: file.relativePath, filePath: file.relativePath,
-        message: `"${file.relativePath}" is inside workflow "${parts[0]}". Resources like ${parts[1]}/ should be at the top level to be shared across workflows.`,
-      })
+      // Workflow-scoped resources are valid — only warn if the resource is also
+      // referenced from outside this workflow (indicating it should be shared)
+      // For now, skip this warning entirely — workflow-local resources are a
+      // legitimate pattern (e.g. build-feature/instructions/design-principles.md)
     }
   }
 

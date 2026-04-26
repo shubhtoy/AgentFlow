@@ -1,5 +1,6 @@
 ---
 name: review-design
+type: step
 description: Present technical design for user approval with clear trade-off analysis
 context:
   inputs: [output.create-design]

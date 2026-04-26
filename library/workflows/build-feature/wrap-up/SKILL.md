@@ -1,5 +1,6 @@
 ---
 name: wrap-up
+type: step
 description: Summarize completed work, persist learnings, suggest next steps
 context:
   inputs: [output.gather-requirements, output.design, output.implementation]

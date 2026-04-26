@@ -1,5 +1,6 @@
 ---
 name: plan-tasks
+type: step
 description: Break approved design into ordered, atomic implementation tasks
 context:
   max_tokens: 6000

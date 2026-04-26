@@ -1,9 +1,11 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest } from 'next/server'
+import path from 'path'
 import { getServices, jsonBody, json } from '@/lib/service-context'
-
-const path = require('path')
+import { loadMcpConfig, addServer, removeServer, saveMcpConfig, resolveEnvTokens } from '@agentflow/cli/mcp/config-manager'
+import { searchRegistry } from '@agentflow/core/mcp/registry-client'
+import { parseRoot } from '@agentflow/cli/parser'
 
 // ── GET: action via ?action= query param ──
 
@@ -12,7 +14,6 @@ export async function GET(req: NextRequest) {
   const s = getServices()
 
   if (action === 'config') {
-    const { loadMcpConfig } = require('@agentflow/cli/mcp/config-manager')
     const result = loadMcpConfig(s.rootDir)
     const servers = Object.entries(result.servers || {}).map(([name, cfg]: [string, any]) => {
       const toolNames = Array.isArray(cfg.discoveredTools) ? cfg.discoveredTools : []
@@ -31,7 +32,6 @@ export async function GET(req: NextRequest) {
   }
 
   if (action === 'search') {
-    const { searchRegistry } = require('@agentflow/core/mcp/registry-client')
     const q = req.nextUrl.searchParams.get('q') || ''
     const limit = parseInt(req.nextUrl.searchParams.get('limit') || '20', 10)
     const cursor = req.nextUrl.searchParams.get('cursor') || undefined
@@ -43,8 +43,6 @@ export async function GET(req: NextRequest) {
   }
 
   if (action === 'tools') {
-    const { loadMcpConfig } = require('@agentflow/cli/mcp/config-manager')
-    const { parseRoot } = require('@agentflow/cli/parser')
     const result = loadMcpConfig(s.rootDir)
     const tools: any[] = []
     const seen = new Set<string>()
@@ -78,8 +76,6 @@ export async function POST(req: NextRequest) {
   if (!action) return json({ error: 'action is required' }, 400)
 
   if (action === 'add') {
-    const { addServer } = require('@agentflow/cli/mcp/config-manager')
-    const { searchRegistry } = require('@agentflow/core/mcp/registry-client')
     const { registryName, env, required } = body
     if (!name) return json({ error: 'name is required' }, 400)
     try {
@@ -97,14 +93,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'remove') {
-    const { removeServer } = require('@agentflow/cli/mcp/config-manager')
     if (!name) return json({ error: 'name is required' }, 400)
     await removeServer(s.rootDir, name)
     return json({ ok: true })
   }
 
   if (action === 'toggle') {
-    const { loadMcpConfig, saveMcpConfig } = require('@agentflow/cli/mcp/config-manager')
     const { disabled } = body
     if (!name) return json({ error: 'name is required' }, 400)
     const result = loadMcpConfig(s.rootDir)
@@ -113,7 +107,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'update') {
-    const { loadMcpConfig, saveMcpConfig } = require('@agentflow/cli/mcp/config-manager')
     const { env, disabled, url, command, args } = body
     if (!name) return json({ error: 'name is required' }, 400)
     const { servers } = loadMcpConfig(s.rootDir)
@@ -130,7 +123,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'discover') {
-    const { loadMcpConfig, saveMcpConfig, resolveEnvTokens } = require('@agentflow/cli/mcp/config-manager')
     if (!name) return json({ error: 'name is required' }, 400)
     const { servers } = loadMcpConfig(s.rootDir)
     const cfg = servers[name]
@@ -168,7 +160,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'test') {
-    const { loadMcpConfig, resolveEnvTokens } = require('@agentflow/cli/mcp/config-manager')
     if (!name) return json({ error: 'name is required' }, 400)
     const { servers } = loadMcpConfig(s.rootDir)
     const cfg = servers[name]

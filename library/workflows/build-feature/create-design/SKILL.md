@@ -1,5 +1,6 @@
 ---
 name: create-design
+type: step
 description: Transform approved requirements into a detailed technical design
 context:
   max_tokens: 8000
