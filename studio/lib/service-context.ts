@@ -11,7 +11,6 @@ import { createTemplateService } from '@agentflow/cli/services/template-service'
 import { createGitService } from '@agentflow/cli/services/git-service'
 import { createScaffoldGenService } from '@agentflow/cli/services/scaffold-gen-service'
 import { createMCPBridge } from '@agentflow/cli/services/mcp-bridge'
-import { exportForPlatform, toAgentSpec, listPlatforms } from '@agentflow/cli/export'
 import { createImportService } from '@agentflow/cli/services/import-service'
 import { HookRegistry } from '@agentflow/cli/services/hook-registry'
 import { EventHookEngine } from '@agentflow/core/services/event-hook-engine'
@@ -52,7 +51,6 @@ export function getServices() {
     git: createGitService(ctx),
     scaffoldGen: createScaffoldGenService(ctx),
     mcpBridge,
-    exportSvc: { exportForPlatform, toAgentSpec, listPlatforms },
     importSvc: createImportService(ctx),
     hookRegistry,
     hookEngine,

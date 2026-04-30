@@ -49,22 +49,11 @@ function parseRefInner(inner: string): {
   if (trimmed.startsWith('->')) {
     const rest = trimmed.slice(2).trim()
     const pipeIdx = rest.indexOf('|')
-    if (pipeIdx !== -1) {
-      const target = rest.slice(0, pipeIdx).trim()
-      const condition = rest.slice(pipeIdx + 1).trim()
-      return {
-        semanticType: 'edge',
-        category: refCategory(target),
-        refName: refName(target),
-        condition,
-      }
-    }
-    return {
-      semanticType: 'edge',
-      category: refCategory(rest),
-      refName: refName(rest),
-      condition: null,
-    }
+    const target = pipeIdx !== -1 ? rest.slice(0, pipeIdx).trim() : rest
+    const condition = pipeIdx !== -1 ? rest.slice(pipeIdx + 1).trim() : null
+    const cat = target.includes('/') ? refCategory(target) : 'nodes'
+    const name = target.includes('/') ? refName(target) : target
+    return { semanticType: 'edge', category: cat, refName: name, condition }
   }
 
   // Mention: category/name

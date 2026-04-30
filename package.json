@@ -12,14 +12,16 @@
     "dev": "npm run dev --prefix studio",
     "build": "npm run build --prefix studio",
     "test": "vitest --run",
-    "lint": "eslint packages/*/src/**/*.{js,ts} --max-warnings 0",
-    "lint:fix": "eslint packages/*/src/**/*.{js,ts} --fix",
+    "lint": "eslint packages/*/src/**/*.ts --max-warnings 0",
+    "lint:fix": "eslint packages/*/src/**/*.ts --fix",
     "format": "prettier --write 'packages/*/src/**/*.{js,ts,json}'",
-    "format:check": "prettier --check 'packages/*/src/**/*.{js,ts,json}'"
+    "format:check": "prettier --check 'packages/*/src/**/*.{js,ts,json}'",
+    "typecheck": "tsc --build"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
     "eslint": "^8.57.1",

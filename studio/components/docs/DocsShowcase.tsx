@@ -33,7 +33,7 @@ export function DocsShowcase({
       try {
         const { validate } = await import('@agentflow/core/validator')
         const d = useAppStore.getState().data
-        if (d) useAppStore.setState({ validationResult: validate(d) })
+        if (d) useAppStore.setState({ validationResult: validate(d as any) })
       } catch {}
       setReady(true)
     })

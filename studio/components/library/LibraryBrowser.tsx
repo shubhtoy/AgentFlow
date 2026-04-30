@@ -150,11 +150,11 @@ function SkillsShSearch() {
 
 export function LibraryBrowser({ onSelect, onAdd }: LibraryBrowserProps) {
   const [tab, setTab] = useState<'local' | 'skills'>('local')
-  const entries = useNewStore(s => s.libraryEntries)
-  const loading = useNewStore(s => s.libraryLoading)
-  const loadLibrary = useNewStore(s => s.loadLibrary)
-  const search = useNewStore(s => s.librarySearch)
-  const setSearch = useNewStore(s => s.setLibrarySearch)
+  const entries = useAppStore(s => s.libraryEntries)
+  const loading = useAppStore(s => s.libraryLoading)
+  const loadLibrary = useAppStore(s => s.loadLibrary)
+  const search = useAppStore(s => s.librarySearch)
+  const setSearch = useAppStore(s => s.setLibrarySearch)
   const data = useAppStore(s => s.data)
 
   const [typeFilter, setTypeFilter] = useState('')

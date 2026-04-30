@@ -210,9 +210,9 @@ function nextCustomFieldName(): string {
 
 /* ── Main form ───────────────────────────────────────────────────────── */
 
-interface FrontmatterFormProps { file: ParsedFile; onSave: (yamlBlock: string) => void }
+interface FrontmatterFormProps { file: ParsedFile; onSave: (yamlBlock: string) => void; onInitialize?: () => void }
 
-export function FrontmatterForm({ file, onSave }: FrontmatterFormProps) {
+export function FrontmatterForm({ file, onSave, onInitialize }: FrontmatterFormProps) {
   const data = useAppStore(s => s.data)
   const fm = file.frontmatter ?? {}
   const detectedType = (fm.type as string) ?? file.resourceType ?? null
@@ -283,7 +283,7 @@ export function FrontmatterForm({ file, onSave }: FrontmatterFormProps) {
         <p className="text-xs text-muted-foreground/60 mb-5 max-w-[220px] leading-relaxed">
           Properties control how this resource behaves. Initialize to get started.
         </p>
-        <Button variant="outline" size="sm" onClick={() => onSave('---\n---\n')} className="gap-1.5 h-8">
+        <Button variant="outline" size="sm" onClick={() => onInitialize ? onInitialize() : onSave('---\n---\n')} className="gap-1.5 h-8">
           <FilePlus size={13} /> Initialize Properties
         </Button>
       </div>

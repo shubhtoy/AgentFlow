@@ -1,4 +1,4 @@
-import { useCallback, useMemo, memo, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react'
 import { X, FileText, ArrowRight, ArrowLeft, CornerDownRight } from 'lucide-react'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import { getNodeTypeColor } from '@/lib/constants'
@@ -58,18 +58,22 @@ export const DetailHeader = memo(function DetailHeader({ name, typeBadge, filePa
 // ── Validation banner ───────────────────────────────────────────────────
 
 export const ValidationBanner = memo(function ValidationBanner({ issues }: { issues: ValidationIssue[] }) {
-  if (issues.length === 0) return null
+  const [hidden, setHidden] = useState(false)
+  // Reset when issues change
+  useEffect(() => { setHidden(false) }, [issues.length])
+
+  if (issues.length === 0 || hidden) return null
   const errors = issues.filter(i => (i as any).severity === 'error')
   const warnings = issues.filter(i => (i as any).severity === 'warning')
 
   return (
     <div className={cn(
-      'px-3 py-2 border-b text-xs font-medium',
+      'px-3 py-1.5 border-b text-xs font-medium flex items-start gap-2',
       errors.length > 0
         ? 'border-destructive/20 bg-destructive/5 text-destructive'
         : 'border-amber-500/20 bg-amber-500/5 text-amber-600 dark:text-amber-400',
     )}>
-      <div className="space-y-1">
+      <div className="space-y-0.5 flex-1 min-w-0">
         {errors.map((e, i) => (
           <p key={`e-${i}`} className="flex items-start gap-1.5">
             <span className="shrink-0 mt-0.5">✕</span>
@@ -83,6 +87,11 @@ export const ValidationBanner = memo(function ValidationBanner({ issues }: { iss
           </p>
         ))}
       </div>
+      <button onClick={() => setHidden(true)}
+        className="shrink-0 mt-0.5 opacity-50 hover:opacity-100 transition-opacity"
+        aria-label="Dismiss validation issues">
+        <X size={12} />
+      </button>
     </div>
   )
 })
@@ -317,6 +326,15 @@ export function NodeDetailTabs({ file, allRefs, onRefNavigate, sourceNodeId, tab
     onSave(file.relativePath, yamlBlock + body.replace(/^\n/, ''))
   }, [file, onSave])
 
+  // Direct save for Initialize Properties — avoids stale closure issues
+  // by reading file at call time rather than relying on captured reference
+  const handleInitializeProperties = useCallback(() => {
+    if (!file || !onSave) return
+    const raw = file.rawContent
+    const body = raw.replace(/^\n/, '')
+    onSave(file.relativePath, '---\n---\n' + body)
+  }, [file, onSave])
+
   if (!file) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
@@ -365,7 +383,7 @@ export function NodeDetailTabs({ file, allRefs, onRefNavigate, sourceNodeId, tab
         )}
         {tab === 'properties' && (
           <ScrollArea className="flex-1 h-0">
-            <FrontmatterForm file={file} onSave={handleFrontmatterSave} />
+            <FrontmatterForm file={file} onSave={handleFrontmatterSave} onInitialize={handleInitializeProperties} />
           </ScrollArea>
         )}
         {tab === 'references' && (

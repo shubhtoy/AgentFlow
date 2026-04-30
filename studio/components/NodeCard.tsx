@@ -73,8 +73,7 @@ export function NodeCard() {
   const isDark = document.documentElement.classList.contains('dark')
   const theme = isDark ? 'dark' : 'light'
 
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null)
-  useEffect(() => { setTab('content'); setDragOffset(null) }, [selectionKey])
+  useEffect(() => { setTab('content') }, [selectionKey])
 
   const [copilotSidebarOpen, setCopilotSidebarOpen] = useState(false)
   useEffect(() => {
@@ -110,21 +109,6 @@ export function NodeCard() {
     ]
   }, [validationResult, primaryFile])
 
-  const dragStartRef = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null)
-  const onDragStart = useCallback((e: React.PointerEvent) => {
-    e.preventDefault()
-    const ox = dragOffset?.x ?? 0
-    const oy = dragOffset?.y ?? 0
-    dragStartRef.current = { mx: e.clientX, my: e.clientY, ox, oy }
-    const onMove = (ev: PointerEvent) => {
-      if (!dragStartRef.current) return
-      setDragOffset({ x: dragStartRef.current.ox + (ev.clientX - dragStartRef.current.mx), y: dragStartRef.current.oy + (ev.clientY - dragStartRef.current.my) })
-    }
-    const onUp = () => { dragStartRef.current = null; window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-  }, [dragOffset])
-
   // ── Visibility: show whenever a node or resource is selected ──
   const isFocusModalOpen = !!focusTarget
   const hasContent = isNode ? !!node && !!wf : isIdentity ? !!identityFile : (isResource && !!resource)
@@ -139,8 +123,8 @@ export function NodeCard() {
   let headerEcosystemHint: string | undefined
   let HeaderIcon: React.ComponentType<{ size?: number; style?: React.CSSProperties }> | null = null
   let showConnections = false
-  let incoming: { from: string; to: string }[] = []
-  let outgoing: { from: string; to: string }[] = []
+  let incoming: { from: string; to: string; condition?: string }[] = []
+  let outgoing: { from: string; to: string; condition?: string }[] = []
 
   if (isNode && node && wf) {
     headerColor = getNodeTypeColor(node.nodeType, theme)
@@ -274,13 +258,20 @@ export function NodeCard() {
                     onClick={() => select({ type: 'node', key: e.from, workflowId: activeWf })}
                     className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-md px-1.5 py-0.5 hover:bg-accent transition-colors">
                     <ArrowLeft size={9} /> {wf?.nodes[e.from]?.name || e.from}
+                    {e.condition && (
+                      <span className="text-amber-500 font-medium truncate max-w-[80px]">| {e.condition}</span>
+                    )}
                   </button>
                 ))}
                 {outgoing.slice(0, 5).map((e, i) => (
                   <button key={`out-${i}`}
                     onClick={() => select({ type: 'node', key: e.to, workflowId: activeWf })}
                     className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-md px-1.5 py-0.5 hover:bg-accent transition-colors">
-                    {wf?.nodes[e.to]?.name || e.to} <ArrowRight size={9} />
+                    {wf?.nodes[e.to]?.name || e.to}
+                    {e.condition && (
+                      <span className="text-amber-500 font-medium truncate max-w-[80px]">| {e.condition}</span>
+                    )}
+                    <ArrowRight size={9} />
                   </button>
                 ))}
                 {(incoming.length + outgoing.length) > 10 && (

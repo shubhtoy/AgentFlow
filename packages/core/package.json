@@ -2,7 +2,7 @@
   "name": "@agentflow/core",
   "version": "0.1.0",
   "description": "AgentFlow core \u2014 parser, validator, exporter, transport. Pure logic, no Node.js APIs.",
-  "main": "src/parser-core.js",
+  "main": "src/parser-core.ts",
   "exports": {
     ".": "./src/parser-core.ts",
     "./parser-core": "./src/parser-core.ts",

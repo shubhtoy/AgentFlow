@@ -21,6 +21,7 @@ const ISSUE_TYPE_CONFIG: Record<string, { icon: typeof XCircle; label: string }>
   broken_data_flow:       { icon: Link2,     label: 'Data Flow' },
   ambiguous_ref:          { icon: Link2,     label: 'Ambiguous Ref' },
   missing_condition:      { icon: GitBranch, label: 'Missing Condition' },
+  inline_condition:       { icon: GitBranch, label: 'Inline Condition' },
   router_non_conditional: { icon: GitBranch, label: 'Router Edge' },
   malformed_variable:     { icon: Variable,  label: 'Malformed Var' },
   schema:                 { icon: Shield,    label: 'Schema' },

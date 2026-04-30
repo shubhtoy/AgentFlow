@@ -1,33 +1,40 @@
 #!/usr/bin/env node
+require('tsx/cjs');
 const { program } = require('commander');
 const path = require('path');
 const fs = require('fs');
 
-// Core (pure logic — no Node APIs)
-const { validate } = require('@agentflow/core/validator');
-const { exportWorkflow } = require('@agentflow/core/exporter');
-const { RESERVED_DIRS, CANONICAL_CATEGORIES, TAXONOMY_REGISTRY } = require('@agentflow/core/taxonomy');
-const { classifyResource, identifyPrimaryFile } = require('@agentflow/core/parser-core');
-const { searchRegistry, getServer } = require('@agentflow/core/mcp/registry-client');
-
-// CLI (Node-only)
+// Lazy loaders — modules are required on first use, not at startup.
+// This lets `agentflow --help` work even if some modules aren't built yet.
 const srcDir = path.join(__dirname, '..', 'src');
-const { resolveRoot } = require(path.join(srcDir, 'utils', 'resolve-root'));
-const { parseRoot } = require(path.join(srcDir, 'parser'));
-const { exportRaw, exportParsed } = require(path.join(srcDir, 'structured-exporter'));
-const { search, add, index } = require(path.join(srcDir, 'library'));
-const { serializeGraph } = require(path.join(srcDir, 'pretty-printer'));
-const gitManager = require(path.join(srcDir, 'git', 'git-manager'));
-const repoScanner = require(path.join(srcDir, 'git', 'repo-scanner'));
-const syncEngine = require(path.join(srcDir, 'git', 'sync-engine'));
-const configManager = require(path.join(srcDir, 'git', 'config-manager'));
-const { loadMcpConfig, addServer, removeServer } = require(path.join(srcDir, 'mcp', 'config-manager'));
-const { discoverTools } = require(path.join(srcDir, 'mcp', 'server-lifecycle'));
-const { scaffoldTools } = require(path.join(srcDir, 'mcp', 'tool-scaffolder'));
-const { unifiedSearch } = require(path.join(srcDir, 'mcp', 'unified-search'));
-const { loadBrandConfig } = require(path.join(srcDir, 'branding'));
+const lazy = (id) => { let m; return new Proxy({}, { get(_, k) { m ??= typeof id === 'function' ? id() : require(id); return m[k]; } }); };
+const lazyMod = (id) => { let m; return () => (m ??= require(id)); };
 
-const brandConfig = loadBrandConfig();
+const core = {
+  get validate() { return require('@agentflow/core/validator').validate; },
+  get taxonomy() { return require('@agentflow/core/taxonomy'); },
+  get parserCore() { return require('@agentflow/core/parser-core'); },
+  get registryClient() { return require('@agentflow/core/mcp/registry-client'); },
+};
+
+const cli = {
+  get resolveRoot() { return require(path.join(srcDir, 'utils', 'resolve-root')).resolveRoot; },
+  get parseRoot() { return require(path.join(srcDir, 'parser')).parseRoot; },
+  get library() { return require(path.join(srcDir, 'library')); },
+  get serializeGraph() { return require(path.join(srcDir, 'pretty-printer')).serializeGraph; },
+  get gitManager() { return require(path.join(srcDir, 'git', 'git-manager')); },
+  get repoScanner() { return require(path.join(srcDir, 'git', 'repo-scanner')); },
+  get syncEngine() { return require(path.join(srcDir, 'git', 'sync-engine')); },
+  get configManager() { return require(path.join(srcDir, 'git', 'config-manager')); },
+  get mcpConfig() { return require(path.join(srcDir, 'mcp', 'config-manager')); },
+  get discoverTools() { return require(path.join(srcDir, 'mcp', 'server-lifecycle')).discoverTools; },
+  get scaffoldTools() { return require(path.join(srcDir, 'mcp', 'tool-scaffolder')).scaffoldTools; },
+  get unifiedSearch() { return require(path.join(srcDir, 'mcp', 'unified-search')).unifiedSearch; },
+  get branding() { return require(path.join(srcDir, 'branding')); },
+  get structuredExporter() { return require(path.join(srcDir, 'structured-exporter')); },
+};
+
+const brandConfig = cli.branding.loadBrandConfig();
 
 program.name(brandConfig.cli).description('Parse and visualize agent workflows').version('0.1.0');
 
@@ -44,7 +51,7 @@ program
   .action((dir, opts) => {
     const rootDir = path.resolve(dir);
     const mode = opts.metadataOnly ? 'metadata-only' : 'full';
-    const graph = parseRoot(rootDir, mode);
+    const graph = cli.parseRoot(rootDir, mode);
     const json = JSON.stringify(graph, null, 2);
     if (opts.output) {
       fs.writeFileSync(opts.output, json);
@@ -65,8 +72,8 @@ program
   .option('--strict', 'treat warnings as errors')
   .action((dir, opts) => {
     const rootDir = path.resolve(dir);
-    const graph = parseRoot(rootDir);
-    const result = validate(graph, { strict: !!opts.strict });
+    const graph = cli.parseRoot(rootDir);
+    const result = core.validate(graph, { strict: !!opts.strict });
     const errors = result.errors || [];
     const warnings = result.warnings || [];
 
@@ -101,52 +108,45 @@ program
   .action(async (dir, opts) => {
     const rootDir = path.resolve(dir);
 
-    // Platform-specific export via transport pipeline
+    // Platform-specific export via export engine
     if (opts.platform) {
       try {
-        const { TransportRegistry } = require(path.join(srcDir, 'transport', 'transport-registry'));
-        const { AdapterFactory } = require(path.join(srcDir, 'transport', 'adapter-factory'));
-        const { ExportPipeline } = require(path.join(srcDir, 'transport', 'export-pipeline'));
-        const graph = parseRoot(rootDir);
-        const registry = new TransportRegistry();
-        const factory = new AdapterFactory(path.join(srcDir, 'transport', 'platforms'));
-        factory.registerAll(registry);
-        const pipeline = new ExportPipeline(registry);
-        const result = await pipeline.export(opts.platform, graph, { outputPath: opts.output });
-        if (!result.ok) { console.error(`\u2717 ${result.error}`); process.exit(1); }
+        const { exportForPlatform, toAgentSpec } = require(path.join(srcDir, 'export'));
+        const graph = cli.parseRoot(rootDir);
+        let files;
+        if (opts.platform === 'agent-spec') {
+          const spec = toAgentSpec(graph);
+          files = { 'agent-spec.json': JSON.stringify(spec, null, 2) };
+        } else {
+          files = exportForPlatform(graph, opts.platform);
+        }
+        if (!Object.keys(files).length) { console.error(`\u2717 Export produced no files for platform "${opts.platform}".`); process.exit(1); }
         const outDir = opts.output || path.join('export', opts.platform);
-        for (const [filePath, content] of Object.entries(result.data.files)) {
+        for (const [filePath, content] of Object.entries(files)) {
           const fullPath = path.join(outDir, filePath);
           fs.mkdirSync(path.dirname(fullPath), { recursive: true });
           fs.writeFileSync(fullPath, content);
         }
-        console.log(`\u2713 Exported to ${opts.platform} format in ${outDir}/ (${Object.keys(result.data.files).length} files)`);
-        if (result.data.fidelityReport) console.log(result.data.fidelityReport.markdown);
+        console.log(`\u2713 Exported to ${opts.platform} format in ${outDir}/ (${Object.keys(files).length} files)`);
       } catch (err) { console.error(`\u2717 ${err.message}`); process.exit(1); }
       return;
     }
 
-    // Default export (no --platform, no --format)
+    // Default export (no --platform, no --format) — list available platforms
     if (!opts.format) {
       try {
-        const { defaultExport } = require(path.join(srcDir, 'transport', 'default-export'));
-        const graph = parseRoot(rootDir);
-        const result = defaultExport(graph);
-        if (!result.ok) { console.error(`\u2717 ${result.error}`); process.exit(1); }
-        const outDir = opts.output || path.join('export', 'default');
-        for (const [filePath, content] of Object.entries(result.data.files)) {
-          const fullPath = path.join(outDir, filePath);
-          fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-          fs.writeFileSync(fullPath, content);
-        }
-        console.log(`\u2713 Default export to ${outDir}/ (${Object.keys(result.data.files).length} files)`);
+        const { listPlatforms } = require(path.join(srcDir, 'export'));
+        const platforms = listPlatforms();
+        if (!platforms.length) { console.error('\u2717 No platform configs found.'); process.exit(1); }
+        console.log('Available platforms:\n' + platforms.map(p => `  ${p}`).join('\n'));
+        console.log('\nUsage: export [dir] --platform <name>');
       } catch (err) { console.error(`\u2717 ${err.message}`); process.exit(1); }
       return;
     }
 
     // Legacy formats: raw/parsed (single workflow export via structured-exporter)
     if (opts.format === 'raw' || opts.format === 'parsed') {
-      const graph = parseRoot(rootDir);
+      const graph = cli.parseRoot(rootDir);
       const workflowIds = Object.keys(graph.workflows || {});
       let workflowId = opts.workflow;
       if (!workflowId) {
@@ -154,7 +154,7 @@ program
         else if (workflowIds.length === 0) { console.error('No workflows found.'); process.exit(1); }
         else { console.error(`Multiple workflows found. Use --workflow <name>: ${workflowIds.join(', ')}`); process.exit(1); }
       }
-      const files = opts.format === 'parsed' ? exportParsed(graph, workflowId) : exportRaw(graph, workflowId);
+      const files = opts.format === 'parsed' ? cli.structuredExporter.exportParsed(graph, workflowId) : cli.structuredExporter.exportRaw(graph, workflowId);
       const wfName = (graph.workflows[workflowId] || {}).name || workflowId;
       const suffix = opts.format === 'parsed' ? '-parsed' : '';
       const outDir = opts.output || path.join('export', `${wfName}${suffix}`);
@@ -331,7 +331,7 @@ program
   .argument('[dir]', 'workspace directory', brandConfig.dir)
   .action((dir) => {
     const rootDir = path.resolve(dir);
-    const graph = parseRoot(rootDir);
+    const graph = cli.parseRoot(rootDir);
     const lines = [];
 
     for (const wfId of Object.keys(graph.workflows || {})) {
@@ -368,7 +368,7 @@ program
   .argument('[dir]', 'directory', brandConfig.dir)
   .action((dir) => {
     const base = path.resolve(dir);
-    for (const d of RESERVED_DIRS) {
+    for (const d of core.taxonomy.RESERVED_DIRS) {
       fs.mkdirSync(path.join(base, d), { recursive: true });
     }
     fs.writeFileSync(
@@ -435,7 +435,7 @@ program
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
     registry._libraryDir = path.resolve('library');
     try {
-      add(registry, type, name, path.resolve(brandConfig.dir));
+      cli.library.add(registry, type, name, path.resolve(brandConfig.dir));
       console.log(`✓ Added ${type} "${name}" to ${brandConfig.dir}/`);
     } catch (err) {
       console.error(err.message);
@@ -514,7 +514,7 @@ program
         console.error('library/ directory not found.');
         process.exit(1);
       }
-      const registry = index(libraryDir);
+      const registry = cli.library.index(libraryDir);
       const outPath = path.join(libraryDir, 'registry.json');
       fs.writeFileSync(outPath, JSON.stringify(registry, null, 2));
       console.log(`✓ Regenerated ${outPath} (${registry.entries.length} entries)`);
@@ -586,33 +586,68 @@ program
 
 program
   .command('dev')
+  .description('Start the AgentFlow studio (alias: studio)')
+  .argument('[dir]', 'workspace directory')
+  .option('--agent', 'also start LangGraph runtime')
+  .option('-p, --port <port>', 'studio port', '3000')
+  .action((dir, opts) => {
+    startStudio(dir, opts);
+  });
+
+program
+  .command('studio')
   .description('Start the AgentFlow studio')
   .argument('[dir]', 'workspace directory')
   .option('--agent', 'also start LangGraph runtime')
-  .option('-p, --port <port>', 'studio port')
+  .option('-p, --port <port>', 'studio port', '3000')
   .action((dir, opts) => {
-    const { spawn } = require('child_process');
-    const root = dir ? path.resolve(dir) : resolveRoot();
-    process.env.AGENTFLOW_ROOT = root;
-    const studioDir = path.join(__dirname, '..', 'studio');
-
-    if (opts.agent) {
-      const { execSync } = require('child_process');
-      try { execSync('npx concurrently --version', { stdio: 'ignore' }); } catch (_) {
-        console.error('✗ Install concurrently: npm i -D concurrently');
-        process.exit(1);
-      }
-      const nextCmd = opts.port ? `next dev --port ${opts.port}` : 'next dev';
-      spawn('npx', ['concurrently', '-k', '-n', 'studio,agent', '-c', 'blue,green',
-        `cd ${studioDir} && ${nextCmd}`,
-        'sleep 2 && npx @langchain/langgraph-cli dev --no-browser --port 2024'
-      ], { stdio: 'inherit', shell: true });
-    } else {
-      const args = ['dev'];
-      if (opts.port) args.push('--port', opts.port);
-      spawn('npx', ['next', ...args], { cwd: studioDir, stdio: 'inherit', env: { ...process.env, AGENTFLOW_ROOT: root } });
-    }
+    startStudio(dir, opts);
   });
+
+function findStudioDir() {
+  // Walk up from the CLI bin to find the studio/ directory in the monorepo
+  let dir = path.resolve(__dirname, '..');
+  for (let i = 0; i < 5; i++) {
+    const candidate = path.join(dir, 'studio');
+    if (fs.existsSync(path.join(candidate, 'package.json'))) return candidate;
+    dir = path.dirname(dir);
+  }
+  return null;
+}
+
+function startStudio(dir, opts) {
+  const { spawn } = require('child_process');
+  const root = dir ? path.resolve(dir) : cli.resolveRoot();
+  process.env.AGENTFLOW_ROOT = root;
+  const studioDir = findStudioDir();
+
+  if (!studioDir) {
+    console.error('✗ Could not find the studio/ directory. Make sure you are in the agentflow monorepo.');
+    process.exit(1);
+  }
+
+  console.log(`Starting AgentFlow Studio...`);
+  console.log(`  Studio:    ${studioDir}`);
+  console.log(`  Workspace: ${root}`);
+  console.log(`  Port:      ${opts.port}`);
+  console.log();
+
+  if (opts.agent) {
+    const { execSync } = require('child_process');
+    try { execSync('npx concurrently --version', { stdio: 'ignore' }); } catch (_) {
+      console.error('✗ Install concurrently: npm i -D concurrently');
+      process.exit(1);
+    }
+    const nextCmd = `next dev --port ${opts.port}`;
+    spawn('npx', ['concurrently', '-k', '-n', 'studio,agent', '-c', 'blue,green',
+      `cd ${studioDir} && ${nextCmd}`,
+      'sleep 2 && npx @langchain/langgraph-cli dev --no-browser --port 2024'
+    ], { stdio: 'inherit', shell: true });
+  } else {
+    const args = ['dev', '--port', opts.port];
+    spawn('npx', ['next', ...args], { cwd: studioDir, stdio: 'inherit', env: { ...process.env, AGENTFLOW_ROOT: root } });
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  tokens [dir]                                                       */
@@ -632,7 +667,7 @@ program
   .option('--json', 'output raw JSON')
   .action((dir, opts) => {
     const rootDir = path.resolve(dir);
-    const graph = parseRoot(rootDir);
+    const graph = cli.parseRoot(rootDir);
 
     let scope = 'workflow';
     const calcOpts = {
@@ -682,7 +717,7 @@ program
   .option('--json', 'output raw JSON')
   .action((dir, opts) => {
     const rootDir = path.resolve(dir);
-    const graph = parseRoot(rootDir);
+    const graph = cli.parseRoot(rootDir);
 
     const workflowIds = Object.keys(graph.workflows || {});
     let workflowId = opts.workflow;
@@ -740,7 +775,7 @@ function formatScanResults(scanResult) {
   }
 
   lines.push(`  Resources: ${stats.totalResources}`);
-  for (const type of CANONICAL_CATEGORIES) {
+  for (const type of core.taxonomy.CANONICAL_CATEGORIES) {
     const items = resources[type] || [];
     if (items.length > 0) {
       lines.push(`    ${type}: ${items.length}`);
@@ -803,7 +838,7 @@ async function initializeRepo(repoUrl, options) {
   };
 
   config.repos.push(mapping);
-  configManager.save(config, options.configPath);
+  cli.configManager.save(config, options.configPath);
 
   return { success: true, scanResult, mapping };
 }
@@ -1011,7 +1046,7 @@ git
         }
         target[keys[keys.length - 1]] = value;
 
-        configManager.save(config);
+        cli.configManager.save(config);
         console.log(`✓ Set ${key} = ${rawValue}`);
         return;
       }
@@ -1068,7 +1103,7 @@ mcp
   .action(async (query, opts) => {
     try {
       const limit = parseInt(opts.limit, 10);
-      const result = await searchRegistry(query, { limit });
+      const result = await core.registryClient.searchRegistry(query, { limit });
       const results = result.entries;
 
       if (!results.length) {
@@ -1118,13 +1153,13 @@ mcp
   .option('--env <KEY=VALUE...>', 'set environment variables', collectEnv, {})
   .action(async (serverName, opts) => {
     try {
-      const entry = await getServer(serverName);
+      const entry = await core.registryClient.getServer(serverName);
       if (!entry) {
         console.error(`✗ Server "${serverName}" not found in registry`);
         process.exit(1);
       }
       const rootDir = path.resolve(brandConfig.dir);
-      addServer(rootDir, serverName, entry, {
+      cli.mcpConfig.addServer(rootDir, serverName, entry, {
         required: !!opts.required,
         env: opts.env || {},
       });
@@ -1144,7 +1179,7 @@ mcp
   .action((serverName, opts) => {
     try {
       const rootDir = path.resolve(brandConfig.dir);
-      removeServer(rootDir, serverName, { removeTools: !!opts.removeTools });
+      cli.mcpConfig.removeServer(rootDir, serverName, { removeTools: !!opts.removeTools });
       console.log(`✓ Removed MCP server "${serverName}" from mcp.json`);
     } catch (err) {
       console.error(`✗ ${err.message}`);

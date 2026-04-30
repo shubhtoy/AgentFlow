@@ -160,10 +160,11 @@ export function StatusBar() {
         <McpStatus />
 
         <Seg onClick={() => emit('agentflow:show-validation')} tip="Open validation panel">
-          {errorCount > 0 ? (
-            <span className="flex items-center gap-1 text-red-400"><AlertCircle size={13} />{errorCount} error{errorCount > 1 ? 's' : ''}</span>
-          ) : warningCount > 0 ? (
-            <span className="flex items-center gap-1 text-amber-400"><AlertTriangle size={13} />{warningCount} warning{warningCount > 1 ? 's' : ''}</span>
+          {errorCount > 0 || warningCount > 0 ? (
+            <span className="flex items-center gap-2">
+              {errorCount > 0 && <span className="flex items-center gap-1 text-red-400"><AlertCircle size={13} />{errorCount}</span>}
+              {warningCount > 0 && <span className="flex items-center gap-1 text-amber-400"><AlertTriangle size={13} />{warningCount}</span>}
+            </span>
           ) : (
             <span className="flex items-center gap-1 text-emerald-500/60"><CheckCircle2 size={13} />No issues</span>
           )}

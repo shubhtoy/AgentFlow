@@ -1,13 +1,25 @@
 node_modules/
 .next/
-.env
-.env.local
-.env.*.local
-*.tsbuildinfo
 dist/
 _archive/
 .langgraph_api/
 .agents/
-.DS_Store
-*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+studio/.env.local
+
+# Build artifacts
+*.tsbuildinfo
+
+# OS
+**/.DS_Store
+
+# Editor / tooling
 .copilot-keys.json
+.watchman-cookie-*
+
+# Logs
+*.log

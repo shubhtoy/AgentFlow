@@ -1,0 +1,685 @@
+{
+  "agent-spec": {
+    "id": "agent-spec",
+    "name": "Open Agent Spec",
+    "website": "https://openagentspec.dev",
+    "version": "26.1.0",
+    "serializer": "tsagentspec",
+    "mapping": {
+      "identity": {
+        "transform": "to-agent-system-prompt"
+      },
+      "instructions": {
+        "transform": "to-system-prompt-chunk"
+      },
+      "skills": {
+        "transform": "to-agent-specialization"
+      },
+      "capabilities": {
+        "builtin": {
+          "transform": "to-builtin-tool"
+        },
+        "script": {
+          "transform": "to-server-tool"
+        },
+        "mcp": {
+          "transform": "to-mcp-tool"
+        },
+        "package": {
+          "transform": "to-client-tool"
+        }
+      },
+      "nodes": {
+        "step": {
+          "transform": "to-agent-node"
+        },
+        "sub-workflow": {
+          "transform": "to-flow-node"
+        }
+      },
+      "edges": {
+        "unconditional": {
+          "transform": "to-control-flow-edge"
+        },
+        "conditional": {
+          "transform": "to-branching-node"
+        }
+      },
+      "memory": {
+        "transform": null
+      },
+      "hooks": {
+        "transform": null
+      }
+    },
+    "mcp": {
+      "format": "agent-spec-mcp",
+      "components": [
+        "MCPTool",
+        "MCPToolBox",
+        "StdioTransport",
+        "SSETransport",
+        "StreamableHTTPTransport"
+      ]
+    }
+  },
+  "aider": {
+    "id": "aider",
+    "name": "Aider",
+    "website": "https://aider.chat",
+    "paths": {
+      "root": ".",
+      "conventions": "CONVENTIONS.md"
+    },
+    "mapping": {
+      "identity": {
+        "target": "CONVENTIONS.md",
+        "transform": "concatenate",
+        "sources": [
+          "identity",
+          "instructions"
+        ]
+      },
+      "instructions": {
+        "target": null,
+        "note": "Merged into CONVENTIONS.md via identity concatenation"
+      },
+      "skills": {
+        "target": "CONVENTIONS.md",
+        "transform": "concatenate",
+        "append": true
+      },
+      "capabilities": {
+        "mcp": {
+          "target": null
+        },
+        "non-mcp": {
+          "embed": "conventions"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": null,
+      "format": null
+    }
+  },
+  "antigravity": {
+    "id": "antigravity",
+    "name": "Antigravity",
+    "website": "https://antigravity.dev",
+    "paths": {
+      "root": ".antigravity",
+      "skills": ".antigravity/skills/"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".antigravity/AGENTS.md",
+        "transform": "copy"
+      },
+      "instructions": {
+        "target": ".antigravity/skills/{name}/SKILL.md",
+        "transform": "to-skill-dir"
+      },
+      "skills": {
+        "target": ".antigravity/skills/{name}/",
+        "transform": "copy-dir"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": null
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": null,
+      "format": null
+    }
+  },
+  "claude-code": {
+    "id": "claude-code",
+    "name": "Claude Code",
+    "website": "https://claude.ai/code",
+    "agentsmd": true,
+    "paths": {
+      "root": ".claude",
+      "identity": "CLAUDE.md",
+      "rules": ".claude/rules/",
+      "skills": ".claude/skills/",
+      "settings": ".claude/settings.json"
+    },
+    "mapping": {
+      "identity": {
+        "target": "CLAUDE.md",
+        "transform": "rename"
+      },
+      "instructions": {
+        "target": ".claude/rules/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": ".claude/skills/{name}/",
+        "transform": "copy-dir"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".claude/settings.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".claude/settings.json",
+      "format": "claude-settings",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}",
+            "env": "{env}"
+          }
+        }
+      }
+    }
+  },
+  "copilot": {
+    "id": "copilot",
+    "name": "GitHub Copilot",
+    "website": "https://github.com/features/copilot",
+    "paths": {
+      "root": ".github",
+      "agents": ".github/agents/",
+      "mcp": ".github/copilot/mcp.json"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".github/agents/identity.md",
+        "transform": "copy"
+      },
+      "instructions": {
+        "target": ".github/agents/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": ".github/agents/{name}.md",
+        "transform": "flatten-skill"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".github/copilot/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".github/copilot/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}"
+          }
+        }
+      }
+    }
+  },
+  "cursor": {
+    "id": "cursor",
+    "name": "Cursor",
+    "website": "https://cursor.com",
+    "paths": {
+      "root": ".cursor",
+      "rules": ".cursor/rules/",
+      "mcp": ".cursor/mcp.json"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".cursor/rules/identity.mdc",
+        "transform": "to-mdc",
+        "frontmatter": {
+          "description": "Workspace identity and agent persona",
+          "alwaysApply": true
+        }
+      },
+      "instructions": {
+        "target": ".cursor/rules/{name}.mdc",
+        "transform": "to-mdc",
+        "frontmatter": {
+          "description": "from:instructions.description",
+          "globs": "from:instructions.platforms.cursor.globs",
+          "alwaysApply": "from:instructions.platforms.cursor.alwaysApply"
+        }
+      },
+      "skills": {
+        "target": ".cursor/rules/{name}.mdc",
+        "transform": "flatten-skill",
+        "frontmatter": {
+          "description": "from:skills.description"
+        }
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".cursor/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "rules"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".cursor/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}"
+          }
+        }
+      }
+    }
+  },
+  "gemini-cli": {
+    "id": "gemini-cli",
+    "name": "Gemini CLI",
+    "website": "https://github.com/google-gemini/gemini-cli",
+    "paths": {
+      "root": ".gemini",
+      "skills": ".gemini/skills/",
+      "settings": ".gemini/settings.json"
+    },
+    "mapping": {
+      "identity": {
+        "target": "GEMINI.md",
+        "transform": "rename"
+      },
+      "instructions": {
+        "target": ".gemini/skills/{name}/SKILL.md",
+        "transform": "to-skill-dir"
+      },
+      "skills": {
+        "target": ".gemini/skills/{name}/",
+        "transform": "copy-dir"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".gemini/settings.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".gemini/settings.json",
+      "format": "gemini-settings",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}",
+            "env": "{env}"
+          }
+        }
+      }
+    }
+  },
+  "kimi": {
+    "id": "kimi",
+    "name": "Kimi Code",
+    "website": "https://kimi.ai",
+    "paths": {
+      "root": ".kimi",
+      "agents": ".kimi/agents/"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".kimi/agents/identity.yaml",
+        "transform": "to-yaml-agent",
+        "fields": {
+          "name": "from:identity.name",
+          "role": "from:identity.role",
+          "personality": "from:identity.personality",
+          "constraints": "from:identity.constraints"
+        }
+      },
+      "instructions": {
+        "target": ".kimi/agents/{name}.yaml",
+        "transform": "to-yaml-agent"
+      },
+      "skills": {
+        "target": ".kimi/agents/{name}.yaml",
+        "transform": "to-yaml-agent"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".kimi/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".kimi/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}"
+          }
+        }
+      }
+    }
+  },
+  "kiro": {
+    "id": "kiro",
+    "name": "Kiro",
+    "website": "https://kiro.dev",
+    "paths": {
+      "root": ".kiro",
+      "specs": ".kiro/specs/",
+      "steering": ".kiro/steering/",
+      "settings": ".kiro/settings/"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".kiro/steering/identity.md",
+        "transform": "copy"
+      },
+      "instructions": {
+        "target": ".kiro/steering/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": ".kiro/specs/{name}.md",
+        "transform": "flatten-skill"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".kiro/settings/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": ".kiro/steering/{name}.md",
+        "transform": "copy"
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".kiro/settings/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}",
+            "env": "{env}"
+          }
+        }
+      }
+    }
+  },
+  "openclaw": {
+    "id": "openclaw",
+    "name": "OpenClaw",
+    "website": "https://openclaw.dev",
+    "paths": {
+      "root": ".",
+      "soul": "SOUL.md",
+      "agents": "AGENTS.md",
+      "identity": "IDENTITY.md"
+    },
+    "mapping": {
+      "identity": {
+        "target": null,
+        "transform": "split-identity",
+        "outputs": {
+          "soul": "SOUL.md",
+          "agents": "AGENTS.md",
+          "identity": "IDENTITY.md"
+        }
+      },
+      "instructions": {
+        "target": "instructions/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": "skills/{name}/SKILL.md",
+        "transform": "to-skill-dir"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": null
+        },
+        "non-mcp": {
+          "embed": "soul"
+        }
+      },
+      "memory": {
+        "target": "memory/{name}.md",
+        "transform": "copy"
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": null,
+      "format": null
+    }
+  },
+  "opencode": {
+    "id": "opencode",
+    "name": "OpenCode",
+    "website": "https://opencode.ai",
+    "paths": {
+      "root": ".opencode",
+      "agents": ".opencode/agents/"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".opencode/agents/identity.md",
+        "transform": "copy"
+      },
+      "instructions": {
+        "target": ".opencode/agents/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": ".opencode/agents/{name}.md",
+        "transform": "flatten-skill"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".opencode/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".opencode/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}"
+          }
+        }
+      }
+    }
+  },
+  "qwen": {
+    "id": "qwen",
+    "name": "Qwen Code",
+    "website": "https://qwen.ai",
+    "paths": {
+      "root": ".qwen",
+      "agents": ".qwen/agents/"
+    },
+    "mapping": {
+      "identity": {
+        "target": ".qwen/agents/identity.md",
+        "transform": "copy"
+      },
+      "instructions": {
+        "target": ".qwen/agents/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": ".qwen/agents/{name}.md",
+        "transform": "flatten-skill"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".qwen/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".qwen/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}"
+          }
+        }
+      }
+    }
+  },
+  "windsurf": {
+    "id": "windsurf",
+    "name": "Windsurf",
+    "website": "https://windsurf.com",
+    "agentsmd": true,
+    "paths": {
+      "root": ".",
+      "identity": "AGENTS.md",
+      "rules": ".windsurf/rules/"
+    },
+    "mapping": {
+      "identity": {
+        "target": "AGENTS.md",
+        "transform": "copy"
+      },
+      "instructions": {
+        "target": ".windsurf/rules/{name}.md",
+        "transform": "copy"
+      },
+      "skills": {
+        "target": ".windsurf/rules/{name}.md",
+        "transform": "flatten-skill"
+      },
+      "capabilities": {
+        "mcp": {
+          "target": ".windsurf/mcp.json",
+          "transform": "merge-mcp-config"
+        },
+        "non-mcp": {
+          "embed": "identity"
+        }
+      },
+      "memory": {
+        "target": null
+      },
+      "hooks": {
+        "target": null
+      }
+    },
+    "mcp": {
+      "configPath": ".windsurf/mcp.json",
+      "format": "mcp-standard",
+      "schema": {
+        "mcpServers": {
+          "{name}": {
+            "command": "{command}",
+            "args": "{args}"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,3 @@
-import fs from 'fs'
-import path from 'path'
-import yaml from 'js-yaml'
 import type { ParsedGraph, ParsedFile, SkillEntry } from '@agentflow/core/parser-core'
 import { TRANSFORM_REGISTRY, type FileMap, type TransformContext } from './transforms'
 import { mergeMcpConfig, type McpCapability } from './transforms/merge-mcp-config'
@@ -27,21 +24,19 @@ export interface PlatformConfig {
   }
 }
 
-// ── Config loading ─────────────────────────────────────────────────────
+// ── Config loading (static JSON — no fs needed) ────────────────────────
 
-const CONFIGS_DIR = path.resolve(__dirname, '../../../../configs/platforms')
+// @ts-ignore — JSON import works in both Node (with resolveJsonModule) and bundlers
+import platformsJson from '../../../../configs/platforms.json'
 
 let configCache: Map<string, PlatformConfig> | null = null
 
 export function loadPlatformConfigs(): Map<string, PlatformConfig> {
   if (configCache) return configCache
   configCache = new Map()
-  if (!fs.existsSync(CONFIGS_DIR)) return configCache
-  const files = fs.readdirSync(CONFIGS_DIR).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
-  for (const file of files) {
-    const raw = fs.readFileSync(path.join(CONFIGS_DIR, file), 'utf-8')
-    const config = yaml.load(raw) as PlatformConfig
-    if (config?.id) configCache.set(config.id, config)
+  const configs = platformsJson as Record<string, PlatformConfig>
+  for (const [id, config] of Object.entries(configs)) {
+    configCache.set(id, config)
   }
   return configCache
 }
@@ -68,6 +63,9 @@ export function exportForPlatform(
 
   const result: FileMap = {}
   const mapping = config.mapping
+  const instructions = graph.instructions || {}
+  const skills = graph.skills || {}
+  const capabilities = graph.capabilities || {}
 
   // Identity
   if (mapping.identity && graph.descriptorFile) {
@@ -96,14 +94,14 @@ export function exportForPlatform(
   if (mapping.instructions) {
     const rule = mapping.instructions as Record<string, unknown>
     if (rule.transform === 'concatenate') {
-      const files = Object.values(graph.instructions)
+      const files = Object.values(instructions)
       const identityFiles = graph.descriptorFile ? [graph.descriptorFile] : []
       Object.assign(result, concatenate(
         [...identityFiles, ...files],
         (rule.target as string) || 'CONVENTIONS.md',
       ))
     } else if (rule.target && rule.transform) {
-      for (const [name, file] of Object.entries(graph.instructions)) {
+      for (const [name, file] of Object.entries(instructions)) {
         Object.assign(result, applyTransform(
           rule.transform as string,
           file,
@@ -117,7 +115,7 @@ export function exportForPlatform(
   if (mapping.skills) {
     const rule = mapping.skills as Record<string, unknown>
     if (rule.target && rule.transform) {
-      for (const [name, skill] of Object.entries(graph.skills)) {
+      for (const [name, skill] of Object.entries(skills)) {
         if (rule.transform === 'flatten-skill') {
           Object.assign(result, flattenSkill(skill, {
             name,
@@ -150,7 +148,7 @@ export function exportForPlatform(
     const mcpRule = capMapping.mcp as Record<string, unknown> | undefined
     if (mcpRule?.target && mcpRule.transform === 'merge-mcp-config') {
       const mcpCaps: McpCapability[] = []
-      for (const [name, cap] of Object.entries(graph.capabilities)) {
+      for (const [name, cap] of Object.entries(capabilities)) {
         if (cap.toolType === 'mcp' || cap.mcp) {
           mcpCaps.push({
             name,

@@ -159,24 +159,11 @@ export function ExportDialogContent({ onClose }: { onClose?: () => void } = {}) 
     let cancelled = false
     setPlatformLoading(true)
     ;(async () => {
-      const { requireWorkspace } = await import('@/lib/workspace')
-      const w = await requireWorkspace()
-      const files = await w.readAll()
-      const fileMap = Object.fromEntries(files.map(f => [f.path, f.content]))
-      const res = await fetch('/api/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: fileMap, format: selectedPlatform, workflowId: workflow }),
-      })
+      const files = await api.exportPreview({ workflow, format: 'platform', platform: selectedPlatform })
       if (cancelled) return
-      if (res.ok) {
-        const result = await res.json()
-        setPlatformPreview(result as any)
-        const keys = Object.keys(result.files).sort()
-        if (keys.length) setSelectedFile(keys[0])
-      } else {
-        setPlatformPreview(null)
-      }
+      setPlatformPreview({ files, warnings: [], mappingReport: { exportMappings: [] } })
+      const keys = Object.keys(files).sort()
+      if (keys.length) setSelectedFile(keys[0])
     })()
       .catch(() => { if (!cancelled) setPlatformPreview(null) })
       .finally(() => { if (!cancelled) setPlatformLoading(false) })
@@ -214,20 +201,7 @@ export function ExportDialogContent({ onClose }: { onClose?: () => void } = {}) 
       const exportWf = effectiveWorkflow
       const filename = exportScope === 'workspace' ? `workspace-${format}` : `${workflow}-${format}`
       if (format === 'platform' && selectedPlatform) {
-        const w = await (await import('@/lib/workspace')).requireWorkspace()
-        const wsFiles = await w.readAll()
-        const fileMap = Object.fromEntries(wsFiles.map(f => [f.path, f.content]))
-        const res = await fetch('/api/export', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ files: fileMap, format: selectedPlatform, workflowId: exportWf }),
-        })
-        if (!res.ok) throw new Error('Export failed')
-        const result = await res.json()
-        const JSZip = (await import('jszip')).default
-        const zip = new JSZip()
-        for (const [fp, content] of Object.entries(result.files)) zip.file(fp, content as string)
-        const blob = await zip.generateAsync({ type: 'blob' })
+        const blob = await api.exportDownload({ workflow: exportWf as string, format: 'platform', platform: selectedPlatform })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url; a.download = `${filename}-${selectedPlatform}.zip`; a.click()

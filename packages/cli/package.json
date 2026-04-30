@@ -1,8 +1,8 @@
 {
   "name": "@agentflow/cli",
   "version": "0.1.0",
-  "description": "AgentFlow CLI \u2014 parse, validate, export agent workflows from the command line.",
-  "main": "src/parser.js",
+  "description": "AgentFlow CLI — parse, validate, export agent workflows from the command line.",
+  "main": "src/parser.ts",
   "bin": {
     "agentflow": "bin/cli.js"
   },
@@ -22,7 +22,7 @@
     "./export": "./src/export/index.ts"
   },
   "dependencies": {
-    "@agentflow/core": "*",
+    "@agentflow/core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "commander": "^14.0.3",
     "glob": "^13.0.6",
@@ -31,7 +31,11 @@
     "jszip": "^3.10.1",
     "minimatch": "^9.0.0",
     "simple-git": "^3.33.0",
+    "tsx": "^4.21.0",
     "zod": "^3.25.76"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
 }

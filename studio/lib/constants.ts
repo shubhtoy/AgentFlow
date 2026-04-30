@@ -153,7 +153,11 @@ function stripRefPrefix(raw: string): string {
 export function refCategory(raw: string): string {
   const cleaned = stripRefPrefix(raw)
   if (cleaned.startsWith('output.') || cleaned === 'output') return 'output'
-  return cleaned.split('/')[0] || 'unknown'
+  const slash = cleaned.indexOf('/')
+  if (slash > 0) return cleaned.slice(0, slash)
+  // Bare name with edge prefix → it's a node reference
+  if (raw.trim().startsWith('->')) return 'nodes'
+  return cleaned || 'unknown'
 }
 
 export function refName(raw: string): string {

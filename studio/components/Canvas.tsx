@@ -86,6 +86,7 @@ export function Canvas() {
   const [dblClickPos, setDblClickPos] = useState<{ x: number; y: number } | null>(null)
   const [dblClickFlowPos, setDblClickFlowPos] = useState<{ x: number; y: number } | null>(null)
   const [edgePopover, setEdgePopover] = useState<{ x: number; y: number; from: string; to: string; condition?: string; edgeId: string } | null>(null)
+  const [layoutReady, setLayoutReady] = useState(false)
 
   const selectRef = useRef(select); selectRef.current = select
   const edgesRef = useRef(edges); edgesRef.current = edges
@@ -97,7 +98,7 @@ export function Canvas() {
   const primaryColor = 'var(--node-step)'
 
   const buildGraph = useCallback(() => {
-    if (!data) { setNodes([]); setEdges([]); return }
+    if (!data) { setNodes([]); setEdges([]); setLayoutReady(true); return }
 
     // ── Workspace view: show all workflows as nodes ──
     if (!activeWf) {
@@ -132,10 +133,10 @@ export function Canvas() {
         type: 'workflow',
       })) : []
 
-      setNodes(rfNodes); setEdges(rfEdges); return
+      setNodes(rfNodes); setEdges(rfEdges); setLayoutReady(true); return
     }
 
-    if (!wf) { setNodes([]); setEdges([]); return }
+    if (!wf) { setNodes([]); setEdges([]); setLayoutReady(true); return }
     const rfNodes: RFNode[] = []; const rfEdges: RFEdge[] = []
     const catConfig = getCategoryConfig(isDark ? 'dark' : 'light')
 
@@ -211,27 +212,44 @@ export function Canvas() {
     // Include condition nodes as if they were steps for layout purposes
     const allLayoutIds = [...stepIds, ...condNodeIds]
 
-    const positions = gridLayout(allLayoutIds)
     const saved = getSavedPositions(activeWf)
-    for (const n of rfNodes) {
-      const key = n.id.startsWith('step:') ? n.id : `step:${n.id}`
-      n.position = saved[n.id] || positions[key] || { x: 0, y: 0 }
-    }
-    setNodes(rfNodes); setEdges(rfEdges)
+    const hasSaved = Object.keys(saved).length > 0
 
-    // Async ELK layout on initial load (no saved positions)
-    if (Object.keys(saved).length === 0) {
+    if (hasSaved) {
+      // Use saved positions — no layout jerk
+      const positions = gridLayout(allLayoutIds)
+      for (const n of rfNodes) {
+        const key = n.id.startsWith('step:') ? n.id : `step:${n.id}`
+        n.position = saved[n.id] || positions[key] || { x: 0, y: 0 }
+      }
+      setNodes(rfNodes); setEdges(rfEdges)
+      setLayoutReady(true)
+    } else {
+      // No saved positions — compute ELK layout before showing
+      setLayoutReady(false)
       const elkEdgeDefs = rfEdges.map(e => ({
         from: e.source.replace(/^step:/, ''),
         to: e.target.replace(/^step:/, ''),
         sourceRef: {} as any,
       }))
+      // Set nodes with grid positions first (hidden via opacity)
+      const positions = gridLayout(allLayoutIds)
+      for (const n of rfNodes) {
+        const key = n.id.startsWith('step:') ? n.id : `step:${n.id}`
+        n.position = positions[key] || { x: 0, y: 0 }
+      }
+      setNodes(rfNodes); setEdges(rfEdges)
+
       elkLayout(allLayoutIds, elkEdgeDefs).then(elkPos => {
         setNodes(prev => prev.map(n => {
           const key = n.id.startsWith('step:') ? n.id : `step:${n.id}`
           return elkPos[key] ? { ...n, position: elkPos[key] } : n
         }))
-      }).catch(() => {})
+        setLayoutReady(true)
+      }).catch(() => {
+        // ELK failed — show grid layout as fallback
+        setLayoutReady(true)
+      })
     }
   }, [wf, data, activeWf, setNodes, setEdges, isDark, primaryColor])
 
@@ -341,18 +359,26 @@ export function Canvas() {
       to: e.target.replace(/^step:/, ''),
       sourceRef: {} as any,
     }))
+    setLayoutReady(false)
     const elkPos = await elkLayout(allIds, allEdgeDefs)
     setNodes(prev => prev.map(n => {
       const key = n.id.startsWith('step:') ? n.id : `step:${n.id}`
       return elkPos[key] ? { ...n, position: elkPos[key] } : n
     }))
+    setLayoutReady(true)
     requestAnimationFrame(() => reactFlowInstance.fitView({ duration: 400, padding: 0.05, maxZoom: 2.5 }))
   }, [wf, data, activeWf, setNodes, nodes, edges, reactFlowInstance])
 
   useEffect(() => {
     buildGraph()
-    requestAnimationFrame(() => reactFlowInstance.fitView({ duration: 400, padding: 0.05, maxZoom: 2.5 }))
-  }, [buildGraph, reactFlowInstance])
+  }, [buildGraph])
+
+  // Fit view once layout is computed and visible
+  useEffect(() => {
+    if (layoutReady) {
+      requestAnimationFrame(() => reactFlowInstance.fitView({ duration: 300, padding: 0.05, maxZoom: 2.5 }))
+    }
+  }, [layoutReady, reactFlowInstance])
 
   useEffect(() => {
     const onAutoLayout = () => handleAutoLayout(); const onFitView = () => reactFlowInstance.fitView({ duration: 400, padding: 0.05, maxZoom: 2.5 })
@@ -699,7 +725,7 @@ export function Canvas() {
         onPaneClick={handlePaneClick} onDoubleClick={handlePaneDoubleClick} fitView fitViewOptions={{ padding: 0.05, maxZoom: 2.5 }}
         minZoom={0.2} maxZoom={2} zoomOnScroll zoomOnPinch panOnScroll={false} proOptions={{ hideAttribution: true }}
         defaultEdgeOptions={{ type: 'custom' }} connectionLineStyle={{ stroke: primaryColor, strokeWidth: 2.5, strokeDasharray: '6 3' }}
-        connectionRadius={20} colorMode={isDark ? 'dark' : 'light'} className="h-full w-full !bg-background">
+        connectionRadius={20} colorMode={isDark ? 'dark' : 'light'} className="h-full w-full !bg-background" style={{ opacity: layoutReady ? 1 : 0, transition: 'opacity 0.2s ease-in' }}>
         <SelectionSyncHandler />
         <Background color={isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)'} gap={20} size={1.5} />
         <MiniMap

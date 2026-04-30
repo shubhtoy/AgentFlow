@@ -45,8 +45,8 @@ async function parseClientSide(files: { path: string; content: string }[]): Prom
   const fileMap: Record<string, string> = {}
   for (const f of files) fileMap[f.path] = f.content
   const result = parseFromFiles(fileMap)
-  result._rawFiles = fileMap
-  return result
+  ;(result as any)._rawFiles = fileMap
+  return result as unknown as WorkflowGraph
 }
 
 // ── API ──
@@ -94,7 +94,7 @@ export const api = {
   // Validation — client-side
   validate: async (options?: { strict?: boolean }): Promise<ValidationResult> => {
     const { validate } = await import('@agentflow/core/validator')
-    return validate(await api.getData(), options)
+    return validate(await api.getData() as any, options)
   },
 
   // Library — static project-level catalog (not workspace data)
@@ -155,45 +155,69 @@ export const api = {
     ]
   }),
 
-  // Export — via /api/export server route
+  // Export — fully client-side via shared engine
   exportWorkflow: async (options: { workflow: string }): Promise<ExportBundle> => {
     const data = await api.getData()
-    const files = Object.fromEntries(
+    const { parseFromFiles } = await import('@agentflow/core/parser-browser')
+    const { toAgentSpec } = await import('@agentflow/cli/export')
+    const fileMap = Object.fromEntries(
       (data.allFiles || []).map((f: any) => [f.relativePath, f.rawContent || ''])
     )
-    const res = await fetch('/api/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files, format: 'agent-spec', workflowId: options.workflow }),
-    })
-    return res.json()
+    const graph = parseFromFiles(fileMap)
+    const spec = toAgentSpec(graph)
+    return { files: { 'agent-spec.json': JSON.stringify(spec, null, 2) } } as any
   },
 
-  exportStructured: async (options: ExportOptions): Promise<Blob> => {
+
+  exportPreview: async (options: ExportOptions): Promise<Record<string, string>> => {
+    const data = await api.getData()
+
+    // Raw: exact source files, {{refs}} untouched
+    if (options.format === 'raw') {
+      const out: Record<string, string> = {}
+      for (const f of (data.allFiles || []) as any[]) {
+        if (f.relativePath && f.rawContent) out[f.relativePath] = f.rawContent
+      }
+      return out
+    }
+
+    // Parsed: same .md structure, refs resolved to file paths
+    if (options.format === 'parsed') {
+      const out: Record<string, string> = {}
+      for (const f of (data.allFiles || []) as any[]) {
+        if (!f.relativePath || !f.rawContent) continue
+        let content = f.rawContent as string
+        const refs = (f.refs || []) as Array<{ raw: string; category: string; name: string }>
+        // Replace refs with resolved paths (reverse order to preserve offsets)
+        for (const ref of [...refs].reverse()) {
+          const resolved = `${ref.category}/${ref.name}`
+          content = content.replace(ref.raw, resolved)
+        }
+        out[f.relativePath] = content
+      }
+      return out
+    }
+
+    // Platform: shared export engine — fully client-side, no API route
+    const { parseFromFiles } = await import('@agentflow/core/parser-browser')
+    const { exportForPlatform, toAgentSpec } = await import('@agentflow/cli/export')
+    const fileMap = Object.fromEntries(
+      (data.allFiles || []).map((f: any) => [f.relativePath, f.rawContent || ''])
+    )
+    const graph = parseFromFiles(fileMap)
+    const platform = options.platform || 'agent-spec'
+    if (platform === 'agent-spec') {
+      return { 'agent-spec.json': JSON.stringify(toAgentSpec(graph), null, 2) }
+    }
+    return exportForPlatform(graph, platform)
+  },
+
+  exportDownload: async (options: ExportOptions): Promise<Blob> => {
     const files = await api.exportPreview(options)
     const JSZip = (await import('jszip')).default
     const zip = new JSZip()
     for (const [fp, content] of Object.entries(files)) zip.file(fp, content)
     return zip.generateAsync({ type: 'blob' })
-  },
-
-  exportPreview: async (options: ExportOptions): Promise<Record<string, string>> => {
-    const data = await api.getData()
-    const files = Object.fromEntries(
-      (data.allFiles || []).map((f: any) => [f.relativePath, f.rawContent || ''])
-    )
-    const format = options.format === 'platform' ? (options.platform || 'agent-spec') : 'agent-spec'
-    const res = await fetch('/api/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files, format, workflowId: options.workflow }),
-    })
-    const result = await res.json()
-    return result.files || {}
-  },
-
-  exportDownload: async (options: ExportOptions): Promise<Blob> => {
-    return api.exportStructured(options)
   },
 
   // Token calculator — client-side from parsed data

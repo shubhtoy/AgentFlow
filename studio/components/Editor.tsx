@@ -54,9 +54,15 @@ function RefBadge({ raw, index }: { raw: string; index: number }) {
     )
   }
 
+  const isEdge = raw.trimStart().startsWith('->')
+  const isDataFlow = raw.trimStart().startsWith('<<')
   const cleaned = raw.replace(/^->?\s*/, '').replace(/^<<\s*/, '')
-  const cat = refCategory(cleaned); const name = refName(cleaned); const cfg = categoryConfig[cat]
-  let prefix = ''; if (raw.startsWith('->')) prefix = '→ '; else if (raw.startsWith('<<')) prefix = '⇠ '
+  const pipeIdx = cleaned.indexOf('|')
+  const target = pipeIdx !== -1 ? cleaned.slice(0, pipeIdx).trim() : cleaned.trim()
+  const cat = target.includes('/') ? refCategory(target) : isEdge ? 'nodes' : refCategory(target)
+  const name = refName(target)
+  const cfg = categoryConfig[cat]
+  let prefix = ''; if (isEdge) prefix = '→ '; else if (isDataFlow) prefix = '⇠ '
   const condMatch = raw.match(/\|\s*(.+)$/); const condition = condMatch ? condMatch[1].trim() : null
   const displayName = condition ? `${name} | ${condition}` : name
 

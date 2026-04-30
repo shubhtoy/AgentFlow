@@ -45,6 +45,12 @@ function RefBadge({ raw, invalid, onClick }: { raw: string; invalid?: boolean; o
   const data = useAppStore(s => s.data)
   const trimmed = raw.trim()
 
+  // Conditional edge ref: "-> target | condition"
+  const isEdge = trimmed.startsWith('->')
+  const stripped = isEdge ? trimmed.slice(2).trim() : trimmed
+  const pipeIdx = stripped.indexOf('|')
+  const conditionText = pipeIdx !== -1 ? stripped.slice(pipeIdx + 1).trim() : null
+
   // Template variable — resolve to actual content in preview
   if (trimmed.startsWith('$')) {
     if (!data) return <span className="text-muted-foreground italic text-xs">{trimmed}</span>
@@ -120,6 +126,9 @@ function RefBadge({ raw, invalid, onClick }: { raw: string; invalid?: boolean; o
       )}
       {Icon && <Icon size={11} style={{ color: cfg?.primaryColor }} />}
       {name}
+      {conditionText && (
+        <span className="text-amber-500/80 text-[10px] font-normal ml-0.5">| {conditionText}</span>
+      )}
     </button>
   )
 }

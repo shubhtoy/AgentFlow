@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
       }
     }
     try {
-      const graph = parseRoot(s.rootDir)
-      for (const [name, tool] of Object.entries(graph.tools || {}) as any) {
+      const graph = await parseRoot(s.rootDir)
+      for (const [name, tool] of Object.entries((graph as any).tools || (graph as any).capabilities || {}) as any) {
         const fm = tool.frontmatter || tool.primaryFile?.frontmatter || {}
         if (fm.type === 'mcp' && !seen.has(name)) { seen.add(name); tools.push({ name, description: fm.description || tool.title || '', server: fm.mcp || fm.server || 'unknown', source: 'mcp' }) }
       }
