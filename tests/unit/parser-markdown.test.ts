@@ -25,7 +25,10 @@ describe('parseMarkdownFile', () => {
       const result = parseMarkdownFile(fp);
 
       expect(result.filePath).toBe(fp);
-      expect(result.relativePath).toBe('');
+      // parseMarkdownFile has no notion of a "root" for a standalone call — relativePath
+      // is whatever path string was passed in, same as filePath. Real callers (repo-scanner,
+      // workflow-service) compute a true relative path themselves before calling.
+      expect(result.relativePath).toBe(fp);
       expect(result.frontmatter).toEqual({ name: 'hello', type: 'tool' });
       expect(result.title).toBe('My Title');
       expect(result.content).toContain('Some body text.');

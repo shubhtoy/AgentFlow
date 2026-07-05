@@ -12,7 +12,7 @@ describe('REF_PATTERNS', () => {
 
 describe('parseRef', () => {
   it('parses a mention ref', () => {
-    const ref = parseRef('{{tools/search}}', 'mention', ['tools/search']);
+    const ref = parseRef('tools/search', 'mention', ['tools/search']);
     expect(ref).toEqual({
       raw: 'tools/search',
       semanticType: 'mention',
@@ -22,9 +22,9 @@ describe('parseRef', () => {
   });
 
   it('parses an edge ref', () => {
-    const ref = parseRef('{{-> nodes/analyze}}', 'edge', ['nodes/analyze']);
+    const ref = parseRef('nodes/analyze', 'edge', ['nodes/analyze']);
     expect(ref).toEqual({
-      raw: '-> nodes/analyze',
+      raw: 'nodes/analyze',
       semanticType: 'edge',
       category: 'nodes',
       name: 'analyze',
@@ -33,7 +33,7 @@ describe('parseRef', () => {
 
   it('parses a conditional edge ref', () => {
     const ref = parseRef(
-      '{{-> nodes/fix | templates/needs-fix}}',
+      '-> nodes/fix | templates/needs-fix',
       'conditional_edge',
       ['nodes/fix', 'templates/needs-fix']
     );
@@ -47,9 +47,9 @@ describe('parseRef', () => {
   });
 
   it('parses a data flow ref', () => {
-    const ref = parseRef('{{<< output.analyze}}', 'data_flow', ['analyze']);
+    const ref = parseRef('output.analyze', 'data_flow', ['output.analyze']);
     expect(ref).toEqual({
-      raw: '<< output.analyze',
+      raw: 'output.analyze',
       semanticType: 'data_flow',
       category: 'output',
       name: 'analyze',
@@ -57,18 +57,18 @@ describe('parseRef', () => {
   });
 
   it('handles mention ref with no slash (category only)', () => {
-    const ref = parseRef('{{readme}}', 'mention', ['readme']);
+    const ref = parseRef('readme', 'mention', ['readme']);
     expect(ref).toEqual({
       raw: 'readme',
       semanticType: 'mention',
-      category: 'readme',
-      name: '',
+      category: null,
+      name: 'readme',
     });
   });
 
   it('conditional edge semanticType is edge, not conditional_edge', () => {
     const ref = parseRef(
-      '{{-> nodes/a | templates/b}}',
+      '-> nodes/a | templates/b',
       'conditional_edge',
       ['nodes/a', 'templates/b']
     );

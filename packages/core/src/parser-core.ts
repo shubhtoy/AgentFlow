@@ -187,7 +187,7 @@ export function lineFromOffset(content: string, offset: number): number {
 
 export function parseRef(token: string, type: string, groups?: string[]): Ref {
   const trimmed = token.trim()
-  const ref: Ref = { raw: trimmed, semanticType: type, category: null, name: null, condition: null }
+  const ref: Ref = { raw: trimmed, semanticType: type, category: null, name: null }
 
   if (type === 'conditional_edge' && groups) {
     const target = (groups[0] || '').trim()
@@ -204,7 +204,7 @@ export function parseRef(token: string, type: string, groups?: string[]): Ref {
     ref.semanticType = 'edge'
   } else if (type === 'data_flow') {
     ref.category = 'output'
-    ref.name = trimmed
+    ref.name = trimmed.startsWith('output.') ? trimmed.slice(7) : trimmed
   } else {
     if (trimmed.includes('/')) {
       const [c, ...rest] = trimmed.split('/')
@@ -220,14 +220,16 @@ export function parseRef(token: string, type: string, groups?: string[]): Ref {
 export function extractRefs(content: string): Ref[] {
   if (!content) return []
   const refs: Ref[] = []
-  const seen = new Set<string>()
+  // Track claimed spans (not type+text) so a lower-priority pattern (e.g. plain `edge`,
+  // whose [^}]+ also matches through a `|`) can't re-match a span the higher-priority
+  // conditional_edge pattern already claimed at the same offset.
+  const claimed = new Set<number>()
   for (const pattern of REF_PATTERNS) {
     const re = new RegExp(pattern.re.source, pattern.re.flags)
     let match: RegExpExecArray | null
     while ((match = re.exec(content)) !== null) {
-      const key = `${pattern.type}:${match[0]}:${match.index}`
-      if (seen.has(key)) continue
-      seen.add(key)
+      if (claimed.has(match.index)) continue
+      claimed.add(match.index)
       const groups = match.slice(1)
       const ref = parseRef(match[1] || match[0], pattern.type, groups)
       ref.offset = match.index

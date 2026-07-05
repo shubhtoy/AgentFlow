@@ -29,13 +29,13 @@ describe('parseWorkflow', () => {
     if (tmpDir) removeTempTree(tmpDir);
   });
 
-  it('parses a simple workflow with two nodes and an edge', () => {
+  it('parses a simple workflow with two nodes and an edge', async () => {
     tmpDir = createTempTree({
       'nodeA/main.md': '# Node A\n\nGo to {{-> nodeB}}',
       'nodeB/main.md': '# Node B\n\nDone.',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(Object.keys(wf.nodes)).toHaveLength(2);
     expect(wf.nodes['nodeA']).toBeDefined();
@@ -46,13 +46,13 @@ describe('parseWorkflow', () => {
     expect(wf.edges[0].condition).toBeUndefined();
   });
 
-  it('detects descriptor file with type: agents frontmatter', () => {
+  it('detects descriptor file with type: agents frontmatter', async () => {
     tmpDir = createTempTree({
       'workflow.md': '---\ntype: agents\nname: My Workflow\ndescription: A test workflow\n---\n# Workflow',
       'step1/main.md': '# Step 1',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.descriptorFile).toBeDefined();
     expect(wf.descriptorFile.frontmatter.type).toBe('agents');
@@ -60,26 +60,26 @@ describe('parseWorkflow', () => {
     expect(wf.description).toBe('A test workflow');
   });
 
-  it('detects AGENTS.md as descriptor file by convention', () => {
+  it('detects AGENTS.md as descriptor file by convention', async () => {
     tmpDir = createTempTree({
       'AGENTS.md': '# My Agent Workflow',
       'step1/main.md': '# Step 1',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.descriptorFile).toBeDefined();
     expect(wf.name).toBe('My Agent Workflow');
   });
 
-  it('skips reserved directories (instructions, capabilities, etc.)', () => {
+  it('skips reserved directories (instructions, capabilities, etc.)', async () => {
     tmpDir = createTempTree({
       'capabilities/hammer.md': '---\nname: Hammer\n---\n# Hammer Tool',
       'instructions/debug.md': '# Debug Skill',
       'nodeA/main.md': '# Node A',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(Object.keys(wf.nodes)).toHaveLength(1);
     expect(wf.nodes['nodeA']).toBeDefined();
@@ -87,53 +87,53 @@ describe('parseWorkflow', () => {
     expect(wf.nodes['instructions']).toBeUndefined();
   });
 
-  it('skips directories without .md files', () => {
+  it('skips directories without .md files', async () => {
     tmpDir = createTempTree({
       'nodeA/main.md': '# Node A',
       'empty-dir/.gitkeep': '',
       'data/config.json': '{}',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(Object.keys(wf.nodes)).toHaveLength(1);
     expect(wf.nodes['nodeA']).toBeDefined();
   });
 
-  it('detects explicit entry points from frontmatter entry: true', () => {
+  it('detects explicit entry points from frontmatter entry: true', async () => {
     tmpDir = createTempTree({
       'start/main.md': '---\nentry: true\n---\n# Start\n\n{{-> middle}}',
       'middle/main.md': '# Middle\n\n{{-> end}}',
       'end/main.md': '# End',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.entryPoints).toEqual(['start']);
     expect(wf.nodes['start'].entry).toBe(true);
     expect(wf.nodes['start'].entryInferred).toBe(false);
   });
 
-  it('infers entry points from nodes with no incoming edges', () => {
+  it('infers entry points from nodes with no incoming edges', async () => {
     tmpDir = createTempTree({
       'nodeA/main.md': '# Node A\n\n{{-> nodeB}}',
       'nodeB/main.md': '# Node B',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.entryPoints).toEqual(['nodeA']);
     expect(wf.nodes['nodeA'].entryInferred).toBe(true);
     expect(wf.nodes['nodeB'].entryInferred).toBe(false);
   });
 
-  it('marks multiple inferred entry points when no explicit entries exist', () => {
+  it('marks multiple inferred entry points when no explicit entries exist', async () => {
     tmpDir = createTempTree({
       'nodeA/main.md': '# Node A',
       'nodeB/main.md': '# Node B',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.entryPoints).toHaveLength(2);
     expect(wf.entryPoints).toContain('nodeA');
@@ -142,14 +142,14 @@ describe('parseWorkflow', () => {
     expect(wf.nodes['nodeB'].entryInferred).toBe(true);
   });
 
-  it('builds conditional edges with condition field', () => {
+  it('builds conditional edges with condition field', async () => {
     tmpDir = createTempTree({
       'router/main.md': '---\ntype: router\n---\n# Router\n\n{{-> yes | templates/is-positive}}\n{{-> no | templates/is-negative}}',
       'yes/main.md': '# Yes Path',
       'no/main.md': '# No Path',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.edges).toHaveLength(2);
     const yesEdge = wf.edges.find((e) => e.to === 'yes');
@@ -160,14 +160,14 @@ describe('parseWorkflow', () => {
     expect(noEdge.condition).toBe('templates/is-negative');
   });
 
-  it('recursively parses sub-workflow nodes', () => {
+  it('recursively parses sub-workflow nodes', async () => {
     tmpDir = createTempTree({
       'outer/main.md': '---\ntype: sub-workflow\n---\n# Outer',
       'outer/AGENTS.md': '---\ntype: agents\nname: Inner Workflow\n---\n# Inner',
       'outer/inner-step/main.md': '# Inner Step',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.nodes['outer']).toBeDefined();
     expect(wf.nodes['outer'].nodeType).toBe('sub-workflow');
@@ -176,35 +176,35 @@ describe('parseWorkflow', () => {
     expect(Object.keys(wf.nodes['outer'].subWorkflow.nodes)).toContain('inner-step');
   });
 
-  it('uses directory basename as workflow id', () => {
+  it('uses directory basename as workflow id', async () => {
     tmpDir = createTempTree({
       'step1/main.md': '# Step 1',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(wf.id).toBe(path.basename(tmpDir));
   });
 
-  it('returns empty edges and nodes for an empty workflow directory', () => {
+  it('returns empty edges and nodes for an empty workflow directory', async () => {
     tmpDir = createTempTree({
       '.gitkeep': '',
     });
 
-    const wf = parseWorkflow(tmpDir);
+    const wf = await parseWorkflow(tmpDir);
 
     expect(Object.keys(wf.nodes)).toHaveLength(0);
     expect(wf.edges).toHaveLength(0);
     expect(wf.entryPoints).toHaveLength(0);
   });
 
-  it('passes mode through to parseNode for metadata-only', () => {
+  it('passes mode through to parseNode for metadata-only', async () => {
     tmpDir = createTempTree({
       'step1/main.md': '---\nname: Step One\n---\n# Step 1\n\nSome content with {{-> step2}}',
       'step2/main.md': '# Step 2',
     });
 
-    const wf = parseWorkflow(tmpDir, 'metadata-only');
+    const wf = await parseWorkflow(tmpDir, 'metadata-only');
 
     // In metadata-only mode, refs are not extracted, so no edges
     expect(wf.nodes['step1']).toBeDefined();
