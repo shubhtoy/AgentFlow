@@ -70,24 +70,31 @@ Procedure, each time a correction lands:
 1. **Would this recur?** If it's genuinely one-off (a typo, a fact about this one call), just
    fix it and stop — don't write anything down.
 2. **Zoom out** — what's the general pattern behind the correction, not just this instance?
-3. **Check for overlap first.** Read `.kiro/steering/decisions.md` and
-   `.kiro/steering/user-corrections.md` before adding anything. If a new correction sharpens,
-   contradicts, or is a special case of something already there, **edit that entry in place**
-   — merge or replace it, don't append a near-duplicate.
+3. **Check for overlap first.** Read `docs/DECISIONS.md` and `docs/USER-CORRECTIONS.md` before
+   adding anything. If a new correction sharpens, contradicts, or is a special case of something
+   already there, **edit that entry in place** — merge or replace it, don't append a
+   near-duplicate.
 4. **Write a principle, not a transcript.** Not "user said X in turn 47" — the durable rule
    behind it, one or two lines. If it belongs in a specific directory's own `AGENTS.md` or in
    `docs/CODING-STANDARDS.md` instead (i.e. it's really a coding/architecture standard, not a
-   one-off workflow preference), put it there instead and don't duplicate it into steering.
+   one-off workflow preference), put it there instead and don't duplicate it into these files.
 5. **Where it goes:**
-   - `.kiro/steering/decisions.md` — durable architectural/product decisions ("we chose X over
-     Y because Z") that would otherwise get re-litigated or re-derived next session.
-   - `.kiro/steering/user-corrections.md` — durable behavioral corrections about how to work in
-     this repo specifically (communication style, process preferences) — not project facts.
+   - `docs/DECISIONS.md` — durable architectural/product decisions ("we chose X over Y because
+     Z") that would otherwise get re-litigated or re-derived next session.
+   - `docs/USER-CORRECTIONS.md` — durable behavioral corrections about how to work in this repo
+     specifically (communication style, process preferences) — not project facts.
    - Anything that's actually a coding standard belongs in `docs/CODING-STANDARDS.md`; anything
      that's a directory-specific implementation fact belongs in that directory's `AGENTS.md`.
+   - **Plain markdown under `docs/`, never a host-specific folder** (e.g. `.kiro/`, `.cursor/`,
+     `.claude/`). This project's own thesis is host-agnostic export — durable memory belongs
+     somewhere every host and human can read, not locked into one vendor's config directory.
 6. **Never silently rewrite in bulk.** Add/edit one entry at a time, in the same commit as the
    work that prompted it, so it's reviewable in the diff — same reasoning as never auto-merging
    agent-authored rule changes without a human seeing the diff first.
 7. **Prune, don't just accumulate.** If a steering file is growing long, that's a signal to
    consolidate overlapping entries into a sharper principle, not to keep appending. A short file
-   of real principles beats a long file of accumulated exceptions.
+   of real principles beats a long file of accumulated exceptions. `npm run docs:check`
+   (`scripts/docs-prune-check.js`) also runs automatically on `git push` (`.husky/pre-push`) —
+   it's read-only and purely informational (never blocks the push), flags files/entries worth
+   consolidating (too long, too many entries, likely near-duplicate headings, stale dates), and
+   never edits anything itself.

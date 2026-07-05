@@ -16,7 +16,9 @@
     "lint:fix": "eslint packages/*/src/**/*.ts --fix",
     "format": "prettier --write 'packages/*/src/**/*.{js,ts,json}'",
     "format:check": "prettier --check 'packages/*/src/**/*.{js,ts,json}'",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build",
+    "docs:check": "node scripts/docs-prune-check.js",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -29,6 +31,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "fast-check": "^3.23.2",
     "globals": "^17.5.0",
+    "husky": "^9.1.7",
     "prettier": "^3.8.3",
     "typescript": "^5.9.3",
     "vitest": "^3.2.1"
