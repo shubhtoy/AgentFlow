@@ -9,7 +9,7 @@ import { resolveRef, RESERVED_DIRS } from '../parser-core'
 import type { ParsedGraph, Ref } from '../parser-core'
 import type { ValidationIssue, ValidationResult } from './types'
 import { SCHEMAS, validateSchema } from './schema'
-import { findUnreachable } from './structure'
+import { detectCycles, findUnreachable } from './structure'
 import { validateVariables } from './variables'
 
 // ── Re-exports (public API) ────────────────────────────────────────────
@@ -207,6 +207,12 @@ export function validate(graph: ParsedGraph, options: { strict?: boolean } = {})
         nodes: [nodeId],
         workflow: wfKey,
       })
+    }
+
+    // 2d-ii. Cycles — informational. Revision loops (e.g. review → plan) are a
+    // legitimate pattern, so cycles are reported as warnings, never hard errors.
+    for (const cycleIssue of detectCycles(Object.values(nodes), edges)) {
+      softIssues.push({ ...cycleIssue, workflow: wfKey })
     }
 
     // 2e. Entry point validation

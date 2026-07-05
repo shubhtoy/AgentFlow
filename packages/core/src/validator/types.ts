@@ -64,6 +64,12 @@ export const RULES: RuleDef[] = [
   { id: 'schema', severity: 'warning', message: 'Schema validation issue', category: 'schema' },
   { id: 'ambiguous_ref', severity: 'warning', message: 'Ambiguous ref matches multiple files', category: 'references' },
   { id: 'unreachable', severity: 'warning', message: 'Node may be unreachable', category: 'structure' },
+  {
+    id: 'cycle',
+    severity: 'warning',
+    message: 'Cycle detected in workflow graph (often an intentional revision loop)',
+    category: 'structure',
+  },
   { id: 'unknown_category', severity: 'warning', message: 'Unknown category prefix in ref', category: 'taxonomy' },
   {
     id: 'router_non_conditional',

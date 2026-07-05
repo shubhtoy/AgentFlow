@@ -265,6 +265,25 @@ export async function parseRoot(rootDir: string, mode: 'full' | 'metadata-only' 
 
 // ── Re-exports ─────────────────────────────────────────────────────────
 
+/**
+ * Read a markdown file from disk and parse it via `parseMarkdownContent`.
+ * Returns null if the file cannot be read (missing, permission error, etc.).
+ * Single source of truth for fs+parse glue — reused by repo-scanner and
+ * workflow-service instead of each keeping a private copy.
+ */
+export function parseMarkdownFile(
+  filePath: string,
+  mode: 'full' | 'metadata-only' = 'full',
+): ParsedFile | null {
+  try {
+    const raw = fsSync.readFileSync(filePath, 'utf-8')
+    return parseMarkdownContent(raw, filePath, mode)
+  } catch {
+    return null
+  }
+}
+
+
 export {
   parseFrontmatter, parseMarkdownContent, classifyResource,
   identifyPrimaryFile, resolveEdgeTarget, extractRefs,
@@ -274,3 +293,8 @@ export {
 }
 
 export type { ParsedFile, ParsedNode, ParsedWorkflow, ParsedGraph, SkillEntry, Edge, Ref }
+
+export {
+  toRelativePath, rewriteRefsToPaths, resolveRefsToPaths,
+} from '@agentflow/core/ref-paths'
+export type { RefResolution, RewriteResult, GraphRewriteResult } from '@agentflow/core/ref-paths'

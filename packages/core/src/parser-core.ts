@@ -103,6 +103,28 @@ export interface ParsedGraph {
   mcpServers: Record<string, unknown>
   mcpErrors: unknown[]
   resolvedIdentityRefs?: { workspace: Ref[], workflows: Record<string, Ref[]> }
+  identityAssembly?: IdentityAssembly
+}
+
+/** A descriptor reference resolved to its target path + loaded content (for L0/L1 assembly). */
+export interface ResolvedIdentityRef {
+  ref: Ref
+  path: string | null
+  content: string | null
+  resolvedBy: string | null
+}
+
+export interface IdentityLevel {
+  /** The descriptor (AGENTS.md) body content, or null when there is no descriptor. */
+  descriptor: string | null
+  /** Each mention ref in the descriptor, resolved to its target path + loaded content. */
+  refs: ResolvedIdentityRef[]
+}
+
+/** Loaded L0 (workspace) + L1 (per-workflow) identity content assembled from AGENTS.md refs. */
+export interface IdentityAssembly {
+  workspace: IdentityLevel
+  workflows: Record<string, IdentityLevel>
 }
 
 export interface TreeNode {
@@ -209,7 +231,10 @@ export function parseFrontmatter(content: string): { data: Record<string, unknow
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   if (!match) return { data: {}, content }
   let data: Record<string, unknown> = {}
-  try { data = (yaml.load(match[1]) as Record<string, unknown>) || {} } catch { /* invalid YAML */ }
+  try { data = (yaml.load(match[1]) as Record<string, unknown>) || {} } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`Invalid YAML frontmatter: ${err instanceof Error ? err.message : String(err)}`)
+  }
   const body = content.slice(match[0].length).replace(/^\r?\n/, '')
   return { data, content: body }
 }
@@ -590,13 +615,16 @@ export function parseFromFiles(
     }
   }
 
-  return {
+  const graph: ParsedGraph = {
     rootDir: '.', descriptorFile, identity,
     instructions, capabilities, skills, memory,
     hooks, customFiles, workflows, allFiles,
     mcpServers: {}, mcpErrors: [],
     resolvedIdentityRefs,
   }
+  // Resolve + load AGENTS.md references so L0/L1 identity content is in the model.
+  graph.identityAssembly = assembleIdentity(graph)
+  return graph
 }
 
 // ── Tree builder ───────────────────────────────────────────────────────
@@ -655,4 +683,49 @@ export function resolveRef(ref: Ref, graph: ParsedGraph): ResolvedRef | null {
   if (nameMatches.length === 1) return { ref, target: nameMatches[0], resolvedBy: 'name' }
   if (nameMatches.length > 1) return { ref, target: null, resolvedBy: 'ambiguous', matches: nameMatches }
   return null
+}
+
+// ── Identity assembly (L0/L1) ──────────────────────────────────────────
+
+/** Resolve each mention ref to its target path + loaded body content. */
+function resolveIdentityRefs(refs: Ref[], graph: ParsedGraph): ResolvedIdentityRef[] {
+  const out: ResolvedIdentityRef[] = []
+  for (const ref of refs) {
+    if (ref.semanticType !== 'mention') continue
+    const resolved = resolveRef(ref, graph)
+    const target = resolved && resolved.resolvedBy !== 'ambiguous'
+      ? (resolved.target as ParsedFile | null)
+      : null
+    out.push({
+      ref,
+      path: target ? (target.relativePath || null) : null,
+      content: target ? (target.content ?? target.rawContent ?? null) : null,
+      resolvedBy: resolved ? resolved.resolvedBy : null,
+    })
+  }
+  return out
+}
+
+/**
+ * Assemble the L0 (workspace) and L1 (per-workflow) identity context by resolving
+ * the AGENTS.md descriptor references and loading their target content. Nested
+ * (workflow-level) descriptors are resolved in addition to the workspace level.
+ */
+export function assembleIdentity(graph: ParsedGraph): IdentityAssembly {
+  const ws = graph.descriptorFile
+  const assembly: IdentityAssembly = {
+    workspace: {
+      descriptor: ws ? (ws.content ?? ws.rawContent ?? null) : null,
+      refs: ws ? resolveIdentityRefs(ws.refs || [], graph) : [],
+    },
+    workflows: {},
+  }
+  for (const [wfId, wf] of Object.entries(graph.workflows || {})) {
+    const d = wf.descriptorFile
+    assembly.workflows[wfId] = {
+      descriptor: d ? (d.content ?? d.rawContent ?? null) : null,
+      refs: d ? resolveIdentityRefs(d.refs || [], graph) : [],
+    }
+  }
+  return assembly
 }
