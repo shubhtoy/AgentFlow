@@ -53,15 +53,20 @@ third option.
 
 ## Dashboard
 
-`npm run dashboard` (`scripts/generate-dashboard.js`) writes a static snapshot to
-`studio/public/dashboard.html` — quick-glance test/lint/typecheck health, board epic status,
-recent commits, and durable-doc sizes. Not a PM tool, just an overview. Deployed to GitHub
-Pages (`.github/workflows/dashboard.yml`) on every push to `main` — live at
-https://shubhtoy.github.io/AgentFlow/. The workflow regenerates the file itself in CI (using
-the run's own `GITHUB_TOKEN` for the board section), so the committed file is a local-dev
-convenience, not the deploy source of truth. `npm run docs:check` and `npm run dashboard` both
-also run in `.husky/pre-push`; the dashboard step warns (doesn't auto-commit — see git-safety)
-if the local snapshot changed and needs staging before the push.
+`npm run dashboard` (`scripts/generate-dashboard.js`) writes `studio/public/dashboard.html` —
+quick-glance test/lint/typecheck health, board epic status, code size, and durable-doc sizes.
+Not a PM tool, just an overview. Deployed to GitHub Pages (`.github/workflows/dashboard.yml`)
+on every push to `main` &mdash; live at https://shubhtoy.github.io/AgentFlow/.
+
+**Hybrid live/static, chosen per section based on what's actually possible** (the repo is
+public, so this matters): commits, open issues, and CI runs are fetched **live, client-side**
+from `api.github.com` on page load — no auth needed for a public repo, always current, no
+server involved. The project board stays server-baked at build time (GitHub Projects v2 API
+requires auth even for a public repo, so it can't be called from a visitor's browser without
+exposing a credential). Tests/lint/typecheck/code-size also stay server-baked — there's no API
+that returns a live test result; something has to actually run the suite once. `npm run
+docs:check` and `npm run dashboard` both also run in `.husky/pre-push`; the dashboard step
+warns (doesn't auto-commit — see git-safety) if the local snapshot changed and needs staging.
 
 ## Commits & PRs
 
