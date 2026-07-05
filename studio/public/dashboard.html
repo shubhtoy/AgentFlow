@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgentFlow — Dashboard</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root {
+    --bg: #0b0d12; --panel: #12151c; --border: #232735; --text: #e6e8ee; --muted: #8b93a7;
+    --ok: #2ecc71; --bad: #ff5c5c; --accent: #7aa2f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 24px; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .stat .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat .value { font-size: 20px; margin-top: 6px; font-weight: 600; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .card h2 { margin: 0 0 12px; font-size: 15px; color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12px; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-ok { background: rgba(46,204,113,0.15); color: var(--ok); }
+  .badge-bad { background: rgba(255,92,92,0.15); color: var(--bad); }
+  .badge-todo { background: rgba(139,147,167,0.15); color: var(--muted); }
+  .badge-progress { background: rgba(122,162,247,0.15); color: var(--accent); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<main>
+  <h1>AgentFlow — Dashboard</h1>
+  <p class="meta">Generated 2026-07-05T22:53:51.652Z · branch <span class="mono">main</span> @ <span class="mono">95632f9</span> <span class="badge badge-bad">uncommitted changes</span></p>
+
+  <div class="grid">
+    <div class="stat">
+      <div class="label">Tests</div>
+      <div class="value"><span class="badge badge-ok">green</span> 569 passed | 16 skipped (585)</div>
+    </div>
+    <div class="stat">
+      <div class="label">Lint</div>
+      <div class="value"><span class="badge badge-ok">green</span> 0 errors, 0 warnings</div>
+    </div>
+    <div class="stat">
+      <div class="label">Typecheck</div>
+      <div class="value"><span class="badge badge-bad">red</span> 10 errors</div>
+    </div>
+    <div class="stat">
+      <div class="label">Board</div>
+      <div class="value">4/35 done</div>
+    </div>
+  </div>
+
+  
+    <section class="card">
+      <h2>Project board</h2>
+      <p class="muted">35 tracked items — Done: 4 · Todo: 31</p>
+      <table>
+        <thead><tr><th>#</th><th>Epic</th><th>Status</th><th>Priority</th><th>Points</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">#1</td>
+            <td>Setup: Core Engine</td>
+            <td><span class="badge badge-ok">Done</span></td>
+            <td>P0</td>
+            <td>13</td>
+          </tr>
+<tr>
+            <td class="mono">#2</td>
+            <td>Setup: Export / Compile Engine</td>
+            <td><span class="badge badge-todo">Todo</span></td>
+            <td>P0</td>
+            <td>26</td>
+          </tr>
+<tr>
+            <td class="mono">#3</td>
+            <td>Setup: Host Targets</td>
+            <td><span class="badge badge-todo">Todo</span></td>
+            <td>P0</td>
+            <td>21</td>
+          </tr>
+<tr>
+            <td class="mono">#4</td>
+            <td>Setup: Capabilities &amp; MCP Binding</td>
+            <td><span class="badge badge-todo">Todo</span></td>
+            <td>P0</td>
+            <td>15</td>
+          </tr>
+<tr>
+            <td class="mono">#5</td>
+            <td>Setup: MCP Execution Controller</td>
+            <td><span class="badge badge-todo">Todo</span></td>
+            <td>P2</td>
+            <td>15</td>
+          </tr>
+<tr>
+            <td class="mono">#6</td>
+            <td>Setup: Packaging &amp; Distribution</td>
+            <td><span class="badge badge-todo">Todo</span></td>
+            <td>P2</td>
+            <td>19</td>
+          </tr>
+<tr>
+            <td class="mono">#7</td>
+            <td>Stabilization &amp; Housekeeping</td>
+            <td><span class="badge badge-todo">Todo</span></td>
+            <td>P1</td>
+            <td>13</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  <section class="card">
+    <h2>Recent commits</h2>
+    <table>
+      <thead><tr><th>SHA</th><th>Subject</th><th>When</th></tr></thead>
+      <tbody><tr><td class="mono">95632f9</td><td>chore: run tests in pre-push alongside docs-check</td><td class="muted">28 minutes ago</td></tr>
+<tr><td class="mono">4a096b3</td><td>fix: move durable-memory docs out of .kiro; add prune-check + pre-push hook</td><td class="muted">29 minutes ago</td></tr>
+<tr><td class="mono">e559897</td><td>docs: add learning-from-corrections procedure; populate steering files</td><td class="muted">38 minutes ago</td></tr>
+<tr><td class="mono">5be94cb</td><td>docs: rewrite FEATURE-MAP.md as a real feature inventory</td><td class="muted">40 minutes ago</td></tr>
+<tr><td class="mono">f5d92b6</td><td>fix: correct pnpm-style workspace refs breaking npm ci; drop unused eslint deps</td><td class="muted">41 minutes ago</td></tr>
+<tr><td class="mono">6249304</td><td>docs: slim FEATURE-MAP.md to cross-cutting content only</td><td class="muted">43 minutes ago</td></tr>
+<tr><td class="mono">3213b22</td><td>chore: replace airbnb-base with a TypeScript-native eslint config</td><td class="muted">46 minutes ago</td></tr>
+<tr><td class="mono">4b61f49</td><td>fix: dedupe parseMarkdownFile, warn on invalid YAML; add agent docs</td><td class="muted">54 minutes ago</td></tr>
+<tr><td class="mono">7b1aa3c</td><td>core: resolve {{}} refs to paths, load AGENTS.md identity, validate cycles</td><td class="muted">54 minutes ago</td></tr>
+<tr><td class="mono">f12215e</td><td>docs: add master plan (validated architecture, 7 epics, engineering principles)</td><td class="muted">4 hours ago</td></tr>
+<tr><td class="mono">bcb59ed</td><td>chore: condition nodes, library browser simplification, skills route rework</td><td class="muted">8 hours ago</td></tr>
+<tr><td class="mono">d8f4471</td><td>raw dump</td><td class="muted">9 weeks ago</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Durable docs</h2>
+    <table>
+      <thead><tr><th>File</th><th>Size</th><th>Entries</th></tr></thead>
+      <tbody><tr><td class="mono">docs/DECISIONS.md</td><td>24 lines</td><td>2 entries</td></tr>
+<tr><td class="mono">docs/USER-CORRECTIONS.md</td><td>29 lines</td><td>3 entries</td></tr>
+<tr><td class="mono">docs/FEATURE-MAP.md</td><td>61 lines</td><td>7 entries</td></tr>
+<tr><td class="mono">docs/CODING-STANDARDS.md</td><td>103 lines</td><td>6 entries</td></tr></tbody>
+    </table>
+  </section>
+
+  <p class="muted" style="font-size:12px">
+    Regenerate: <code>npm run dashboard</code>. Source: <code>scripts/generate-dashboard.js</code>.
+    Board/repo: <a href="https://github.com/shubhtoy/AgentFlowTest">github.com/shubhtoy/AgentFlowTest</a> ·
+    <a href="https://github.com/users/shubhtoy/projects/4">Project board</a>
+  </p>
+</main>
+</body>
+</html>

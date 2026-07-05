@@ -1,15 +1,21 @@
 #!/usr/bin/env sh
-# Pre-push checks. Both are informational — neither blocks the push.
-#
-# Tests: this repo has 13 pre-existing failing test files (~51 tests, tracked as
-# Epic 7 on the project board) unrelated to most changes. A hard-blocking gate here
-# would make every push fail regardless of what changed, so this reports pass/fail
-# counts and lets you compare against the known baseline yourself rather than
-# pretending to enforce green when it isn't. Fix the gate to be strict (`&& exit 1`
-# on regression) once Epic 7 lands and baseline is 0 failing.
-echo "── pre-push: running tests (informational, not a gate) ──"
-npm test -- --silent 2>&1 | tail -8
+# Mandatory pre-push checks. Tests must pass or the push is aborted.
+set -e
+
+echo "── pre-push: running tests ──"
+npm test
 
 echo ""
-echo "── pre-push: docs prune check (informational, not a gate) ──"
+echo "── pre-push: docs prune check (advisory — never fails the push on its own) ──"
 npm run docs:check
+
+echo ""
+echo "── pre-push: refreshing dashboard snapshot ──"
+npm run dashboard
+if ! git diff --quiet studio/public/dashboard.html 2>/dev/null; then
+  echo ""
+  echo "NOTE: studio/public/dashboard.html changed (fresh commit/test/lint counts)."
+  echo "      Not auto-committed — per git-safety, stage + commit it yourself if you want"
+  echo "      this push's deploy to include the refreshed snapshot:"
+  echo "        git add studio/public/dashboard.html && git commit -m 'chore: refresh dashboard'"
+fi

@@ -51,11 +51,25 @@ third option.
 - Prefer a small number of tests that cover the real acceptance criteria over exhaustive
   permutation coverage. Calibrate effort to the risk of the change, not to 100% branch coverage.
 
+## Dashboard
+
+`npm run dashboard` (`scripts/generate-dashboard.js`) writes a static snapshot to
+`studio/public/dashboard.html` — quick-glance test/lint/typecheck health, board epic status,
+recent commits, and durable-doc sizes. Not a PM tool, just an overview. It's a static file
+committed to the repo (not fetched live by the deployed page — no credentials exposed to
+visitors), served automatically by the existing studio Vercel deploy. `npm run docs:check` and
+`npm run dashboard` both run in `.husky/pre-push`; the dashboard step warns (doesn't
+auto-commit — see git-safety) if the snapshot changed and needs staging before the push.
+
 ## Commits & PRs
 
 - Never commit without being explicitly asked. Stage specific files, not `git add .`.
 - One logical change per commit (e.g. "core engine change" separate from "lint config fix").
-- Never commit generated/build artifacts (`.next/`, `.source/`, `dist/`, `tsconfig.tsbuildinfo`).
+- Never commit generated/build artifacts (`.next/`, `.source/`, `dist/`, `tsconfig.tsbuildinfo`)
+  — `studio/public/dashboard.html` is the one intentional exception (see Dashboard above).
+- **Commit messages are one-line, semantic-commit style** (`type: short summary`, e.g.
+  `fix: correct pnpm-style workspace refs breaking npm ci`) — not multi-paragraph explanations.
+  Put rationale/detail in the PR description or a linked issue, not the commit subject.
 
 ## Learning from corrections (keep docs improving without bloat)
 
@@ -94,7 +108,9 @@ Procedure, each time a correction lands:
 7. **Prune, don't just accumulate.** If a steering file is growing long, that's a signal to
    consolidate overlapping entries into a sharper principle, not to keep appending. A short file
    of real principles beats a long file of accumulated exceptions. `npm run docs:check`
-   (`scripts/docs-prune-check.js`) also runs automatically on `git push` (`.husky/pre-push`) —
-   it's read-only and purely informational (never blocks the push), flags files/entries worth
+   (`scripts/docs-prune-check.js`) runs automatically on `git push` (`.husky/pre-push`) — it's
+   read-only and only ever nudges (never blocks the push on its own), flags files/entries worth
    consolidating (too long, too many entries, likely near-duplicate headings, stale dates), and
-   never edits anything itself.
+   never edits anything itself. `npm test` also runs on every push and **does** block — the
+   suite must stay green; use `it.skip`/`describe.skip` with a tracking-issue comment (never a
+   silent skip) for anything that needs a design decision rather than a quick fix.

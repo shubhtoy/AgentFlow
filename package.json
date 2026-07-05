@@ -18,6 +18,7 @@
     "format:check": "prettier --check 'packages/*/src/**/*.{js,ts,json}'",
     "typecheck": "tsc --build",
     "docs:check": "node scripts/docs-prune-check.js",
+    "dashboard": "node scripts/generate-dashboard.js",
     "prepare": "husky"
   },
   "devDependencies": {
