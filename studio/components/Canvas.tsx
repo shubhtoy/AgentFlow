@@ -85,7 +85,6 @@ export function Canvas() {
   const [ctxTarget, setCtxTarget] = useState<ContextMenuTarget | null>(null)
   const [dblClickPos, setDblClickPos] = useState<{ x: number; y: number } | null>(null)
   const [dblClickFlowPos, setDblClickFlowPos] = useState<{ x: number; y: number } | null>(null)
-  const [edgePopover, setEdgePopover] = useState<{ x: number; y: number; from: string; to: string; condition?: string; edgeId: string } | null>(null)
   const [layoutReady, setLayoutReady] = useState(false)
 
   const selectRef = useRef(select); selectRef.current = select
@@ -174,25 +173,29 @@ export function Canvas() {
 
         const condData: ResourceNodeData = {
           id: condId, name: condName, category: 'condition',
-          label: 'Condition', color: '#f59e0b',
+          label: 'Condition', color: isDark ? 'hsl(322 75% 65%)' : 'hsl(322 75% 58%)',
           description: edge.condition,
           subType: undefined,
           ecosystemHint: cfg?.ecosystemHint,
           compact: false,
+          from: edge.from,
+          to: edge.to,
+          condition: edge.condition,
         }
         rfNodes.push({ id: condId, type: 'resource', position: { x: 0, y: 0 }, data: condData as unknown as Record<string, unknown> })
 
+        const condEdgeColor = isDark ? 'hsl(322 75% 65%)' : 'hsl(322 75% 58%)'
         // Edge: source → condition gate
         rfEdges.push({
           id: `flow:${edge.from}-${condId}`, source: `step:${edge.from}`, target: condId, type: 'custom',
           data: { label: condName, edgeType: 'condition-in' } as Record<string, unknown>,
-          markerEnd: { type: MarkerType.ArrowClosed, color: isDark ? '#fbbf24' : '#f59e0b', width: 16, height: 16 },
+          markerEnd: { type: MarkerType.ArrowClosed, color: condEdgeColor, width: 16, height: 16 },
         })
         // Edge: condition gate → target
         rfEdges.push({
           id: `flow:${condId}-${edge.to}`, source: condId, target: `step:${edge.to}`, type: 'custom',
           data: { label: edge.to, edgeType: 'condition-out' } as Record<string, unknown>,
-          markerEnd: { type: MarkerType.ArrowClosed, color: isDark ? '#fbbf24' : '#f59e0b', width: 16, height: 16 },
+          markerEnd: { type: MarkerType.ArrowClosed, color: condEdgeColor, width: 16, height: 16 },
         })
       } else {
         // Unconditional edge
@@ -532,25 +535,15 @@ export function Canvas() {
 
   // Edge click → show popover
   const handleEdgeClick = useCallback((_e: React.MouseEvent, edge: RFEdge) => {
-    const fromId = edge.source.replace(/^step:/, '')
-    const toId = edge.target.replace(/^step:/, '')
-    const edgeData = edge.data as WorkflowEdgeData | undefined
-    const rect = reactFlowWrapper.current?.getBoundingClientRect()
-    if (!rect) return
-    setEdgePopover({
-      x: _e.clientX - rect.left,
-      y: _e.clientY - rect.top,
-      from: wf?.nodes[fromId]?.name || fromId,
-      to: wf?.nodes[toId]?.name || toId,
-      condition: edgeData?.condition,
-      edgeId: edge.id,
-    })
-  }, [wf])
+    const fromId = edge.source.replace(/^step:/, '').replace(/^cond:/, '').split('-')[0]
+    if (activeWf && wf?.nodes[fromId]) {
+      select({ type: 'node', key: fromId, workflowId: activeWf })
+    }
+  }, [wf, activeWf, select])
 
   // Close edge popover on pane click
   const handlePaneClick = useCallback(() => {
     select(null)
-    setEdgePopover(null)
     if (clickTrail.length > 0) clearTrail()
   }, [select, clickTrail, clearTrail])
 
@@ -660,7 +653,6 @@ export function Canvas() {
         onNodeClick={(e, node) => {
           if (e.metaKey || e.ctrlKey) return
           const raw = node.id
-          setEdgePopover(null)
 
           // Workspace view: clicking a workflow node navigates to it
           if (!activeWf) {
@@ -678,24 +670,17 @@ export function Canvas() {
             handleTrailClick(stepId)
             select({ type: 'node', key: stepId, workflowId: activeWf })
           } else if (raw.startsWith('cond:')) {
-            // Condition gate — show edge popover with condition info
-            handleTrailClick(raw)
+            // Condition gate — open condition card with full edge context
             const d = node.data as unknown as ResourceNodeData
-            // Parse source/target from condId format: cond:{from}-{condName}-{to}
-            const parts = raw.replace(/^cond:/, '').split('-')
-            const fromId = parts[0] || ''
-            const toId = parts[parts.length - 1] || ''
-            const rect = reactFlowWrapper.current?.getBoundingClientRect()
-            if (rect) {
-              setEdgePopover({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
-                from: wf?.nodes[fromId]?.name || fromId,
-                to: wf?.nodes[toId]?.name || toId,
-                condition: d?.description || d?.name,
-                edgeId: raw,
-              })
-            }
+            handleTrailClick(raw)
+            select({
+              type: 'condition',
+              key: raw,
+              workflowId: activeWf,
+              from: d?.from,
+              to: d?.to,
+              condition: d?.condition,
+            })
           } else {
             // Other resource nodes
             const d = node.data as unknown as ResourceNodeData
@@ -837,61 +822,6 @@ export function Canvas() {
       )}
 
       <AttachResourceDialog open={!!attachPayload} onClose={() => setAttachPayload(null)} payload={attachPayload} />
-
-      {/* Edge click popover */}
-      {edgePopover && (
-        <div
-          className="absolute z-50 pointer-events-auto animate-in fade-in-0 zoom-in-95 duration-150"
-          style={{ left: edgePopover.x, top: edgePopover.y }}
-        >
-          <div className="bg-popover/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl min-w-[220px] -translate-x-1/2 -translate-y-full mb-2 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                {edgePopover.condition ? (
-                  <><GitBranch size={12} className="text-amber-500" /><span>Conditional</span></>
-                ) : (
-                  <><ArrowRight size={12} /><span>Connection</span></>
-                )}
-              </div>
-              <button
-                onClick={() => setEdgePopover(null)}
-                className="size-5 flex items-center justify-center rounded hover:bg-accent text-muted-foreground transition-colors"
-              >
-                <X size={12} />
-              </button>
-            </div>
-
-            {/* Route */}
-            <div className="flex items-center gap-2 px-3 py-1 text-sm">
-              <span className="font-medium truncate max-w-[100px]">{edgePopover.from}</span>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-medium truncate max-w-[100px]">{edgePopover.to}</span>
-            </div>
-
-            {/* Condition text */}
-            {edgePopover.condition && (
-              <div className="mx-3 my-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">{edgePopover.condition}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center gap-1 px-2 py-2 border-t border-border/50 mt-1">
-              <button
-                onClick={() => {
-                  handleCtxAction('delete-edge', edgePopover.edgeId)
-                  setEdgePopover(null)
-                }}
-                className="flex items-center gap-1.5 text-xs text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-md transition-colors"
-              >
-                <Trash2 size={12} />
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Context menu */}
       <CanvasContextMenu

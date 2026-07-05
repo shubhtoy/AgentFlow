@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useCallback, useRef, memo } from 'react'
-import { Search, X, Globe, Download, ExternalLink, Check, ChevronRight } from 'lucide-react'
-import { Spinner, LoadingState, EmptyState } from './ui/spinner'
+import { Search, X, Globe, Download, ExternalLink, Check, ChevronRight, FileText } from 'lucide-react'
+import { Spinner, LoadingState } from './ui/spinner'
 import { useAppStore } from '@/store'
 import { emit } from '@/utils/events'
 
@@ -10,9 +10,8 @@ interface SkillResult {
   id: string; skillId: string; name: string; installs: number; source: string
 }
 
-interface PreviewSkill {
-  name: string; category: string; description: string; content: string; dir: string
-}
+interface SkillFile { path: string; content: string }
+interface PreviewSkill { name: string; dir: string; files: SkillFile[] }
 
 export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
   const [query, setQuery] = useState('')
@@ -46,10 +45,10 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
       const res = await fetch('/api/skills', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'preview', source: skill.source }),
+        body: JSON.stringify({ source: skill.source, skill: skill.skillId }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Preview failed')
+      if (!res.ok) throw new Error(data.error || 'Failed')
       setPreview({ skills: data.skills, source: skill.source, skillId: skill.id })
     } catch (err) {
       showNotification(`Failed: ${err instanceof Error ? err.message : 'Unknown'}`, 'error')
@@ -60,47 +59,45 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
     if (!preview) return
     setConfirming(true)
     try {
-      // Write files to workspace (client-side — works with OPFS or server)
       const { requireWorkspace } = await import('@/lib/workspace')
       const ws = await requireWorkspace()
 
       for (const skill of preview.skills) {
-        const filePath = `${skill.category}/${skill.dir}.md`
-        await ws.write(filePath, skill.content)
+        for (const file of skill.files) {
+          // Inject source into SKILL.md frontmatter if missing
+          let content = file.content
+          if (file.path === 'SKILL.md' && !content.includes('source:')) {
+            content = content.replace(/^(---\n)/, `$1source: ${preview.source}\n`)
+          }
+          await ws.write(`skills/${skill.dir}/${file.path}`, content)
+        }
       }
 
       setInstalled(prev => new Set(prev).add(preview.skillId))
       setPreview(null)
       await reload()
       emit('agentflow:show-resources')
-      const names = preview.skills.map(s => s.name).join(', ')
-      showNotification(`Installed ${names}`, 'success')
+      showNotification(`Installed ${preview.skills.map(s => s.name).join(', ')}`, 'success')
     } catch (err) {
       showNotification(`Failed: ${err instanceof Error ? err.message : 'Unknown'}`, 'error')
     } finally { setConfirming(false) }
   }, [preview, reload, showNotification])
 
-  const handleCancel = useCallback(async () => {
-    if (!preview) return
-    await fetch('/api/skills', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'rollback', dirs: preview.skills.map(s => s.dir) }),
-    }).catch(() => {})
-    setPreview(null)
-  }, [preview])
-
   const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 
+  // ── Preview screen ──
   if (preview) {
+    const totalFiles = preview.skills.reduce((n, s) => n + s.files.length, 0)
     return (
       <div className="flex flex-col h-full bg-card/50">
         <div className="p-3 border-b border-border/30 flex items-center justify-between">
           <div>
             <h3 className="text-xs font-semibold">Preview: {preview.source}</h3>
-            <p className="text-[10px] text-muted-foreground">{preview.skills.length} skill{preview.skills.length > 1 ? 's' : ''} found</p>
+            <p className="text-[10px] text-muted-foreground">
+              {preview.skills.length} skill{preview.skills.length > 1 ? 's' : ''} · {totalFiles} file{totalFiles > 1 ? 's' : ''}
+            </p>
           </div>
-          <button onClick={handleCancel} className="p-1 rounded hover:bg-accent"><X size={14} /></button>
+          <button onClick={() => setPreview(null)} className="p-1 rounded hover:bg-accent"><X size={14} /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {preview.skills.map(skill => (
@@ -108,36 +105,44 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
               <div className="flex items-center gap-2">
                 <Globe size={14} style={{ color: 'hsl(200, 80%, 55%)' }} />
                 <span className="text-xs font-medium">{skill.name}</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{skill.category}</span>
               </div>
-              {skill.description && (
-                <p className="text-[10px] text-muted-foreground leading-relaxed">{skill.description}</p>
-              )}
-              <details className="group">
-                <summary className="text-[10px] text-muted-foreground/60 cursor-pointer hover:text-muted-foreground flex items-center gap-1">
-                  <ChevronRight size={10} className="group-open:rotate-90 transition-transform" />
-                  SKILL.md content
-                </summary>
-                <pre className="mt-1.5 text-[9px] leading-relaxed bg-background/60 rounded-md p-2 overflow-x-auto max-h-40 text-muted-foreground whitespace-pre-wrap">{skill.content.slice(0, 1000)}{skill.content.length > 1000 ? '\n…' : ''}</pre>
-              </details>
+              <p className="text-[10px] text-muted-foreground">
+                → skills/{skill.dir}/
+              </p>
+              {/* File list */}
+              <div className="space-y-0.5">
+                {skill.files.map(f => (
+                  <details key={f.path} className="group">
+                    <summary className="text-[10px] text-muted-foreground/70 cursor-pointer hover:text-muted-foreground flex items-center gap-1">
+                      <ChevronRight size={10} className="group-open:rotate-90 transition-transform" />
+                      <FileText size={10} />
+                      {f.path}
+                    </summary>
+                    <pre className="mt-1 text-[9px] leading-relaxed bg-background/60 rounded-md p-2 overflow-x-auto max-h-32 text-muted-foreground whitespace-pre-wrap">
+                      {f.content.slice(0, 800)}{f.content.length > 800 ? '\n…' : ''}
+                    </pre>
+                  </details>
+                ))}
+              </div>
             </div>
           ))}
         </div>
         <div className="p-2 border-t border-border/30 flex gap-2">
-          <button onClick={handleCancel}
+          <button onClick={() => setPreview(null)}
             className="flex-1 py-1.5 text-xs rounded-lg border border-border/50 hover:bg-accent transition-colors">
             Cancel
           </button>
           <button onClick={handleConfirm} disabled={confirming}
             className="flex-1 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
             {confirming ? <Spinner size="sm" /> : <Download size={12} />}
-            Install{preview.skills.length > 1 ? ` ${preview.skills.length} skills` : ''}
+            Install to skills/
           </button>
         </div>
       </div>
     )
   }
 
+  // ── Search screen ──
   return (
     <div className="flex flex-col h-full bg-card/50">
       <div className="p-2.5 pb-2 space-y-2">
@@ -161,9 +166,7 @@ export const SkillsDiscoverView = memo(function SkillsDiscoverView() {
         </p>
       </div>
       <div className="flex-1 overflow-y-auto px-1.5 pb-4">
-        {loading && (
-          <LoadingState />
-        )}
+        {loading && <LoadingState />}
         {!loading && query.length < 2 && (
           <div className="flex flex-col items-center py-10 text-center px-4">
             <Globe size={28} className="text-muted-foreground/30 mb-3" />

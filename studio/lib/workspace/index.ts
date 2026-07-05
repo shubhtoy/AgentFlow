@@ -1,6 +1,5 @@
 export type { WorkspaceAdapter, WorkspaceFile } from './types'
 export { createBrowserAdapter, pickDirectory, getDirectoryHandle, setDirectoryHandle, buildTreeFromPaths } from './browser-adapter'
-export { createIDBAdapter, clearIDBWorkspace, ensureDefaultIDBWorkspace } from './idb-adapter'
 export { createOPFSAdapter, clearOPFSWorkspace } from './opfs-adapter'
 export { sync, diff, apply, snapshot, type SyncResult, type SyncState, type FileChange } from './sync'
 
@@ -79,13 +78,6 @@ export async function openWorkspace(adapter: WorkspaceAdapter): Promise<void> {
   if (!(await adapter.exists('AGENTS.md'))) {
     await adapter.write('AGENTS.md', DEFAULT_AGENTS_MD)
   }
-}
-
-/** Create a fresh IDB workspace (clears existing) */
-export async function freshIDB(): Promise<WorkspaceAdapter> {
-  const { clearIDBWorkspace, createIDBAdapter } = await import('./idb-adapter')
-  await clearIDBWorkspace()
-  return createIDBAdapter()
 }
 
 /** List available library workflows (for the workflow dropdown) */

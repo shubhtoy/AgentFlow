@@ -127,7 +127,7 @@ function RefBadge({ raw, invalid, onClick }: { raw: string; invalid?: boolean; o
       {Icon && <Icon size={11} style={{ color: cfg?.primaryColor }} />}
       {name}
       {conditionText && (
-        <span className="text-amber-500/80 text-[10px] font-normal ml-0.5">| {conditionText}</span>
+        <span className="text-[var(--node-condition)]/80 text-[10px] font-normal ml-0.5">| {conditionText}</span>
       )}
     </button>
   )

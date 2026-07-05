@@ -47,7 +47,7 @@ export function PathTraceBar({ paths, activeIndex, onChangeIndex, onClear, nodeN
         {path.conditions.size > 0 && (
           <div className="flex items-center gap-1 ml-1 border-l border-border/40 pl-2">
             {[...path.conditions.values()].slice(0, 2).map((c, i) => (
-              <Badge key={i} variant="outline" className="text-[9px] h-4 px-1.5 text-amber-500 border-amber-500/30">
+              <Badge key={i} variant="outline" className="text-[9px] h-4 px-1.5 text-[var(--node-condition)] border-[var(--node-condition)]/30">
                 {c.includes('/') ? c.split('/').pop() : c}
               </Badge>
             ))}

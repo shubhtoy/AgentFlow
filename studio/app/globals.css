@@ -45,6 +45,7 @@
   --color-node-step: var(--node-step);
   --color-node-router: var(--node-router);
   --color-node-sub-workflow: var(--node-sub-workflow);
+  --color-node-condition: var(--node-condition);
 }
 
 @layer base {
@@ -73,6 +74,7 @@
     --node-step: hsl(217 91% 60%);
     --node-router: hsl(271 91% 65%);
     --node-sub-workflow: hsl(172 66% 50%);
+    --node-condition: hsl(322 75% 58%);
     --radius: 0.5rem;
   }
 
@@ -101,6 +103,7 @@
     --node-step: hsl(217 91% 65%);
     --node-router: hsl(271 91% 70%);
     --node-sub-workflow: hsl(172 66% 55%);
+    --node-condition: hsl(322 75% 65%);
   }
 }
 
@@ -147,52 +150,18 @@
   --text-secondary: #9e9e9e;
 }
 
-/* ── Narrative block decoration ───────────────────────────── */
-.narrative-block {
-  background: rgba(0, 0, 0, 0.03);
-  border-left: 2px solid rgba(0, 0, 0, 0.12);
-  padding: 4px 8px 4px 32px;
-  border-radius: 8px;
-  margin: 2px 0;
-  transition: background 0.15s ease;
-  position: relative;
-}
-.narrative-block:hover { background: rgba(0, 0, 0, 0.05); }
-.dark .narrative-block { background: rgba(255, 255, 255, 0.05); border-left-color: rgba(255, 255, 255, 0.15); }
-.dark .narrative-block:hover { background: rgba(255, 255, 255, 0.08); }
-
-.narrative-move-buttons {
-  position: absolute; left: 3px; top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 0px;
-  opacity: 0; transition: opacity 0.15s ease;
-}
-.narrative-block:hover .narrative-move-buttons { opacity: 1; }
-
-.narrative-drag-handle {
-  display: flex; align-items: center; justify-content: center;
-  width: 18px; height: 14px; cursor: grab; font-size: 10px; line-height: 1;
-  color: rgba(0, 0, 0, 0.3); border-radius: 3px; transition: all 0.1s ease; user-select: none;
-}
-.narrative-drag-handle:hover { background: rgba(0, 0, 0, 0.08); color: rgba(0, 0, 0, 0.5); }
-.narrative-drag-handle:active { cursor: grabbing; }
-.dark .narrative-drag-handle { color: rgba(255, 255, 255, 0.3); }
-.dark .narrative-drag-handle:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
-
-.narrative-move-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 18px; height: 14px; border: none; background: transparent;
-  color: rgba(0, 0, 0, 0.35); cursor: pointer; font-size: 10px; line-height: 1;
-  padding: 0; border-radius: 3px; transition: all 0.1s ease;
-}
-.narrative-move-btn:hover { background: rgba(0, 0, 0, 0.08); color: rgba(0, 0, 0, 0.6); }
-.dark .narrative-move-btn { color: rgba(255, 255, 255, 0.35); }
-.dark .narrative-move-btn:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
-
-.narrative-drop-target { outline: 2px dashed rgba(25, 118, 210, 0.5); outline-offset: -2px; border-radius: 8px; background: rgba(25, 118, 210, 0.04); }
-.dark .narrative-drop-target { outline-color: rgba(100, 181, 246, 0.5); background: rgba(100, 181, 246, 0.06); }
-
 .ref-chip-wrapper { display: inline; line-height: inherit; }
 .ref-chip-wrapper .ProseMirror-selectednode { outline: 2px solid rgb(59 130 246 / 0.5); border-radius: 6px; }
+
+/* Narrative block — subtle accent for ref-containing paragraphs */
+.narrative-block {
+  background: rgba(0, 0, 0, 0.02); border-left: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px; padding: 2px 6px 2px 8px; margin: 1px 0;
+  transition: background 0.15s ease;
+}
+.narrative-block:hover { background: rgba(0, 0, 0, 0.04); }
+.dark .narrative-block { background: rgba(255, 255, 255, 0.03); border-left-color: rgba(255, 255, 255, 0.1); }
+.dark .narrative-block:hover { background: rgba(255, 255, 255, 0.05); }
 
 /* ── TipTap / ProseMirror editor styles ───────────────────── */
 .ProseMirror { outline: none; min-height: 100%; font-size: 1rem; line-height: 1.7; }

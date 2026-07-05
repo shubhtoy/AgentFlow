@@ -28,9 +28,9 @@ async function openFolder(reload: () => Promise<any>) {
     input.onchange = async () => {
       if (!input.files?.length) return
       useAppStore.getState().showNotification(`Loading ${input.files.length} files…`, 'info')
-      const { createIDBAdapter, setWorkspace } = await import('@/lib/workspace')
-      const adapter = createIDBAdapter()
-      setWorkspace(adapter)
+      const { createOPFSAdapter, openWorkspace } = await import('@/lib/workspace')
+      const adapter = createOPFSAdapter()
+      await openWorkspace(adapter)
       for (const file of Array.from(input.files)) {
         const rel = (file as any).webkitRelativePath || file.name
         const parts = rel.split('/')

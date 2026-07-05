@@ -10,6 +10,7 @@ import { useAppStore } from '@/store'
 import { getNodeTypeColor } from '@/lib/constants'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import { NodeDetailTabs, ValidationBanner } from './NodeDetail'
+import { ConditionCard } from './ConditionCard'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import {
@@ -51,6 +52,7 @@ export function NodeCard() {
   const isNode = selectionType === 'node'
   const isResource = selectionType === 'resource'
   const isIdentity = selectionType === 'identity'
+  const isCondition = selectionType === 'condition'
 
   const resource = useMemo(
     () => (isResource ? getSelectedResource() : null),
@@ -111,6 +113,7 @@ export function NodeCard() {
 
   // ── Visibility: show whenever a node or resource is selected ──
   const isFocusModalOpen = !!focusTarget
+  if (isCondition && !isFocusModalOpen) return <ConditionCard />
   const hasContent = isNode ? !!node && !!wf : isIdentity ? !!identityFile : (isResource && !!resource)
   if (!hasContent || isFocusModalOpen) return null
 
@@ -259,7 +262,7 @@ export function NodeCard() {
                     className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-md px-1.5 py-0.5 hover:bg-accent transition-colors">
                     <ArrowLeft size={9} /> {wf?.nodes[e.from]?.name || e.from}
                     {e.condition && (
-                      <span className="text-amber-500 font-medium truncate max-w-[80px]">| {e.condition}</span>
+                      <span className="text-[var(--node-condition)] font-medium truncate max-w-[80px]">| {e.condition}</span>
                     )}
                   </button>
                 ))}
@@ -269,7 +272,7 @@ export function NodeCard() {
                     className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-md px-1.5 py-0.5 hover:bg-accent transition-colors">
                     {wf?.nodes[e.to]?.name || e.to}
                     {e.condition && (
-                      <span className="text-amber-500 font-medium truncate max-w-[80px]">| {e.condition}</span>
+                      <span className="text-[var(--node-condition)] font-medium truncate max-w-[80px]">| {e.condition}</span>
                     )}
                     <ArrowRight size={9} />
                   </button>

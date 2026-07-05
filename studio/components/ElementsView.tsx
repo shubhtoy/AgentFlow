@@ -71,8 +71,14 @@ const ItemRow = memo(function ItemRow({ item, icon: ItemIcon, color, onInstall, 
   icon?: React.ComponentType<{ size?: number; style?: React.CSSProperties }>
   color?: string; onInstall?: (entry: LibraryEntry) => void; installed?: boolean
 }) {
+  const select = useAppStore(s => s.select)
   const canDrag = item.draggable !== false
   const handleDragStart = useCallback((e: React.DragEvent) => setDragData(e, item), [item])
+  const handleClick = useCallback(() => {
+    if (item.source === 'workspace' && item.file) {
+      select({ type: 'resource', category: item.category as any, key: item.name })
+    }
+  }, [item, select])
 
   const sourceLabel = item.source === 'mcp' ? item.server : null; const isBuiltin = item.source === 'library' && (item.entry as any)?.builtin
 
@@ -81,6 +87,7 @@ const ItemRow = memo(function ItemRow({ item, icon: ItemIcon, color, onInstall, 
       <div
         draggable={canDrag}
         onDragStart={canDrag ? handleDragStart : undefined}
+        onClick={handleClick}
         className={`flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors hover:bg-accent/50 ${
           canDrag ? 'cursor-grab active:cursor-grabbing' : ''
         }`}
@@ -115,8 +122,14 @@ const BlockCard = memo(function BlockCard({ item, icon: ItemIcon, color, onInsta
   icon?: React.ComponentType<{ size?: number; style?: React.CSSProperties }>
   color?: string; onInstall?: (entry: LibraryEntry) => void; installed?: boolean
 }) {
+  const select = useAppStore(s => s.select)
   const canDrag = item.draggable !== false
   const handleDragStart = useCallback((e: React.DragEvent) => setDragData(e, item), [item])
+  const handleClick = useCallback(() => {
+    if (item.source === 'workspace' && item.file) {
+      select({ type: 'resource', category: item.category as any, key: item.name })
+    }
+  }, [item, select])
 
   const sourceLabel = item.source === 'mcp' ? item.server : null; const isBuiltin = item.source === 'library' && (item.entry as any)?.builtin
 
@@ -124,6 +137,7 @@ const BlockCard = memo(function BlockCard({ item, icon: ItemIcon, color, onInsta
     <div
       draggable={canDrag}
       onDragStart={canDrag ? handleDragStart : undefined}
+      onClick={handleClick}
       className={`group/block relative flex flex-col items-center gap-1.5 p-2.5 rounded-lg border border-border/40 hover:border-border hover:bg-accent/40 transition-all text-center ${
         canDrag ? 'cursor-grab active:cursor-grabbing' : ''
       }`}

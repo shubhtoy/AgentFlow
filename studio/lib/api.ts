@@ -181,17 +181,18 @@ export const api = {
       return out
     }
 
-    // Parsed: same .md structure, refs resolved to file paths
+    // Parsed: same .md structure, {{ref}} templates resolved to bare paths
     if (options.format === 'parsed') {
       const out: Record<string, string> = {}
       for (const f of (data.allFiles || []) as any[]) {
         if (!f.relativePath || !f.rawContent) continue
         let content = f.rawContent as string
         const refs = (f.refs || []) as Array<{ raw: string; category: string; name: string }>
-        // Replace refs with resolved paths (reverse order to preserve offsets)
+        // Replace {{category/name}} with category/name (remove template braces)
         for (const ref of [...refs].reverse()) {
+          const template = `{{${ref.raw}}}`
           const resolved = `${ref.category}/${ref.name}`
-          content = content.replace(ref.raw, resolved)
+          content = content.replace(template, resolved)
         }
         out[f.relativePath] = content
       }

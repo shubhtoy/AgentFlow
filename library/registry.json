@@ -4,7 +4,7 @@
     {
       "name": "accessibility",
       "type": "instruction",
-      "description": "WCAG 2.1 AA compliance \u2014 semantic HTML, ARIA, keyboard navigation, color contrast, screen reader testing",
+      "description": "WCAG 2.1 AA compliance — semantic HTML, ARIA, keyboard navigation, color contrast, screen reader testing",
       "path": "instructions/accessibility.md"
     },
     {
@@ -16,7 +16,7 @@
     {
       "name": "agentflow-authoring",
       "type": "instruction",
-      "description": "Complete reference for authoring AgentFlow workspaces \u2014 file formats, taxonomy, context layers, reference syntax, validation rules",
+      "description": "Complete reference for authoring AgentFlow workspaces — file formats, taxonomy, context layers, reference syntax, validation rules",
       "path": "instructions/agentflow-authoring.md"
     },
     {
@@ -58,7 +58,7 @@
     {
       "name": "error-handling",
       "type": "instruction",
-      "description": "Never swallow errors \u2014 explicit error handling patterns, guard clauses, custom types, and logging strategy",
+      "description": "Never swallow errors — explicit error handling patterns, guard clauses, custom types, and logging strategy",
       "path": "instructions/error-handling.md"
     },
     {
@@ -262,13 +262,13 @@
     {
       "name": "decisions",
       "type": "memory",
-      "description": "Architecture decisions, trade-offs, and rationale \u2014 prevents re-debating settled questions",
+      "description": "Architecture decisions, trade-offs, and rationale — prevents re-debating settled questions",
       "path": "memory/decisions.md"
     },
     {
       "name": "lessons-learned",
       "type": "memory",
-      "description": "What worked, what didn't, patterns to avoid \u2014 prevents repeating mistakes",
+      "description": "What worked, what didn't, patterns to avoid — prevents repeating mistakes",
       "path": "memory/lessons-learned.md"
     },
     {
@@ -298,7 +298,7 @@
     {
       "name": "api-design",
       "type": "skill",
-      "description": "RESTful API design best practices \u2014 resource naming, HTTP methods, status codes, pagination, filtering, error responses, versioning, and authentication patterns. Includes OpenAPI spec guidance.",
+      "description": "RESTful API design best practices — resource naming, HTTP methods, status codes, pagination, filtering, error responses, versioning, and authentication patterns. Includes OpenAPI spec guidance.",
       "path": "skills/api-design"
     },
     {
@@ -316,13 +316,13 @@
     {
       "name": "code-review",
       "type": "skill",
-      "description": "Systematic code review with priority ordering \u2014 correctness, security, performance, readability, maintainability, style. Structured feedback with actionable suggestions.",
+      "description": "Systematic code review with priority ordering — correctness, security, performance, readability, maintainability, style. Structured feedback with actionable suggestions.",
       "path": "skills/code-review"
     },
     {
       "name": "context-engineering",
       "type": "skill",
-      "description": "Treat LLM context as a finite resource \u2014 minimal system prompts, token-efficient tools, progressive disclosure, compaction strategies, structured note-taking, and sub-agent architectures.",
+      "description": "Treat LLM context as a finite resource — minimal system prompts, token-efficient tools, progressive disclosure, compaction strategies, structured note-taking, and sub-agent architectures.",
       "path": "skills/context-engineering"
     },
     {
@@ -340,7 +340,7 @@
     {
       "name": "documentation",
       "type": "skill",
-      "description": "Write effective technical documentation \u2014 README structure, API docs, architecture decision records, inline comments, and progressive disclosure. Explain why, not what.",
+      "description": "Write effective technical documentation — README structure, API docs, architecture decision records, inline comments, and progressive disclosure. Explain why, not what.",
       "path": "skills/documentation"
     },
     {
@@ -370,13 +370,13 @@
     {
       "name": "mcp-builder",
       "type": "skill",
-      "description": "Build Model Context Protocol (MCP) servers \u2014 protocol overview, tool and resource definitions, transport types (stdio, SSE, streamable HTTP), error handling, and testing strategies.",
+      "description": "Build Model Context Protocol (MCP) servers — protocol overview, tool and resource definitions, transport types (stdio, SSE, streamable HTTP), error handling, and testing strategies.",
       "path": "skills/mcp-builder"
     },
     {
       "name": "performance-optimization",
       "type": "skill",
-      "description": "Measurement-driven performance optimization \u2014 profile before optimizing, identify common bottlenecks (N+1 queries, bundle size, memory leaks, re-renders), and track web vitals.",
+      "description": "Measurement-driven performance optimization — profile before optimizing, identify common bottlenecks (N+1 queries, bundle size, memory leaks, re-renders), and track web vitals.",
       "path": "skills/performance-optimization"
     },
     {
@@ -454,7 +454,7 @@
     {
       "name": "backup-on-delete",
       "type": "hook",
-      "description": "Log deleted file paths for recovery \u2014 ensures no accidental data loss goes unnoticed",
+      "description": "Log deleted file paths for recovery — ensures no accidental data loss goes unnoticed",
       "path": "hooks/backup-on-delete.json"
     },
     {

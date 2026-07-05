@@ -2,7 +2,7 @@ import type { WorkspaceAdapter, WorkspaceFile } from './types'
 
 /**
  * Sync engine — diffs two workspace adapters and applies changes.
- * Works for any pair: IDB ↔ folder, IDB ↔ git, OPFS ↔ folder, etc.
+ * Works for any pair: OPFS ↔ folder, OPFS ↔ git, etc.
  */
 
 export type ChangeType = 'added' | 'removed' | 'modified' | 'conflict'

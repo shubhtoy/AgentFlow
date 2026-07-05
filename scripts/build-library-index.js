@@ -2,7 +2,6 @@
 /**
  * Generates library/index.json — a flat list of all file paths in the library.
  * Run automatically before next build/dev via package.json prebuild script.
- * Eliminates the need for per-directory manifest.txt files.
  */
 const fs = require('fs')
 const path = require('path')

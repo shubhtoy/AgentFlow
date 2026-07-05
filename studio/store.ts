@@ -53,10 +53,16 @@ export type FocusTarget =
   | { type: 'resource'; category: string; key: string }
 
 export interface Selection {
-  type: 'resource' | 'node' | 'workflow' | 'identity'
+  type: 'resource' | 'node' | 'workflow' | 'identity' | 'condition'
   category?: ResourceCategory
   key: string
   workflowId?: string
+  /** For type='condition': the source router node id */
+  from?: string
+  /** For type='condition': the target node id */
+  to?: string
+  /** For type='condition': the condition text (may be a ref like 'instructions/xxx') */
+  condition?: string
 }
 
 // ── Domain state — tracked by undo ──────────────────────────────────────
@@ -584,6 +590,8 @@ export const useAppStore = create<AppStore>()(
             if (!entry) return null
             // Already a ParsedFile (has relativePath)
             if (entry.relativePath) return entry as ParsedFile
+            // Skill entries and similar have a primaryFile
+            if (entry.primaryFile?.relativePath) return entry.primaryFile as ParsedFile
             // Raw object (e.g. hooks JSON) — synthesize a ParsedFile
             const ext = selection.category === 'hooks' ? 'json' : 'md'
             const rawContent = typeof entry === 'string' ? entry : JSON.stringify(entry, null, 2)

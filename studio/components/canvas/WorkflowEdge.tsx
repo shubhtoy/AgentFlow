@@ -32,10 +32,10 @@ function WorkflowEdgeComponent({
   const edgeType = data?.edgeType ?? (isConditional ? 'conditional' : 'default')
 
   const edgeStyles: Record<string, { stroke: string; width: number; dash?: string; opacity: number }> = {
-    default:        { stroke: 'var(--node-step)',    width: 2,   opacity: 0.5 },
-    conditional:    { stroke: 'rgb(245,158,11)',     width: 2.5, dash: '8 4', opacity: 1 },
-    'condition-in': { stroke: 'rgb(245,158,11)',     width: 2,   dash: '6 3', opacity: 0.7 },
-    'condition-out':{ stroke: 'rgb(245,158,11)',     width: 2,   opacity: 0.8 },
+    default:        { stroke: 'var(--node-step)',            width: 2,   opacity: 0.5 },
+    conditional:    { stroke: 'var(--node-condition)',       width: 2,   dash: '8 4', opacity: 0.8 },
+    'condition-in': { stroke: 'var(--node-condition)',       width: 2,   dash: '6 3', opacity: 0.6 },
+    'condition-out':{ stroke: 'var(--node-condition)',       width: 2,   dash: '6 3', opacity: 0.7 },
   }
   const es = edgeStyles[edgeType] ?? edgeStyles.default
 
@@ -64,8 +64,8 @@ function WorkflowEdgeComponent({
               window.dispatchEvent(new CustomEvent('edge:click', { detail: { id, sourceX, sourceY, targetX, targetY, condition: data?.condition } }))
             }}
           >
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/25 text-amber-400 border border-amber-500/40 px-2 py-0.5 text-[11px] font-semibold backdrop-blur-sm shadow-md hover:bg-amber-500/35 transition-colors max-w-[180px]">
-              <span className="shrink-0">⚡</span> <span className="truncate">{data!.condition}</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--node-condition)]/15 text-[var(--node-condition)] border border-[var(--node-condition)]/30 px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm shadow-sm hover:bg-[var(--node-condition)]/25 transition-colors max-w-[180px]">
+              <span className="shrink-0 opacity-80">⚡</span> <span className="truncate">{data!.condition}</span>
             </span>
           </div>
         </EdgeLabelRenderer>

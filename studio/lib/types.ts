@@ -132,6 +132,7 @@ export interface LibraryEntry {
   path: string
   description: string
   tags: string[]
+  content?: string
 }
 
 // --- Structured Export ---

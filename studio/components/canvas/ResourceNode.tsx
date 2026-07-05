@@ -18,6 +18,12 @@ export interface ResourceNodeData {
   ecosystemHint?: string
   /** When true, renders as a small dot. When false, full pill card. */
   compact?: boolean
+  /** For condition gates: source router node id */
+  from?: string
+  /** For condition gates: target node id */
+  to?: string
+  /** For condition gates: the condition text or ref */
+  condition?: string
 }
 
 const categoryIcons: Record<string, typeof BookOpen> = {
@@ -92,7 +98,7 @@ function ResourceNodeComponent({ data, selected }: NodeProps & { data: ResourceN
 
       <div className={cn(
         'flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm w-[260px] overflow-hidden transition-all duration-200',
-        isCondition && 'border-dashed border-amber-500/40 bg-amber-500/[0.03]',
+        isCondition && 'border-dashed border-[var(--node-condition)]/50 bg-[var(--node-condition)]/[0.05]',
         selected && 'ring-2 ring-primary border-primary',
         hovered && !selected && 'shadow-md border-muted-foreground/30',
       )}>

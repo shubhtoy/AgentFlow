@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/config.schema.json",
+  "project": {
+    "name": "agentflow"
+  }
+}
