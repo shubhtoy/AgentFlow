@@ -9,7 +9,7 @@ const {
   validAgentsFmArb, invalidAgentsFmArb,
   validFrontmatterArb, invalidFrontmatterArb, anyFrontmatterArb,
   TOOL_TYPES, INTERACTION_TYPES, NODE_TYPES,
-} = require('./frontmatter.gen.js');
+} = require('./frontmatter.gen.ts');
 
 describe('frontmatter generators', () => {
   // --- Structure checks ---

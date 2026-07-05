@@ -12,7 +12,7 @@ const {
   reservedDirFilesArb,
   workflowArb,
   agentsFileArb,
-} = require('../generators/directory.gen.js');
+} = require('../generators/directory.gen.ts');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

@@ -4,7 +4,7 @@ const {
   markdownWithFrontmatterArb,
   markdownWithoutFrontmatterArb,
   markdownWithRefsArb,
-} = require('./markdown.gen.js');
+} = require('./markdown.gen.ts');
 
 describe('markdown.gen - markdown file generators', () => {
   it('markdownFileArb produces valid output shape', () => {

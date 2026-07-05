@@ -1,5 +1,5 @@
 const fc = require('fast-check');
-const { nameArb } = require('./refs.gen.js');
+const { nameArb } = require('./refs.gen.ts');
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 

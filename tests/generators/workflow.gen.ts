@@ -1,6 +1,6 @@
 const fc = require('fast-check');
-const { nameArb } = require('./refs.gen.js');
-const { descriptionArb } = require('./frontmatter.gen.js');
+const { nameArb } = require('./refs.gen.ts');
+const { descriptionArb } = require('./frontmatter.gen.ts');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

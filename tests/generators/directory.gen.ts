@@ -1,13 +1,13 @@
 const fc = require('fast-check');
-const { nameArb } = require('./refs.gen.js');
-const { titleArb, paragraphArb, serializeFrontmatter } = require('./markdown.gen.js');
+const { nameArb } = require('./refs.gen.ts');
+const { titleArb, paragraphArb, serializeFrontmatter } = require('./markdown.gen.ts');
 const {
   validToolFmArb,
   validSkillFmArb,
   validMemoryFmArb,
   validNodeFmArb,
   validAgentsFmArb,
-} = require('./frontmatter.gen.js');
+} = require('./frontmatter.gen.ts');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

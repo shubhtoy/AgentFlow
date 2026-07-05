@@ -6,7 +6,7 @@ const {
   conditionalEdgeRefArb,
   dataFlowRefArb,
   anyRefArb,
-} = require('./refs.gen.js');
+} = require('./refs.gen.ts');
 
 describe('refs.gen - ref generators', () => {
   it('mentionRefArb produces valid mention refs', () => {

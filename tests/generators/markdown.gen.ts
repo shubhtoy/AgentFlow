@@ -1,5 +1,5 @@
 const fc = require('fast-check');
-const { anyRefArb, nameArb } = require('./refs.gen.js');
+const { anyRefArb, nameArb } = require('./refs.gen.ts');
 
 // --- Helpers ---
 
