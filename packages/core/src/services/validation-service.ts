@@ -1,18 +1,18 @@
+import type { ParsedGraph } from '../parser-core'
+import { validate as coreValidate } from '../validator'
 import { ok, fail, ErrorCode } from './types'
 import type { ServiceResult } from './types'
-import { validate as coreValidate } from '../validator'
-import type { ParsedGraph } from '../parser-core'
 
 interface Logger {
-  error(obj: unknown, msg: string): void;
+  error(obj: unknown, msg: string): void
 }
 
 interface ValidationOptions {
-  strict?: boolean;
+  strict?: boolean
 }
 
 interface ValidationService {
-  validate(graph: unknown, options?: ValidationOptions): ServiceResult<unknown>;
+  validate(graph: unknown, options?: ValidationOptions): ServiceResult<unknown>
 }
 
 /**
@@ -20,18 +20,18 @@ interface ValidationService {
  * Pure version: validates a pre-parsed graph. No filesystem access.
  */
 export function createValidationService(ctx: { logger: Logger }): ValidationService {
-  const { logger } = ctx;
+  const { logger } = ctx
 
   return {
     validate(graph: unknown, options: ValidationOptions = {}) {
       try {
         const strict = options.strict === true
         const result = coreValidate(graph as ParsedGraph, { strict })
-        return ok(result);
+        return ok(result)
       } catch (err: unknown) {
-        logger.error({ err }, 'ValidationService.validate failed');
-        return fail(ErrorCode.VALIDATION_FAILED, (err as Error).message);
+        logger.error({ err }, 'ValidationService.validate failed')
+        return fail(ErrorCode.VALIDATION_FAILED, (err as Error).message)
       }
     },
-  };
+  }
 }

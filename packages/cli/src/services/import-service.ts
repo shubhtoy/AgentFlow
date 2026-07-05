@@ -59,7 +59,7 @@ function writeFileMap(
   fileMap: Record<string, string>,
   targetRoot: string,
   options: ImportOptions = {},
-): { written: string[], skipped: string[] } {
+): { written: string[]; skipped: string[] } {
   const written: string[] = []
   const skipped: string[] = []
 
@@ -120,7 +120,8 @@ export function createImportService(ctx: ServiceContext) {
 
         const validation = validateFileMap(fileMap)
         if (!validation.valid) return fail(ErrorCode.INVALID_INPUT, validation.errors.join('; '), 400)
-        if (options.dryRun) return ok({ filesWritten: Object.keys(fileMap), skipped: [], warnings: validation.warnings, dryRun: true })
+        if (options.dryRun)
+          return ok({ filesWritten: Object.keys(fileMap), skipped: [], warnings: validation.warnings, dryRun: true })
 
         const { written, skipped } = writeFileMap(fileMap, targetRoot || rootDir, options)
         return ok({ filesWritten: written, skipped, warnings: validation.warnings })
@@ -140,7 +141,8 @@ export function createImportService(ctx: ServiceContext) {
 
         const validation = validateFileMap(fileMap)
         if (!validation.valid) return fail(ErrorCode.INVALID_INPUT, validation.errors.join('; '), 400)
-        if (options.dryRun) return ok({ filesWritten: Object.keys(fileMap), skipped: [], warnings: validation.warnings, dryRun: true })
+        if (options.dryRun)
+          return ok({ filesWritten: Object.keys(fileMap), skipped: [], warnings: validation.warnings, dryRun: true })
 
         const { written, skipped } = writeFileMap(fileMap, targetRoot || rootDir, options)
         return ok({ filesWritten: written, skipped, warnings: validation.warnings })
@@ -157,7 +159,8 @@ export function createImportService(ctx: ServiceContext) {
 
         const validation = validateFileMap(fileMap)
         if (!validation.valid) return fail(ErrorCode.INVALID_INPUT, validation.errors.join('; '), 400)
-        if (options.dryRun) return ok({ filesWritten: Object.keys(fileMap), skipped: [], warnings: validation.warnings, dryRun: true })
+        if (options.dryRun)
+          return ok({ filesWritten: Object.keys(fileMap), skipped: [], warnings: validation.warnings, dryRun: true })
 
         const { written, skipped } = writeFileMap(fileMap, targetRoot || rootDir, options)
         return ok({ filesWritten: written, skipped, warnings: validation.warnings })
@@ -174,9 +177,11 @@ export function createImportService(ctx: ServiceContext) {
         if (!fs.existsSync(registryPath)) return fail(ErrorCode.FILE_NOT_FOUND, 'Library registry not found', 404)
 
         const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
-        const entry = registry.entries.find((e: { type: string, name: string }) => e.type === type && e.name === name)
+        const entry = registry.entries.find((e: { type: string; name: string }) => e.type === type && e.name === name)
         if (!entry) {
-          const available = registry.entries.filter((e: { type: string }) => e.type === type).map((e: { name: string }) => e.name)
+          const available = registry.entries
+            .filter((e: { type: string }) => e.type === type)
+            .map((e: { name: string }) => e.name)
           return fail(ErrorCode.FILE_NOT_FOUND, `"${name}" not found. Available ${type}s: ${available.join(', ')}`, 404)
         }
 

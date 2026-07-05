@@ -30,10 +30,7 @@ export {
   type AgentScaffold,
 } from './builder-schemas'
 
-export {
-  brandConfigSchema,
-  type BrandConfig,
-} from './brand-schemas'
+export { brandConfigSchema, type BrandConfig } from './brand-schemas'
 
 export {
   agentConfigSchema,

@@ -20,7 +20,10 @@ function normalizeField(value: unknown): string[] | null {
     return null
   }
   if (typeof value === 'string') {
-    return value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    return value
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
   }
   return null
 }

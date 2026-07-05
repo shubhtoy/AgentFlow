@@ -2,12 +2,12 @@
  * Unified Search.
  */
 
-import { search } from '../library'
 import registryClient from '@agentflow/core/mcp/registry-client'
+import { search } from '../library'
 
 interface LibraryRegistry {
   version: string
-  entries: { name: string, type: string, path: string, description: string, tags: string[] }[]
+  entries: { name: string; type: string; path: string; description: string; tags: string[] }[]
   _libraryDir?: string
 }
 
@@ -43,14 +43,18 @@ export async function unifiedSearch(
   if (!opts.localOnly) {
     try {
       const result = await registryClient.searchRegistry(query, { limit: opts.mcpLimit || 10 })
-      results.push(...result.entries.map((r: { name: string, description?: string, packages?: unknown[], remotes?: unknown[] }) => ({
-        source: 'mcp' as const,
-        type: 'server',
-        name: r.name,
-        description: r.description,
-        packages: r.packages,
-        remotes: r.remotes,
-      })))
+      results.push(
+        ...result.entries.map(
+          (r: { name: string; description?: string; packages?: unknown[]; remotes?: unknown[] }) => ({
+            source: 'mcp' as const,
+            type: 'server',
+            name: r.name,
+            description: r.description,
+            packages: r.packages,
+            remotes: r.remotes,
+          }),
+        ),
+      )
     } catch (err) {
       if (opts.mcpOnly) throw err
     }

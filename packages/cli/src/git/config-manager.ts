@@ -84,12 +84,19 @@ export function validate(config: GitSyncConfig): void {
   if (!config || typeof config !== 'object') throw new Error('Config must be a non-null object')
 
   if (config.conflictStrategy && !(VALID_CONFLICT_STRATEGIES as readonly string[]).includes(config.conflictStrategy)) {
-    throw new Error(`Invalid conflictStrategy "${config.conflictStrategy}". Must be one of: ${VALID_CONFLICT_STRATEGIES.join(', ')}`)
+    throw new Error(
+      `Invalid conflictStrategy "${config.conflictStrategy}". Must be one of: ${VALID_CONFLICT_STRATEGIES.join(', ')}`,
+    )
   }
 
   if (config.syncRules) {
-    if (config.syncRules.syncDirection && !(VALID_SYNC_DIRECTIONS as readonly string[]).includes(config.syncRules.syncDirection)) {
-      throw new Error(`Invalid syncDirection "${config.syncRules.syncDirection}". Must be one of: ${VALID_SYNC_DIRECTIONS.join(', ')}`)
+    if (
+      config.syncRules.syncDirection &&
+      !(VALID_SYNC_DIRECTIONS as readonly string[]).includes(config.syncRules.syncDirection)
+    ) {
+      throw new Error(
+        `Invalid syncDirection "${config.syncRules.syncDirection}". Must be one of: ${VALID_SYNC_DIRECTIONS.join(', ')}`,
+      )
     }
     validateGlobPatterns(config.syncRules)
   }
@@ -117,8 +124,11 @@ export function loadOrCreate(configPath?: string): GitSyncConfig {
 
   const raw = fs.readFileSync(resolved, 'utf-8')
   let parsed: Record<string, unknown>
-  try { parsed = yaml.load(raw) as Record<string, unknown> }
-  catch (err: unknown) { throw new Error(`Failed to parse config at "${resolved}": ${(err as Error).message}`) }
+  try {
+    parsed = yaml.load(raw) as Record<string, unknown>
+  } catch (err: unknown) {
+    throw new Error(`Failed to parse config at "${resolved}": ${(err as Error).message}`)
+  }
 
   if (!parsed || typeof parsed !== 'object') return getDefaults()
 
@@ -128,8 +138,8 @@ export function loadOrCreate(configPath?: string): GitSyncConfig {
     repos: Array.isArray(parsed.repos) ? parsed.repos : defaults.repos,
     syncRules: { ...defaults.syncRules, ...((parsed.syncRules as Partial<SyncRules>) || {}) },
     conflictStrategy: (parsed.conflictStrategy as string) || defaults.conflictStrategy,
-    autoScan: parsed.autoScan !== undefined ? parsed.autoScan as boolean : defaults.autoScan,
-    scanDepth: parsed.scanDepth !== undefined ? parsed.scanDepth as number : defaults.scanDepth,
+    autoScan: parsed.autoScan !== undefined ? (parsed.autoScan as boolean) : defaults.autoScan,
+    scanDepth: parsed.scanDepth !== undefined ? (parsed.scanDepth as number) : defaults.scanDepth,
   }
 
   validate(config)

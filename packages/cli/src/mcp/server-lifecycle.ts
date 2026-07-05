@@ -10,17 +10,21 @@ import { resolveEnvTokens } from './config-manager'
 export const DEFAULT_TIMEOUT = 30000
 
 interface McpDeps {
-  createClient: (info: { name: string, version: string }) => Client
-  createStdioTransport: (params: { command: string, args: string[], env: Record<string, string> }) => StdioClientTransport
+  createClient: (info: { name: string; version: string }) => Client
+  createStdioTransport: (params: {
+    command: string
+    args: string[]
+    env: Record<string, string>
+  }) => StdioClientTransport
   createHTTPTransport: (url: URL) => StreamableHTTPClientTransport
   resolveEnv: typeof resolveEnvTokens
 }
 
 export function defaultDeps(): McpDeps {
   return {
-    createClient: (info) => new Client(info),
-    createStdioTransport: (params) => new StdioClientTransport(params),
-    createHTTPTransport: (url) => new StreamableHTTPClientTransport(url),
+    createClient: info => new Client(info),
+    createStdioTransport: params => new StdioClientTransport(params),
+    createHTTPTransport: url => new StreamableHTTPClientTransport(url),
     resolveEnv: resolveEnvTokens,
   }
 }
@@ -34,7 +38,7 @@ interface ServerEntry {
 
 export async function discoverTools(
   serverEntry: ServerEntry,
-  opts: { timeout?: number, _deps?: Partial<McpDeps> } = {},
+  opts: { timeout?: number; _deps?: Partial<McpDeps> } = {},
 ): Promise<Record<string, unknown>[]> {
   const timeout = opts.timeout ?? DEFAULT_TIMEOUT
   const deps = { ...defaultDeps(), ...opts._deps }
@@ -68,6 +72,10 @@ export async function discoverTools(
     const result = await client.listTools()
     return (result as { tools?: Record<string, unknown>[] }).tools || []
   } finally {
-    try { if (client) await client.close() } catch { /* ignore */ }
+    try {
+      if (client) await client.close()
+    } catch {
+      /* ignore */
+    }
   }
 }

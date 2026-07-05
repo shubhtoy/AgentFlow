@@ -69,3 +69,11 @@ Format per entry: **Feature** — one-line description. `path/to/file` — key e
 - Native per-host selective-context selectors beyond directory-walk (Epic 2, #14).
 - Claude Code / Cursor export targets (Epic 3, #16-17) — Kiro only so far.
 - MCP execution controller (Epic 5) and packaging/versioning (Epic 6) — later scope.
+
+## Tooling / conventions
+
+- **Coding standards**: `docs/CODING-STANDARDS.md` — read before writing new code.
+- **Lint**: TypeScript-native config (`eslint.config.mjs`), not `airbnb-base`. `npm run lint`
+  is 0 errors/0 warnings project-wide — keep it that way (see CODING-STANDARDS.md for how to
+  handle a rule that doesn't fit a file). `eslint-config-airbnb-base`/`@eslint/eslintrc` in
+  `package.json` are now unused leftovers from the old config — safe to remove in a cleanup pass.

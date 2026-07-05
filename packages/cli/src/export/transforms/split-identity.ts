@@ -6,10 +6,7 @@ export interface SplitOutputs {
   identity: string
 }
 
-export function splitIdentity(
-  file: ParsedFile,
-  outputs: SplitOutputs,
-): Record<string, string> {
+export function splitIdentity(file: ParsedFile, outputs: SplitOutputs): Record<string, string> {
   const fm = file.frontmatter || {}
   const id = (fm.identity || {}) as Record<string, unknown>
   const result: Record<string, string> = {}

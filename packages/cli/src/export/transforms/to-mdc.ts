@@ -1,10 +1,7 @@
 import type { ParsedFile } from '@agentflow/core/parser-core'
 import type { TransformContext } from './copy'
 
-export function toMdc(
-  file: ParsedFile,
-  ctx: TransformContext,
-): Record<string, string> {
+export function toMdc(file: ParsedFile, ctx: TransformContext): Record<string, string> {
   const target = ctx.targetPattern.replace('{name}', ctx.name)
   const fm = file.frontmatter || {}
   const configFm = (ctx.config.frontmatter || {}) as Record<string, string>
@@ -13,10 +10,7 @@ export function toMdc(
   const globs = resolveFmValue(configFm.globs, fm) || ''
   const alwaysApply = resolveFmValue(configFm.alwaysApply, fm) ?? false
 
-  const lines = [
-    '---',
-    `description: ${description}`,
-  ]
+  const lines = ['---', `description: ${description}`]
   if (globs) lines.push(`globs: ${globs}`)
   lines.push(`alwaysApply: ${alwaysApply}`)
   lines.push('---')
@@ -26,10 +20,7 @@ export function toMdc(
   return { [target]: lines.join('\n') }
 }
 
-function resolveFmValue(
-  pattern: string | undefined,
-  fm: Record<string, unknown>,
-): unknown {
+function resolveFmValue(pattern: string | undefined, fm: Record<string, unknown>): unknown {
   if (!pattern || typeof pattern !== 'string') return undefined
   if (!pattern.startsWith('from:')) return pattern
   const path = pattern.slice(5).split('.')

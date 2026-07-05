@@ -6,10 +6,7 @@ export interface TransformContext {
   config: Record<string, unknown>
 }
 
-export function copy(
-  file: ParsedFile,
-  ctx: TransformContext,
-): Record<string, string> {
+export function copy(file: ParsedFile, ctx: TransformContext): Record<string, string> {
   const target = ctx.targetPattern.replace('{name}', ctx.name)
   return { [target]: file.rawContent }
 }

@@ -10,10 +10,10 @@ export interface NarrativeTemplate {
 export const DEFAULT_NARRATIVE: Record<string, NarrativeTemplate> = {
   capabilities: { prefix: 'Use', suffix: 'to' },
   instructions: { prefix: 'Apply', suffix: 'to' },
-  skills:       { prefix: 'Apply', suffix: '' },
-  memory:       { prefix: 'Recall from', suffix: '' },
-  hooks:        { prefix: '', suffix: '' },
-  customFiles:  { prefix: '', suffix: '' },
+  skills: { prefix: 'Apply', suffix: '' },
+  memory: { prefix: 'Recall from', suffix: '' },
+  hooks: { prefix: '', suffix: '' },
+  customFiles: { prefix: '', suffix: '' },
 }
 
 export function getNarrativeScaffolding(opts: {

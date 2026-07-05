@@ -4,11 +4,11 @@
 
 import fs from 'fs'
 import path from 'path'
+import { RESERVED_DIRS } from '@agentflow/core/taxonomy'
 import { minimatch } from 'minimatch'
+import type { GitSyncConfig } from './config-manager'
 import * as gitManager from './git-manager'
 import { scan } from './repo-scanner'
-import { RESERVED_DIRS } from '@agentflow/core/taxonomy'
-import type { GitSyncConfig } from './config-manager'
 
 export const SYNCLOCK_FILENAME = '.synclock'
 export { RESERVED_DIRS }
@@ -21,9 +21,9 @@ interface SyncRules {
 
 interface BoundGit {
   repoDir: string
-  pull: (branch: string) => Promise<{ hasConflicts: boolean, conflictFiles: string[], output: string }>
-  push: (branch: string) => Promise<{ success: boolean, output: string }>
-  status: () => Promise<{ modifiedFiles: string[], untrackedFiles: string[], behind: number }>
+  pull: (branch: string) => Promise<{ hasConflicts: boolean; conflictFiles: string[]; output: string }>
+  push: (branch: string) => Promise<{ success: boolean; output: string }>
+  status: () => Promise<{ modifiedFiles: string[]; untrackedFiles: string[]; behind: number }>
   stage: (filePath: string) => Promise<void>
   commit: (message: string) => Promise<string>
   stagedFileCount: () => Promise<number>
@@ -52,7 +52,10 @@ export function matchesSyncRules(filePath: string, syncRules?: SyncRules): boole
   }
   let matchesInclude = include.length === 0
   for (const pattern of include) {
-    if (minimatch(normalized, pattern, { dot: true })) { matchesInclude = true; break }
+    if (minimatch(normalized, pattern, { dot: true })) {
+      matchesInclude = true
+      break
+    }
   }
   if (!matchesInclude) return false
   if (resourceTypes.length > 0) {
@@ -79,7 +82,11 @@ export function acquireLock(agentflowDir: string): string {
 }
 
 export function releaseLock(lockPath: string): void {
-  try { if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath) } catch { /* ignore */ }
+  try {
+    if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath)
+  } catch {
+    /* ignore */
+  }
 }
 
 export function findMapping(repos: { name: string }[], repoName: string) {
@@ -94,16 +101,27 @@ async function resolveConflictByStrategy(
   strategy: string,
 ): Promise<string> {
   switch (strategy) {
-    case 'local_wins': await gm.checkoutOurs(conflictPath); return 'local_wins'
-    case 'remote_wins': await gm.checkoutTheirs(conflictPath); return 'remote_wins'
+    case 'local_wins':
+      await gm.checkoutOurs(conflictPath)
+      return 'local_wins'
+    case 'remote_wins':
+      await gm.checkoutTheirs(conflictPath)
+      return 'remote_wins'
     case 'timestamp': {
       try {
         const localStat = fs.statSync(path.resolve(gm.repoDir, conflictPath))
-        if (localStat.mtimeMs > 0) { await gm.checkoutOurs(conflictPath); return 'local_wins' }
-      } catch { /* fallthrough */ }
-      await gm.checkoutTheirs(conflictPath); return 'remote_wins'
+        if (localStat.mtimeMs > 0) {
+          await gm.checkoutOurs(conflictPath)
+          return 'local_wins'
+        }
+      } catch {
+        /* fallthrough */
+      }
+      await gm.checkoutTheirs(conflictPath)
+      return 'remote_wins'
     }
-    default: return 'pending'
+    default:
+      return 'pending'
   }
 }
 
@@ -119,13 +137,21 @@ export async function sync(
   const mapping = findMapping(config.repos, repoName) as GitSyncConfig['repos'][0] | null
   if (!mapping) throw new Error(`No repo mapping found for: ${repoName}`)
 
-  const agentflowDir = path.join(mapping.localPath, (mapping as { agentflowPath?: string }).agentflowPath || '.agentflow')
+  const agentflowDir = path.join(
+    mapping.localPath,
+    (mapping as { agentflowPath?: string }).agentflowPath || '.agentflow',
+  )
   let lockPath: string | null = null
   if (!dryRun) lockPath = acquireLock(agentflowDir)
 
   try {
     const gm = gitManager.attach(mapping.localPath) as unknown as BoundGit
-    const conflicts: { path: string, localContent: string | null, remoteContent: string | null, resolution: string | null }[] = []
+    const conflicts: {
+      path: string
+      localContent: string | null
+      remoteContent: string | null
+      resolution: string | null
+    }[] = []
 
     if (direction === 'pull_only' || direction === 'bidirectional') {
       const repoStatus = await gm.status()
@@ -134,9 +160,22 @@ export async function sync(
         if (pullResult.hasConflicts) {
           for (const cp of pullResult.conflictFiles) {
             if (!matchesSyncRules(cp, config.syncRules)) continue
-            const conflict = { path: cp, localContent: null as string | null, remoteContent: null as string | null, resolution: null as string | null }
-            try { conflict.localContent = fs.readFileSync(path.join(mapping.localPath, cp), 'utf-8') } catch { /* skip */ }
-            try { conflict.remoteContent = await gm.showRemote(cp, mapping.branch) } catch { /* skip */ }
+            const conflict = {
+              path: cp,
+              localContent: null as string | null,
+              remoteContent: null as string | null,
+              resolution: null as string | null,
+            }
+            try {
+              conflict.localContent = fs.readFileSync(path.join(mapping.localPath, cp), 'utf-8')
+            } catch {
+              /* skip */
+            }
+            try {
+              conflict.remoteContent = await gm.showRemote(cp, mapping.branch)
+            } catch {
+              /* skip */
+            }
             conflict.resolution = await resolveConflictByStrategy(gm, cp, conflict, config.conflictStrategy)
             conflicts.push(conflict)
           }
@@ -159,12 +198,22 @@ export async function sync(
     }
 
     if (config.autoScan && !dryRun) {
-      try { scan(mapping.localPath, config.scanDepth || 5) } catch { /* skip */ }
+      try {
+        scan(mapping.localPath, config.scanDepth || 5)
+      } catch {
+        /* skip */
+      }
     }
 
     return {
-      success: true, direction, filesAdded: [], filesModified: [], filesDeleted: [],
-      conflicts, timestamp: new Date().toISOString(), dryRun,
+      success: true,
+      direction,
+      filesAdded: [],
+      filesModified: [],
+      filesDeleted: [],
+      conflicts,
+      timestamp: new Date().toISOString(),
+      dryRun,
     }
   } finally {
     if (lockPath) releaseLock(lockPath)
@@ -173,8 +222,13 @@ export async function sync(
 
 export async function resolveConflict(gm: BoundGit, conflictPath: string, strategy: string): Promise<string> {
   switch (strategy) {
-    case 'local_wins': await gm.checkoutOurs(conflictPath); return 'local_wins'
-    case 'remote_wins': await gm.checkoutTheirs(conflictPath); return 'remote_wins'
-    default: return 'pending'
+    case 'local_wins':
+      await gm.checkoutOurs(conflictPath)
+      return 'local_wins'
+    case 'remote_wins':
+      await gm.checkoutTheirs(conflictPath)
+      return 'remote_wins'
+    default:
+      return 'pending'
   }
 }

@@ -2,10 +2,10 @@
  * GitManager.
  */
 
-import simpleGit from 'simple-git'
-import type { SimpleGit } from 'simple-git'
 import fs from 'fs'
 import path from 'path'
+import simpleGit from 'simple-git'
+import type { SimpleGit } from 'simple-git'
 
 export function sanitiseOutput(text: string): string {
   if (!text) return ''
@@ -21,7 +21,7 @@ async function safe<T>(promise: Promise<T>): Promise<T> {
     return await promise
   } catch (err: unknown) {
     const msg = sanitiseOutput((err as Error).message || String(err))
-    const wrapped = new Error(msg) as Error & { exitCode: number, stderr: string }
+    const wrapped = new Error(msg) as Error & { exitCode: number; stderr: string }
     wrapped.exitCode = (err as { exitCode?: number }).exitCode ?? 1
     wrapped.stderr = sanitiseOutput((err as { stderr?: string }).stderr || '')
     throw wrapped
@@ -73,7 +73,11 @@ export function attach(repoDir: string) {
 export async function pull(repoDir: string, branch: string) {
   try {
     const result = await safe(exports._git(repoDir).pull('origin', branch))
-    return { hasConflicts: false, conflictFiles: [] as string[], output: (result as { summary?: string }).summary || '' }
+    return {
+      hasConflicts: false,
+      conflictFiles: [] as string[],
+      output: (result as { summary?: string }).summary || '',
+    }
   } catch (err: unknown) {
     const conflicts = parsePullConflicts((err as Error).message)
     if (conflicts.hasConflicts) return { ...conflicts, output: (err as Error).message }
@@ -90,8 +94,15 @@ export async function status(repoDir: string) {
   const gitDir = path.join(repoDir, '.git')
   if (!fs.existsSync(gitDir)) {
     return {
-      isRepo: false, isClean: false, branch: '', ahead: 0, behind: 0,
-      modifiedFiles: [] as string[], untrackedFiles: [] as string[], hasRemote: false, remoteUrl: null as string | null,
+      isRepo: false,
+      isClean: false,
+      branch: '',
+      ahead: 0,
+      behind: 0,
+      modifiedFiles: [] as string[],
+      untrackedFiles: [] as string[],
+      hasRemote: false,
+      remoteUrl: null as string | null,
     }
   }
 
@@ -107,11 +118,19 @@ export async function status(repoDir: string) {
   try {
     const st = await safe(g.status())
     branch = st.current || ''
-    modifiedFiles = [...st.modified, ...st.created, ...st.deleted, ...st.renamed.map((r: { to: string }) => r.to), ...st.conflicted]
+    modifiedFiles = [
+      ...st.modified,
+      ...st.created,
+      ...st.deleted,
+      ...st.renamed.map((r: { to: string }) => r.to),
+      ...st.conflicted,
+    ]
     untrackedFiles = st.not_added || []
     ahead = st.ahead || 0
     behind = st.behind || 0
-  } catch { /* empty repo or detached HEAD */ }
+  } catch {
+    /* empty repo or detached HEAD */
+  }
 
   try {
     const remotes = await safe(g.getRemotes(true))
@@ -119,11 +138,20 @@ export async function status(repoDir: string) {
       hasRemote = true
       remoteUrl = sanitiseOutput(remotes[0].refs?.fetch || remotes[0].refs?.push || '')
     }
-  } catch { /* no remotes */ }
+  } catch {
+    /* no remotes */
+  }
 
   return {
-    isRepo: true, isClean: modifiedFiles.length === 0 && untrackedFiles.length === 0,
-    branch, ahead, behind, modifiedFiles, untrackedFiles, hasRemote, remoteUrl,
+    isRepo: true,
+    isClean: modifiedFiles.length === 0 && untrackedFiles.length === 0,
+    branch,
+    ahead,
+    behind,
+    modifiedFiles,
+    untrackedFiles,
+    hasRemote,
+    remoteUrl,
   }
 }
 
@@ -140,7 +168,9 @@ export async function stagedFileCount(repoDir: string): Promise<number> {
   try {
     const result = await safe(exports._git(repoDir).diff(['--cached', '--name-only']))
     return (result as string).trim().split('\n').filter(Boolean).length
-  } catch { return 0 }
+  } catch {
+    return 0
+  }
 }
 
 export async function addRemote(repoDir: string, name: string, url: string) {

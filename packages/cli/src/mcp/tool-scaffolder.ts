@@ -11,7 +11,10 @@ const AGENTFLOW_DIR = '.agentflow'
 const CAPABILITIES_DIR = 'capabilities'
 
 export function toFileName(name: string): string {
-  return name.replace(/[_\s]+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase()
+  return name
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-zA-Z0-9-]/g, '')
+    .toLowerCase()
 }
 
 export function convertParameters(inputSchema: Record<string, unknown>): Record<string, unknown> {
@@ -28,7 +31,11 @@ export function convertParameters(inputSchema: Record<string, unknown>): Record<
   return params
 }
 
-export function generateToolContent(serverName: string, tool: { name: string, description?: string, inputSchema?: Record<string, unknown> }, generatedAt: string): string {
+export function generateToolContent(
+  serverName: string,
+  tool: { name: string; description?: string; inputSchema?: Record<string, unknown> },
+  generatedAt: string,
+): string {
   const fileName = toFileName(tool.name)
   const description = tool.description || ''
   const parameters = convertParameters(tool.inputSchema || {})
@@ -50,7 +57,7 @@ export function generateToolContent(serverName: string, tool: { name: string, de
 export function scaffoldTools(
   rootDir: string,
   serverName: string,
-  tools: { name: string, description?: string, inputSchema?: Record<string, unknown> }[],
+  tools: { name: string; description?: string; inputSchema?: Record<string, unknown> }[],
   opts: { overwrite?: boolean } = {},
 ): string[] {
   const toolsDir = path.join(rootDir, AGENTFLOW_DIR, CAPABILITIES_DIR)
@@ -79,7 +86,7 @@ export function scaffoldTools(
 
   const { servers } = loadMcpConfig(rootDir)
   if (servers[serverName]) {
-    (servers[serverName] as Record<string, unknown>).discoveredTools = toolNames
+    ;(servers[serverName] as Record<string, unknown>).discoveredTools = toolNames
     saveMcpConfig(rootDir, servers)
   }
 

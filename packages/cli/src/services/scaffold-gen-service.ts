@@ -7,9 +7,9 @@
 
 import fs from 'fs'
 import path from 'path'
+import { AgentScaffoldSchema } from '@agentflow/core/schemas/builder-schemas'
 import { ok, fail, ErrorCode } from '@agentflow/core/services/types'
 import { atomicWrite } from '../svc-utils/file-io'
-import { AgentScaffoldSchema } from '@agentflow/core/schemas/builder-schemas'
 
 interface ServiceContext {
   rootDir: string
@@ -43,7 +43,7 @@ interface Scaffold {
   name: string
   description: string
   pattern: string
-  identity: { name: string, role: string, personality?: string, constraints: string[] }
+  identity: { name: string; role: string; personality?: string; constraints: string[] }
   nodes: ScaffoldNode[]
   edges: ScaffoldEdge[]
   tools: ScaffoldTool[]
@@ -264,7 +264,11 @@ export function createScaffoldGenService(ctx: ServiceContext) {
           return fail(ErrorCode.SCAFFOLD_INVALID, `Roundtrip verification error: ${(err as Error).message}`, 422)
         }
       } catch (err: unknown) {
-        try { fs.rmSync(agentflowDir, { recursive: true, force: true }) } catch { /* ignore */ }
+        try {
+          fs.rmSync(agentflowDir, { recursive: true, force: true })
+        } catch {
+          /* ignore */
+        }
         logger.error({ err }, 'ScaffoldGenService.generateWorkspace failed')
         return fail(ErrorCode.FS_WRITE_ERROR, (err as Error).message)
       }

@@ -20,7 +20,10 @@ import type { ParsedGraph, ParsedNode, ParsedFile, Ref } from './parser-core'
 
 /** Split a path into clean segments (normalizes `\`, drops `''` and `.`). */
 function segments(p: string): string[] {
-  return (p || '').replace(/\\/g, '/').split('/').filter(s => s !== '' && s !== '.')
+  return (p || '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(s => s !== '' && s !== '.')
 }
 
 /** Directory portion (workspace-relative) of a file path, or '' for root-level files. */
@@ -85,11 +88,7 @@ export interface GraphRewriteResult {
 }
 
 /** Find the node an edge ref points to, preferring the ref's own workflow. */
-function findEdgeTargetNode(
-  ref: Ref,
-  graph: ParsedGraph,
-  workflowId?: string,
-): ParsedNode | null {
+function findEdgeTargetNode(ref: Ref, graph: ParsedGraph, workflowId?: string): ParsedNode | null {
   const workflows = graph.workflows || {}
   const inWorkflow = (wfId: string): ParsedNode | null => {
     const wf = workflows[wfId]

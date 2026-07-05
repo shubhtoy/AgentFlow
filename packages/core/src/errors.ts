@@ -18,7 +18,7 @@ export const ErrorCode = {
   UNKNOWN: 'UNKNOWN',
 } as const
 
-export type ErrorCodeValue = typeof ErrorCode[keyof typeof ErrorCode]
+export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode]
 
 export interface ServiceError {
   code: string
@@ -56,12 +56,7 @@ const STATUS_MAP: Record<string, number> = {
 
 export { STATUS_MAP }
 
-export function toServiceError(
-  code: string,
-  message: string,
-  statusCode?: number,
-  details?: unknown,
-): ServiceError {
+export function toServiceError(code: string, message: string, statusCode?: number, details?: unknown): ServiceError {
   return {
     code,
     message,
@@ -74,11 +69,6 @@ export function ok<T>(data: T): ServiceResultOk<T> {
   return { success: true, data }
 }
 
-export function fail(
-  code: string,
-  message: string,
-  statusCode?: number,
-  details?: unknown,
-): ServiceResultFail {
+export function fail(code: string, message: string, statusCode?: number, details?: unknown): ServiceResultFail {
   return { success: false, error: toServiceError(code, message, statusCode, details) }
 }

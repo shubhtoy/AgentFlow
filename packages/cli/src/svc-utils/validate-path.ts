@@ -2,8 +2,8 @@
  * Path validation.
  */
 
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
 
 interface PathValidation {
   valid: boolean
@@ -23,8 +23,11 @@ export function validatePath(filePath: string, rootDir: string): PathValidation 
   }
 
   let realRoot: string
-  try { realRoot = fs.realpathSync(rootDir) }
-  catch { realRoot = path.resolve(rootDir) }
+  try {
+    realRoot = fs.realpathSync(rootDir)
+  } catch {
+    realRoot = path.resolve(rootDir)
+  }
 
   const resolved = path.resolve(realRoot, filePath)
   const normalizedRoot = realRoot.endsWith(path.sep) ? realRoot : realRoot + path.sep

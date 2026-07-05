@@ -2,8 +2,8 @@
  * GitService.
  */
 
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
 import { ok, fail, ErrorCode } from '@agentflow/core/services/types'
 
 interface ServiceContext {
@@ -35,16 +35,14 @@ export function createGitService(ctx: ServiceContext) {
   const getConfigManager = () => require('../git/config-manager')
 
   let lastSyncTimestamp: string | null = null
-  let pendingConflicts: { path: string, resolution: string }[] = []
+  let pendingConflicts: { path: string; resolution: string }[] = []
 
   return {
     async getStatus(repoName?: string) {
       try {
         const configManager = getConfigManager()
         const gitManager = getGitManager()
-        const config = configManager.loadOrCreate(
-          path.join(rootDir, configManager.DEFAULT_CONFIG_FILENAME),
-        )
+        const config = configManager.loadOrCreate(path.join(rootDir, configManager.DEFAULT_CONFIG_FILENAME))
         const repos = config.repos || []
         if (repos.length === 0) return ok({ repos: [], lastSyncTimestamp })
 
@@ -76,7 +74,12 @@ export function createGitService(ctx: ServiceContext) {
         const configPath = path.join(rootDir, configManager.DEFAULT_CONFIG_FILENAME)
         const config = configManager.loadOrCreate(configPath)
 
-        const repoName = name || repoUrl.replace(/\.git$/, '').split('/').pop()
+        const repoName =
+          name ||
+          repoUrl
+            .replace(/\.git$/, '')
+            .split('/')
+            .pop()
         if (config.repos.some((r: { name: string }) => r.name === repoName)) {
           return fail(ErrorCode.INVALID_INPUT, `Repo name "${repoName}" already exists`, 400)
         }
@@ -93,7 +96,11 @@ export function createGitService(ctx: ServiceContext) {
 
         if (fs.existsSync(path.join(targetDir, '.git'))) {
           const gm = gitManager.attach(targetDir)
-          try { await gm.addRemote('agentflow', repoUrl) } catch { /* remote may exist */ }
+          try {
+            await gm.addRemote('agentflow', repoUrl)
+          } catch {
+            /* remote may exist */
+          }
         } else {
           await gitManager.clone(repoUrl, targetDir, targetBranch)
         }
@@ -169,7 +176,9 @@ export function createGitService(ctx: ServiceContext) {
             const resolution = await syncEngine.resolveConflict(gm, conflictPath, strategy)
             pendingConflicts = pendingConflicts.filter(c => c.path !== conflictPath)
             return ok({ path: conflictPath, resolution })
-          } catch { continue }
+          } catch {
+            continue
+          }
         }
 
         return fail(ErrorCode.FILE_NOT_FOUND, `Could not resolve conflict for path: ${conflictPath}`, 404)

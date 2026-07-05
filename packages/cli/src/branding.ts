@@ -8,7 +8,7 @@ import { brandConfigSchema } from '@agentflow/core/schemas/brand-schemas'
 
 export const DEFAULTS = Object.freeze({ name: 'AgentFlow', dir: '.agentflow', cli: 'agentflow' })
 
-export function loadBrandConfig(rootDir?: string): Readonly<{ name: string, dir: string, cli: string }> {
+export function loadBrandConfig(rootDir?: string): Readonly<{ name: string; dir: string; cli: string }> {
   const config: Record<string, string> = { ...DEFAULTS }
 
   const baseDir = rootDir ? path.dirname(rootDir) : process.cwd()
@@ -29,5 +29,5 @@ export function loadBrandConfig(rootDir?: string): Readonly<{ name: string, dir:
   if (process.env.AGENTFLOW_CLI) config.cli = process.env.AGENTFLOW_CLI
 
   const validated = brandConfigSchema.parse(config)
-  return Object.freeze(validated) as Readonly<{ name: string, dir: string, cli: string }>
+  return Object.freeze(validated) as Readonly<{ name: string; dir: string; cli: string }>
 }

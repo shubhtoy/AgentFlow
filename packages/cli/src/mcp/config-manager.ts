@@ -34,16 +34,23 @@ export function loadMcpConfig(rootDir: string): McpConfig {
   if (!fs.existsSync(configPath)) return { servers: {}, errors: [] }
 
   let raw: string
-  try { raw = fs.readFileSync(configPath, 'utf-8') }
-  catch (err: unknown) { return { servers: {}, errors: [`Failed to read ${configPath}: ${(err as Error).message}`] } }
+  try {
+    raw = fs.readFileSync(configPath, 'utf-8')
+  } catch (err: unknown) {
+    return { servers: {}, errors: [`Failed to read ${configPath}: ${(err as Error).message}`] }
+  }
 
   let parsed: Record<string, unknown>
-  try { parsed = JSON.parse(raw) }
-  catch (err: unknown) { return { servers: {}, errors: [`Failed to parse mcp.json: ${(err as Error).message}`] } }
+  try {
+    parsed = JSON.parse(raw)
+  } catch (err: unknown) {
+    return { servers: {}, errors: [`Failed to parse mcp.json: ${(err as Error).message}`] }
+  }
 
-  const servers = (parsed && typeof parsed === 'object' && parsed.mcpServers)
-    ? parsed.mcpServers as Record<string, McpServerEntry>
-    : {}
+  const servers =
+    parsed && typeof parsed === 'object' && parsed.mcpServers
+      ? (parsed.mcpServers as Record<string, McpServerEntry>)
+      : {}
 
   return { servers, errors: [] }
 }
@@ -59,26 +66,34 @@ export function addServer(
   rootDir: string,
   name: string,
   registryEntry: Record<string, unknown>,
-  opts: { required?: boolean, env?: Record<string, string> } = {},
+  opts: { required?: boolean; env?: Record<string, string> } = {},
 ): McpServerEntry {
   const { servers } = loadMcpConfig(rootDir)
   const server = (registryEntry.server || registryEntry) as Record<string, unknown>
   const entry: McpServerEntry = {}
 
-  const pkg = ((server.packages || []) as Record<string, unknown>[]).find(p =>
-    (p.transport as Record<string, unknown>)?.type === 'stdio' || p.registryType === 'npm' || p.registryType === 'pypi',
+  const pkg = ((server.packages || []) as Record<string, unknown>[]).find(
+    p =>
+      (p.transport as Record<string, unknown>)?.type === 'stdio' ||
+      p.registryType === 'npm' ||
+      p.registryType === 'pypi',
   )
   const remote = ((server.remotes || []) as Record<string, unknown>[])[0]
 
   if (pkg) {
-    if (pkg.registryType === 'npm') { entry.command = 'npx'; entry.args = ['-y', pkg.identifier as string] }
-    else if (pkg.registryType === 'pypi') { entry.command = 'uvx'; entry.args = [pkg.identifier as string] }
+    if (pkg.registryType === 'npm') {
+      entry.command = 'npx'
+      entry.args = ['-y', pkg.identifier as string]
+    } else if (pkg.registryType === 'pypi') {
+      entry.command = 'uvx'
+      entry.args = [pkg.identifier as string]
+    }
   } else if (remote) {
     entry.url = remote.url as string
   }
 
   entry.env = {}
-  for (const ev of (server.environmentVariables || []) as { name: string, format?: string }[]) {
+  for (const ev of (server.environmentVariables || []) as { name: string; format?: string }[]) {
     if (ev.name && ev.format !== 'header') entry.env[ev.name] = `\${env:${ev.name}}`
   }
   if (opts.env) Object.assign(entry.env, opts.env)
@@ -93,11 +108,7 @@ export function addServer(
   return entry
 }
 
-export function removeServer(
-  rootDir: string,
-  name: string,
-  opts: { removeTools?: boolean } = {},
-): void {
+export function removeServer(rootDir: string, name: string, opts: { removeTools?: boolean } = {}): void {
   const { servers } = loadMcpConfig(rootDir)
   const entry = servers[name]
   if (!entry) return
@@ -105,7 +116,11 @@ export function removeServer(
   if (opts.removeTools && Array.isArray(entry.discoveredTools)) {
     const toolsDir = path.join(rootDir, AGENTFLOW_DIR, 'capabilities')
     for (const toolName of entry.discoveredTools) {
-      try { fs.unlinkSync(path.join(toolsDir, `${toolName}.md`)) } catch { /* ignore */ }
+      try {
+        fs.unlinkSync(path.join(toolsDir, `${toolName}.md`))
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -119,7 +134,10 @@ export function resolveEnvTokens(env: Record<string, unknown> | undefined): Reco
   const tokenPattern = /^\$\{env:([^}]+)\}$/
 
   for (const [key, value] of Object.entries(env)) {
-    if (typeof value !== 'string') { resolved[key] = String(value); continue }
+    if (typeof value !== 'string') {
+      resolved[key] = String(value)
+      continue
+    }
     const match = value.match(tokenPattern)
     resolved[key] = match ? (process.env[match[1]] ?? '') : value
   }

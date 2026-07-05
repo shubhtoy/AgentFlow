@@ -2,8 +2,8 @@
  * InstructionManager.
  */
 
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
 import matter from 'gray-matter'
 
 interface ServiceContext {
@@ -59,18 +59,18 @@ export function createInstructionManager(ctx: ServiceContext) {
         const isRequested = Array.isArray(requestedNames) && requestedNames.includes(doc.name)
         if (isRequested) docs.push(doc)
       }
-      return docs
-        .map(d => `<instruction name="${d.name}">\n${d.content}\n</instruction>`)
-        .join('\n\n')
+      return docs.map(d => `<instruction name="${d.name}">\n${d.content}\n</instruction>`).join('\n\n')
     },
 
     list(): Omit<InstructionDoc, 'content'>[] {
       return Array.from(cache.values()).map(({ name, description, tags }) => ({
-        name, description, tags,
+        name,
+        description,
+        tags,
       }))
     },
 
-    add(name: string, content: string, options: { description?: string, tags?: string[] } = {}) {
+    add(name: string, content: string, options: { description?: string; tags?: string[] } = {}) {
       const fm: Record<string, unknown> = {}
       if (options.description) fm.description = options.description
       if (options.tags && options.tags.length > 0) fm.tags = options.tags

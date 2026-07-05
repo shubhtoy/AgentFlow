@@ -1,9 +1,10 @@
 import type { ParsedGraph, ParsedFile, SkillEntry } from '@agentflow/core/parser-core'
+import platformsJson from '../../../../configs/platforms.json'
 import { TRANSFORM_REGISTRY, type FileMap, type TransformContext } from './transforms'
-import { mergeMcpConfig, type McpCapability } from './transforms/merge-mcp-config'
 import { concatenate } from './transforms/concatenate'
-import { splitIdentity } from './transforms/split-identity'
 import { flattenSkill } from './transforms/flatten-skill'
+import { mergeMcpConfig, type McpCapability } from './transforms/merge-mcp-config'
+import { splitIdentity } from './transforms/split-identity'
 import { toSkillDir } from './transforms/to-skill-dir'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -25,9 +26,6 @@ export interface PlatformConfig {
 }
 
 // ── Config loading (static JSON — no fs needed) ────────────────────────
-
-// @ts-ignore — JSON import works in both Node (with resolveJsonModule) and bundlers
-import platformsJson from '../../../../configs/platforms.json'
 
 let configCache: Map<string, PlatformConfig> | null = null
 
@@ -51,10 +49,7 @@ export function listPlatforms(): string[] {
 
 // ── Export engine ──────────────────────────────────────────────────────
 
-export function exportForPlatform(
-  graph: ParsedGraph,
-  platformId: string,
-): FileMap {
+export function exportForPlatform(graph: ParsedGraph, platformId: string): FileMap {
   const config = getPlatformConfig(platformId)
   if (!config) throw new Error(`Unknown platform: ${platformId}`)
 
@@ -70,11 +65,14 @@ export function exportForPlatform(
   // Identity
   if (mapping.identity && graph.descriptorFile) {
     const rule = mapping.identity as Record<string, unknown>
-    Object.assign(result, applyTransform(
-      rule.transform as string,
-      graph.descriptorFile,
-      { name: 'identity', targetPattern: (rule.target as string) || '', config: rule },
-    ))
+    Object.assign(
+      result,
+      applyTransform(rule.transform as string, graph.descriptorFile, {
+        name: 'identity',
+        targetPattern: (rule.target as string) || '',
+        config: rule,
+      }),
+    )
   }
 
   // Split identity (OpenClaw)
@@ -82,11 +80,14 @@ export function exportForPlatform(
     if (graph.descriptorFile) {
       const rule = mapping.identity as Record<string, unknown>
       const outputs = (rule.outputs || {}) as Record<string, string>
-      Object.assign(result, splitIdentity(graph.descriptorFile, {
-        soul: outputs.soul || 'SOUL.md',
-        agents: outputs.agents || 'AGENTS.md',
-        identity: outputs.identity || 'IDENTITY.md',
-      }))
+      Object.assign(
+        result,
+        splitIdentity(graph.descriptorFile, {
+          soul: outputs.soul || 'SOUL.md',
+          agents: outputs.agents || 'AGENTS.md',
+          identity: outputs.identity || 'IDENTITY.md',
+        }),
+      )
     }
   }
 
@@ -96,17 +97,13 @@ export function exportForPlatform(
     if (rule.transform === 'concatenate') {
       const files = Object.values(instructions)
       const identityFiles = graph.descriptorFile ? [graph.descriptorFile] : []
-      Object.assign(result, concatenate(
-        [...identityFiles, ...files],
-        (rule.target as string) || 'CONVENTIONS.md',
-      ))
+      Object.assign(result, concatenate([...identityFiles, ...files], (rule.target as string) || 'CONVENTIONS.md'))
     } else if (rule.target && rule.transform) {
       for (const [name, file] of Object.entries(instructions)) {
-        Object.assign(result, applyTransform(
-          rule.transform as string,
-          file,
-          { name, targetPattern: rule.target as string, config: rule },
-        ))
+        Object.assign(
+          result,
+          applyTransform(rule.transform as string, file, { name, targetPattern: rule.target as string, config: rule }),
+        )
       }
     }
   }
@@ -117,26 +114,34 @@ export function exportForPlatform(
     if (rule.target && rule.transform) {
       for (const [name, skill] of Object.entries(skills)) {
         if (rule.transform === 'flatten-skill') {
-          Object.assign(result, flattenSkill(skill, {
-            name,
-            targetPattern: rule.target as string,
-            config: rule,
-          }))
+          Object.assign(
+            result,
+            flattenSkill(skill, {
+              name,
+              targetPattern: rule.target as string,
+              config: rule,
+            }),
+          )
         } else if (rule.transform === 'to-skill-dir') {
-          Object.assign(result, toSkillDir(skill, {
-            name,
-            targetPattern: rule.target as string,
-            config: rule,
-          }))
+          Object.assign(
+            result,
+            toSkillDir(skill, {
+              name,
+              targetPattern: rule.target as string,
+              config: rule,
+            }),
+          )
         } else if (rule.transform === 'copy-dir') {
-          result[`${(rule.target as string).replace('{name}', name)}/SKILL.md`] =
-            skill.primaryFile.rawContent
+          result[`${(rule.target as string).replace('{name}', name)}/SKILL.md`] = skill.primaryFile.rawContent
         } else {
-          Object.assign(result, applyTransform(
-            rule.transform as string,
-            skill.primaryFile,
-            { name, targetPattern: rule.target as string, config: rule },
-          ))
+          Object.assign(
+            result,
+            applyTransform(rule.transform as string, skill.primaryFile, {
+              name,
+              targetPattern: rule.target as string,
+              config: rule,
+            }),
+          )
         }
       }
     }
@@ -172,11 +177,7 @@ export function exportForPlatform(
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function applyTransform(
-  transformName: string,
-  file: ParsedFile | SkillEntry,
-  ctx: TransformContext,
-): FileMap {
+function applyTransform(transformName: string, file: ParsedFile | SkillEntry, ctx: TransformContext): FileMap {
   const fn = TRANSFORM_REGISTRY[transformName]
   if (!fn) return {}
   return fn(file, ctx) as FileMap

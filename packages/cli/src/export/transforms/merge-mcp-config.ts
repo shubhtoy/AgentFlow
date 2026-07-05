@@ -6,10 +6,7 @@ export interface McpCapability {
   env?: Record<string, string>
 }
 
-export function mergeMcpConfig(
-  capabilities: McpCapability[],
-  format: string,
-): Record<string, string> {
+export function mergeMcpConfig(capabilities: McpCapability[], format: string): Record<string, string> {
   if (!capabilities.length) return {}
 
   const servers: Record<string, unknown> = {}

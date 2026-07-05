@@ -11,13 +11,21 @@ export function atomicWrite(filePath: string, content: string): void {
   try {
     fs.writeFileSync(tmpPath, content, 'utf-8')
   } catch (err: unknown) {
-    try { fs.unlinkSync(tmpPath) } catch { /* ignore */ }
+    try {
+      fs.unlinkSync(tmpPath)
+    } catch {
+      /* ignore */
+    }
     throw fail(ErrorCode.FS_WRITE_ERROR, `Failed to write: ${(err as Error).message}`)
   }
   try {
     fs.renameSync(tmpPath, filePath)
   } catch (err: unknown) {
-    try { fs.unlinkSync(tmpPath) } catch { /* ignore */ }
+    try {
+      fs.unlinkSync(tmpPath)
+    } catch {
+      /* ignore */
+    }
     throw fail(ErrorCode.FS_WRITE_ERROR, `Failed to rename: ${(err as Error).message}`)
   }
 }

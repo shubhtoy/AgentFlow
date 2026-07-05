@@ -2,13 +2,13 @@
  * WorkflowService.
  */
 
-import path from 'path'
 import fs from 'fs'
-import { ok, fail, ErrorCode } from '@agentflow/core/services/types'
-import { validatePath } from '../svc-utils/validate-path'
-import { atomicWrite } from '../svc-utils/file-io'
-import { isReservedDir, RESOURCE_TYPE_MAP } from '@agentflow/core/taxonomy'
+import path from 'path'
 import type { ParsedFile } from '@agentflow/core/parser-core'
+import { ok, fail, ErrorCode } from '@agentflow/core/services/types'
+import { isReservedDir, RESOURCE_TYPE_MAP } from '@agentflow/core/taxonomy'
+import { atomicWrite } from '../svc-utils/file-io'
+import { validatePath } from '../svc-utils/validate-path'
 
 interface ServiceContext {
   rootDir: string
@@ -50,8 +50,11 @@ export function createWorkflowService(ctx: ServiceContext) {
     if (ARTIFACT.has(name)) node.isArtifactDir = true
 
     let entries: fs.Dirent[]
-    try { entries = fs.readdirSync(dirPath, { withFileTypes: true }) }
-    catch { return node }
+    try {
+      entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    } catch {
+      return node
+    }
 
     entries.sort((a, b) => {
       if (a.isDirectory() && !b.isDirectory()) return -1
@@ -60,16 +63,15 @@ export function createWorkflowService(ctx: ServiceContext) {
     })
 
     const mdFiles = entries.filter(e => e.isFile() && e.name.endsWith('.md'))
-    const subdirs = entries.filter(e =>
-      e.isDirectory() && !e.name.startsWith('.') &&
-      e.name !== 'node_modules' && e.name !== '_archive',
+    const subdirs = entries.filter(
+      e => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && e.name !== '_archive',
     )
 
-    const isNodeDir = mdFiles.length > 0 && !node.isReservedDir &&
-      !node.isArtifactDir && relPath !== '' && relPath !== '.'
+    const isNodeDir =
+      mdFiles.length > 0 && !node.isReservedDir && !node.isArtifactDir && relPath !== '' && relPath !== '.'
     if (isNodeDir) node.isNodeDir = true
 
-    let parsedFiles: (ParsedFile & { _basename: string, _isPrimary?: boolean })[] | null = null
+    let parsedFiles: (ParsedFile & { _basename: string; _isPrimary?: boolean })[] | null = null
     if (isNodeDir && mdFiles.length > 0) {
       try {
         const { parseMarkdownFile } = getParser()
@@ -80,7 +82,9 @@ export function createWorkflowService(ctx: ServiceContext) {
         })
         const primary = identifyPrimaryFile(parsedFiles)
         if (primary) primary._isPrimary = true
-      } catch { parsedFiles = null }
+      } catch {
+        parsedFiles = null
+      }
     }
 
     for (const sub of subdirs) {
@@ -183,9 +187,11 @@ export function createWorkflowService(ctx: ServiceContext) {
     move(from: string, to: string) {
       try {
         const fromCheck = validatePath(from, rootDir)
-        if (!fromCheck.valid) return fail(ErrorCode.PATH_TRAVERSAL, `Invalid source path: ${from} — ${fromCheck.error}`, 400)
+        if (!fromCheck.valid)
+          return fail(ErrorCode.PATH_TRAVERSAL, `Invalid source path: ${from} — ${fromCheck.error}`, 400)
         const toCheck = validatePath(to, rootDir)
-        if (!toCheck.valid) return fail(ErrorCode.PATH_TRAVERSAL, `Invalid destination path: ${to} — ${toCheck.error}`, 400)
+        if (!toCheck.valid)
+          return fail(ErrorCode.PATH_TRAVERSAL, `Invalid destination path: ${to} — ${toCheck.error}`, 400)
         if (!fs.existsSync(fromCheck.resolved)) return fail(ErrorCode.FILE_NOT_FOUND, `Source not found: ${from}`, 404)
         fs.mkdirSync(path.dirname(toCheck.resolved), { recursive: true })
         fs.renameSync(fromCheck.resolved, toCheck.resolved)

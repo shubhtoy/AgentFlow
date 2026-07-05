@@ -1,10 +1,7 @@
 import type { ParsedFile, SkillEntry } from '@agentflow/core/parser-core'
 import type { TransformContext } from './copy'
 
-export function toSkillDir(
-  source: ParsedFile | SkillEntry,
-  ctx: TransformContext,
-): Record<string, string> {
+export function toSkillDir(source: ParsedFile | SkillEntry, ctx: TransformContext): Record<string, string> {
   const basePath = ctx.targetPattern.replace('{name}', ctx.name)
   const result: Record<string, string> = {}
 

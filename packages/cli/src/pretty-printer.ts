@@ -4,9 +4,9 @@
 
 import fs from 'fs'
 import path from 'path'
-import matter from 'gray-matter'
-import { CANONICAL_CATEGORIES } from '@agentflow/core/taxonomy'
 import type { ParsedFile, ParsedNode, ParsedWorkflow, ParsedGraph } from '@agentflow/core/parser-core'
+import { CANONICAL_CATEGORIES } from '@agentflow/core/taxonomy'
+import matter from 'gray-matter'
 
 export function serialize(file: ParsedFile): string {
   const fm = file.frontmatter || {}

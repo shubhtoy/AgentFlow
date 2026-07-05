@@ -4,8 +4,8 @@
 
 import fs from 'fs'
 import path from 'path'
-import { glob } from 'glob'
 import { RESERVED_DIRS } from '@agentflow/core/taxonomy'
+import { glob } from 'glob'
 import { parseMarkdownFile } from '../parser'
 
 export const DEFAULT_MAX_DEPTH = 5
@@ -32,8 +32,8 @@ interface ScanResult {
   agentflowPaths: string[]
   resources: Record<string, ResourceEntry[]>
   workflows: WorkflowEntry[]
-  stats: { totalFiles: number, totalWorkflows: number, totalResources: number, scanDurationMs: number }
-  warnings: { path: string, message: string, severity: string }[]
+  stats: { totalFiles: number; totalWorkflows: number; totalResources: number; scanDurationMs: number }
+  warnings: { path: string; message: string; severity: string }[]
 }
 
 export function findAgentflowDirs(rootDir: string, maxDepth: number): string[] {
@@ -41,8 +41,11 @@ export function findAgentflowDirs(rootDir: string, maxDepth: number): string[] {
   function walk(dir: string, depth: number) {
     if (depth > maxDepth) return
     let entries: fs.Dirent[]
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }) }
-    catch { return }
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
     for (const entry of entries) {
       if (!entry.isDirectory()) continue
       if (entry.name === 'node_modules' || entry.name === '.git') continue
@@ -75,12 +78,15 @@ export function scanReservedDir(dirPath: string, rootDir: string, resourceType: 
   return resources
 }
 
-export function detectWorkflow(dirPath: string): { isWorkflow: boolean, descriptorPath: string | null } {
+export function detectWorkflow(dirPath: string): { isWorkflow: boolean; descriptorPath: string | null } {
   const agentsPath = path.join(dirPath, 'AGENTS.md')
   if (fs.existsSync(agentsPath)) return { isWorkflow: true, descriptorPath: agentsPath }
   let entries: fs.Dirent[]
-  try { entries = fs.readdirSync(dirPath, { withFileTypes: true }) }
-  catch { return { isWorkflow: false, descriptorPath: null } }
+  try {
+    entries = fs.readdirSync(dirPath, { withFileTypes: true })
+  } catch {
+    return { isWorkflow: false, descriptorPath: null }
+  }
   for (const entry of entries) {
     if (!entry.isFile() || !entry.name.endsWith('.md')) continue
     const filePath = path.join(dirPath, entry.name)
@@ -106,14 +112,19 @@ export function scanWorkflowDir(dirPath: string, rootDir: string): WorkflowEntry
   }
 
   let entries: fs.Dirent[]
-  try { entries = fs.readdirSync(dirPath, { withFileTypes: true }) }
-  catch { entries = [] }
+  try {
+    entries = fs.readdirSync(dirPath, { withFileTypes: true })
+  } catch {
+    entries = []
+  }
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.name === 'output') continue
     try {
       const subFiles = fs.readdirSync(path.join(dirPath, entry.name))
       if (subFiles.some(f => f.endsWith('.md'))) nodeCount++
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   return { name, path: relPath, nodeCount, hasDescriptor: detection.isWorkflow, entryPoints }
@@ -127,7 +138,8 @@ export function scan(rootDir: string, maxDepth: number = DEFAULT_MAX_DEPTH): Sca
   if (agentflowPaths.length === 0) {
     warnings.push({ path: rootDir, message: 'No .agentflow directory found', severity: 'warning' })
     return {
-      repoDir: rootDir, agentflowPaths: [],
+      repoDir: rootDir,
+      agentflowPaths: [],
       resources: Object.fromEntries(RESERVED_DIRS.map(d => [d, []])),
       workflows: [],
       stats: { totalFiles: 0, totalWorkflows: 0, totalResources: 0, scanDurationMs: Date.now() - startTime },
@@ -145,8 +157,11 @@ export function scan(rootDir: string, maxDepth: number = DEFAULT_MAX_DEPTH): Sca
     }
 
     let subEntries: fs.Dirent[]
-    try { subEntries = fs.readdirSync(fullPath, { withFileTypes: true }) }
-    catch { subEntries = [] }
+    try {
+      subEntries = fs.readdirSync(fullPath, { withFileTypes: true })
+    } catch {
+      subEntries = []
+    }
     for (const entry of subEntries) {
       if (!entry.isDirectory() || RESERVED_DIRS.includes(entry.name) || entry.name === 'output') continue
       const detection = detectWorkflow(path.join(fullPath, entry.name))
@@ -156,10 +171,15 @@ export function scan(rootDir: string, maxDepth: number = DEFAULT_MAX_DEPTH): Sca
 
   const totalResources = RESERVED_DIRS.reduce((sum, dir) => sum + allResources[dir].length, 0)
   return {
-    repoDir: rootDir, agentflowPaths, resources: allResources, workflows: allWorkflows,
+    repoDir: rootDir,
+    agentflowPaths,
+    resources: allResources,
+    workflows: allWorkflows,
     stats: {
       totalFiles: totalResources + allWorkflows.reduce((s, w) => s + w.nodeCount, 0),
-      totalWorkflows: allWorkflows.length, totalResources, scanDurationMs: Date.now() - startTime,
+      totalWorkflows: allWorkflows.length,
+      totalResources,
+      scanDurationMs: Date.now() - startTime,
     },
     warnings,
   }
@@ -191,8 +211,10 @@ export function scanIncremental(rootDir: string, changedFiles: string[]): ScanRe
               const fm = parsed.frontmatter || {}
               updatedResources[reservedDir].push({
                 name: (fm.name as string) || path.basename(changedFile, '.md'),
-                path: changedFile, resourceType: reservedDir,
-                hasFrontmatter: Object.keys(fm).length > 0, frontmatterFields: Object.keys(fm),
+                path: changedFile,
+                resourceType: reservedDir,
+                hasFrontmatter: Object.keys(fm).length > 0,
+                frontmatterFields: Object.keys(fm),
               })
             }
           }
@@ -215,11 +237,15 @@ export function scanIncremental(rootDir: string, changedFiles: string[]): ScanRe
 
   const totalResources = RESERVED_DIRS.reduce((sum, dir) => sum + updatedResources[dir].length, 0)
   const result: ScanResult = {
-    repoDir: rootDir, agentflowPaths: cached.agentflowPaths,
-    resources: updatedResources, workflows: updatedWorkflows,
+    repoDir: rootDir,
+    agentflowPaths: cached.agentflowPaths,
+    resources: updatedResources,
+    workflows: updatedWorkflows,
     stats: {
       totalFiles: totalResources + updatedWorkflows.reduce((s, w) => s + w.nodeCount, 0),
-      totalWorkflows: updatedWorkflows.length, totalResources, scanDurationMs: 0,
+      totalWorkflows: updatedWorkflows.length,
+      totalResources,
+      scanDurationMs: 0,
     },
     warnings: cached.warnings,
   }

@@ -14,41 +14,52 @@ export const IntentResponseSchema = z.object({
   suggestedPattern: patternEnum,
   patternReason: z.string(),
   clarifyingQuestions: z.array(z.string()).max(3),
-  suggestedName: z.string().regex(/^[a-z0-9-]+$/).max(64),
+  suggestedName: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .max(64),
 })
 
 /** Phase 2: Pattern confirmation + tool/skill selection */
 export const ToolSelectionResponseSchema = z.object({
   confirmedPattern: patternEnum,
-  tools: z.array(z.object({
-    name: z.string(),
-    source: z.enum(['library', 'mcp', 'custom']),
-    reason: z.string(),
-  })),
-  skills: z.array(z.object({
-    name: z.string(),
-    reason: z.string(),
-  })),
+  tools: z.array(
+    z.object({
+      name: z.string(),
+      source: z.enum(['library', 'mcp', 'custom']),
+      reason: z.string(),
+    }),
+  ),
+  skills: z.array(
+    z.object({
+      name: z.string(),
+      reason: z.string(),
+    }),
+  ),
   memory: z.array(z.string()).optional(),
 })
 
 /** Phase 3: Node structure generation */
 export const NodeStructureResponseSchema = z.object({
-  nodes: z.array(z.object({
-    id: z.string().regex(/^[a-z0-9-]+$/),
-    name: z.string(),
-    nodeType: z.enum(['step', 'sub-workflow']),
-    entry: z.boolean(),
-    description: z.string(),
-    tools: z.array(z.string()),
-    skills: z.array(z.string()),
-    instructions: z.string(),
-  })),
-  edges: z.array(z.object({
-    from: z.string(),
-    to: z.string(),
-    condition: z.string().optional(),
-  })),
+  nodes: z.array(
+    z.object({
+      id: z.string().regex(/^[a-z0-9-]+$/),
+      name: z.string(),
+      nodeType: z.enum(['step', 'sub-workflow']),
+      entry: z.boolean(),
+      description: z.string(),
+      tools: z.array(z.string()),
+      skills: z.array(z.string()),
+      instructions: z.string(),
+    }),
+  ),
+  edges: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      condition: z.string().optional(),
+    }),
+  ),
   identity: z.object({
     name: z.string(),
     role: z.string(),
@@ -59,16 +70,24 @@ export const NodeStructureResponseSchema = z.object({
 /** Phase 4: Final review confirmation */
 export const ReviewResponseSchema = z.object({
   approved: z.boolean(),
-  modifications: z.array(z.object({
-    target: z.enum(['node', 'edge', 'tool', 'skill', 'identity']),
-    action: z.enum(['add', 'remove', 'modify']),
-    details: z.string(),
-  })).optional(),
+  modifications: z
+    .array(
+      z.object({
+        target: z.enum(['node', 'edge', 'tool', 'skill', 'identity']),
+        action: z.enum(['add', 'remove', 'modify']),
+        details: z.string(),
+      }),
+    )
+    .optional(),
 })
 
 /** Full scaffold validation schema */
 export const AgentScaffoldSchema = z.object({
-  name: z.string().regex(/^[a-z0-9-]+$/).min(1).max(64),
+  name: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .min(1)
+    .max(64),
   description: z.string().min(1).max(500),
   identity: z.object({
     name: z.string().min(1),
@@ -76,33 +95,41 @@ export const AgentScaffoldSchema = z.object({
     constraints: z.array(z.string()),
   }),
   pattern: patternEnum,
-  tools: z.array(z.object({
-    name: z.string(),
-    source: z.enum(['library', 'mcp', 'custom']),
-    mcpServer: z.string().optional(),
-  })),
+  tools: z.array(
+    z.object({
+      name: z.string(),
+      source: z.enum(['library', 'mcp', 'custom']),
+      mcpServer: z.string().optional(),
+    }),
+  ),
   skills: z.array(z.string()),
   memory: z.array(z.string()).optional(),
-  nodes: z.array(z.object({
-    id: z.string().regex(/^[a-z0-9-]+$/),
-    name: z.string(),
-    nodeType: z.enum(['step', 'sub-workflow']),
-    entry: z.boolean(),
-    description: z.string(),
-    tools: z.array(z.string()),
-    skills: z.array(z.string()),
-    instructions: z.string().min(1),
-  })),
-  edges: z.array(z.object({
-    from: z.string(),
-    to: z.string(),
-    condition: z.string().optional(),
-  })),
-  metadata: z.object({
-    createdVia: z.enum(['chat', 'template', 'manual']),
-    templateId: z.string().optional(),
-    conversationId: z.string().optional(),
-  }).optional(),
+  nodes: z.array(
+    z.object({
+      id: z.string().regex(/^[a-z0-9-]+$/),
+      name: z.string(),
+      nodeType: z.enum(['step', 'sub-workflow']),
+      entry: z.boolean(),
+      description: z.string(),
+      tools: z.array(z.string()),
+      skills: z.array(z.string()),
+      instructions: z.string().min(1),
+    }),
+  ),
+  edges: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      condition: z.string().optional(),
+    }),
+  ),
+  metadata: z
+    .object({
+      createdVia: z.enum(['chat', 'template', 'manual']),
+      templateId: z.string().optional(),
+      conversationId: z.string().optional(),
+    })
+    .optional(),
 })
 
 /** Map phase name to its Zod schema */

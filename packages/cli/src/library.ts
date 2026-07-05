@@ -4,9 +4,9 @@
 
 import fs from 'fs'
 import path from 'path'
-import matter from 'gray-matter'
 import { TAXONOMY_REGISTRY, CANONICAL_CATEGORIES } from '@agentflow/core/taxonomy'
 import type { CategoryName } from '@agentflow/core/taxonomy'
+import matter from 'gray-matter'
 
 interface LibraryEntry {
   name: string
@@ -24,9 +24,7 @@ interface LibraryRegistry {
 
 const DIR_TYPE_MAP: Record<string, string> = {
   workflows: 'workflow',
-  ...Object.fromEntries(
-    CANONICAL_CATEGORIES.map(k => [TAXONOMY_REGISTRY[k].dir, k]),
-  ),
+  ...Object.fromEntries(CANONICAL_CATEGORIES.map(k => [TAXONOMY_REGISTRY[k].dir, k])),
 }
 
 export function search(registry: LibraryRegistry, query: string): LibraryEntry[] {
@@ -41,12 +39,7 @@ export function search(registry: LibraryRegistry, query: string): LibraryEntry[]
   })
 }
 
-export function add(
-  registry: LibraryRegistry,
-  type: string,
-  name: string,
-  targetRoot: string,
-): void {
+export function add(registry: LibraryRegistry, type: string, name: string, targetRoot: string): void {
   if (!registry?.entries) throw new Error('Library registry is invalid or empty')
 
   const entry = registry.entries.find(e => e.type === type && e.name === name)
@@ -62,9 +55,7 @@ export function add(
   if (type === 'workflow') {
     fs.cpSync(srcPath, path.join(targetRoot, path.basename(entry.path)), { recursive: true })
   } else {
-    const typeToDir = Object.fromEntries(
-      CANONICAL_CATEGORIES.map(k => [k, TAXONOMY_REGISTRY[k].dir]),
-    )
+    const typeToDir = Object.fromEntries(CANONICAL_CATEGORIES.map(k => [k, TAXONOMY_REGISTRY[k].dir]))
     const dirName = typeToDir[type as CategoryName] || type + 's'
     const destDir = path.join(targetRoot, dirName)
     fs.mkdirSync(destDir, { recursive: true })

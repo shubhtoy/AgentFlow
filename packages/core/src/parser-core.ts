@@ -6,14 +6,9 @@
  */
 
 import yaml from 'js-yaml'
-import {
-  RESERVED_DIRS,
-  RESOURCE_TYPE_MAP,
-  RESOURCE_TYPE_TO_CATEGORY,
-  DIR_TO_CATEGORY,
-} from './taxonomy'
-import type { CategoryName } from './taxonomy'
 import { resolveSchemaKey } from './schemas/frontmatter-schemas'
+import { RESERVED_DIRS, RESOURCE_TYPE_MAP, RESOURCE_TYPE_TO_CATEGORY, DIR_TO_CATEGORY } from './taxonomy'
+import type { CategoryName } from './taxonomy'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -88,24 +83,6 @@ export interface ResolvedRef {
   matches?: ParsedFile[]
 }
 
-export interface ParsedGraph {
-  rootDir: string
-  descriptorFile: ParsedFile | undefined
-  identity: unknown
-  instructions: Record<string, ParsedFile>
-  capabilities: Record<string, ParsedFile & { scope?: string, toolType?: string, command?: string, mcp?: string, package?: string, parameters?: unknown, builtinMapping?: string }>
-  skills: Record<string, SkillEntry>
-  memory: Record<string, ParsedFile>
-  hooks: Record<string, unknown>
-  customFiles: Record<string, ParsedFile>
-  workflows: Record<string, ParsedWorkflow>
-  allFiles: ParsedFile[]
-  mcpServers: Record<string, unknown>
-  mcpErrors: unknown[]
-  resolvedIdentityRefs?: { workspace: Ref[], workflows: Record<string, Ref[]> }
-  identityAssembly?: IdentityAssembly
-}
-
 /** A descriptor reference resolved to its target path + loaded content (for L0/L1 assembly). */
 export interface ResolvedIdentityRef {
   ref: Ref
@@ -125,6 +102,35 @@ export interface IdentityLevel {
 export interface IdentityAssembly {
   workspace: IdentityLevel
   workflows: Record<string, IdentityLevel>
+}
+
+export interface ParsedGraph {
+  rootDir: string
+  descriptorFile: ParsedFile | undefined
+  identity: unknown
+  instructions: Record<string, ParsedFile>
+  capabilities: Record<
+    string,
+    ParsedFile & {
+      scope?: string
+      toolType?: string
+      command?: string
+      mcp?: string
+      package?: string
+      parameters?: unknown
+      builtinMapping?: string
+    }
+  >
+  skills: Record<string, SkillEntry>
+  memory: Record<string, ParsedFile>
+  hooks: Record<string, unknown>
+  customFiles: Record<string, ParsedFile>
+  workflows: Record<string, ParsedWorkflow>
+  allFiles: ParsedFile[]
+  mcpServers: Record<string, unknown>
+  mcpErrors: unknown[]
+  resolvedIdentityRefs?: { workspace: Ref[]; workflows: Record<string, Ref[]> }
+  identityAssembly?: IdentityAssembly
 }
 
 export interface TreeNode {
@@ -147,15 +153,24 @@ export const WORKSPACE_EXTENSIONS = ['.md', '.json', '.yaml', '.yml']
 export const NODE_TYPE_ALIASES = new Set(['step', 'sub-workflow'])
 
 export const ARTIFACT_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', 'output', '.next',
-  '__pycache__', '.venv', 'venv', '.cache', 'coverage',
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  'output',
+  '.next',
+  '__pycache__',
+  '.venv',
+  'venv',
+  '.cache',
+  'coverage',
 ])
 
 export const REF_PATTERNS: RefPattern[] = [
   { name: 'conditional_edge', re: /\{\{->\s*([^|}]+?)\s*\|\s*([^}]+?)\s*\}\}/g, type: 'conditional_edge' },
-  { name: 'edge',             re: /\{\{->\s*([^}]+?)\s*\}\}/g,                   type: 'edge' },
-  { name: 'data_flow',        re: /\{\{<<\s*([^}]+?)\s*\}\}/g,                   type: 'data_flow' },
-  { name: 'mention',          re: /\{\{([^}<>|]+?)\}\}/g,                         type: 'mention' },
+  { name: 'edge', re: /\{\{->\s*([^}]+?)\s*\}\}/g, type: 'edge' },
+  { name: 'data_flow', re: /\{\{<<\s*([^}]+?)\s*\}\}/g, type: 'data_flow' },
+  { name: 'mention', re: /\{\{([^}<>|]+?)\}\}/g, type: 'mention' },
 ]
 
 export { RESERVED_DIRS, RESOURCE_TYPE_MAP }
@@ -227,11 +242,13 @@ export function extractRefs(content: string): Ref[] {
 
 // ── Frontmatter ────────────────────────────────────────────────────────
 
-export function parseFrontmatter(content: string): { data: Record<string, unknown>, content: string } {
+export function parseFrontmatter(content: string): { data: Record<string, unknown>; content: string } {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   if (!match) return { data: {}, content }
   let data: Record<string, unknown> = {}
-  try { data = (yaml.load(match[1]) as Record<string, unknown>) || {} } catch (err) {
+  try {
+    data = (yaml.load(match[1]) as Record<string, unknown>) || {}
+  } catch (err) {
     // eslint-disable-next-line no-console
     console.warn(`Invalid YAML frontmatter: ${err instanceof Error ? err.message : String(err)}`)
   }
@@ -275,9 +292,7 @@ export function identifyPrimaryFile(files: ParsedFile[]): ParsedFile {
   })
   if (main) return main
   // alphabetical
-  return files.sort((a, b) =>
-    (a.relativePath || a.filePath || '').localeCompare(b.relativePath || b.filePath || ''),
-  )[0]
+  return files.sort((a, b) => (a.relativePath || a.filePath || '').localeCompare(b.relativePath || b.filePath || ''))[0]
 }
 
 // ── Edge resolution ────────────────────────────────────────────────────
@@ -316,7 +331,11 @@ export function parseMarkdownContent(
   const result: ParsedFile = {
     filePath: relativePath,
     relativePath: relativePath.replace(/\\/g, '/'),
-    frontmatter, title, content: '', rawContent, refs: [],
+    frontmatter,
+    title,
+    content: '',
+    rawContent,
+    refs: [],
     resourceType: null,
   }
   if (mode === 'metadata-only') return result
@@ -327,12 +346,13 @@ export function parseMarkdownContent(
 
 // ── parseFromFiles (browser-safe graph builder) ────────────────────────
 
-export function parseFromFiles(
-  fileMap: Record<string, string>,
-  mode: 'full' | 'metadata-only' = 'full',
-): ParsedGraph {
-  const mdPaths = Object.keys(fileMap).filter(p => p.endsWith('.md')).sort()
-  const jsonPaths = Object.keys(fileMap).filter(p => p.endsWith('.json')).sort()
+export function parseFromFiles(fileMap: Record<string, string>, mode: 'full' | 'metadata-only' = 'full'): ParsedGraph {
+  const mdPaths = Object.keys(fileMap)
+    .filter(p => p.endsWith('.md'))
+    .sort()
+  const jsonPaths = Object.keys(fileMap)
+    .filter(p => p.endsWith('.json'))
+    .sort()
 
   // 1. Parse all files
   const allFiles: ParsedFile[] = []
@@ -345,20 +365,32 @@ export function parseFromFiles(
 
   // 2. Categorize
   const instructions: Record<string, ParsedFile> = {}
-  const capabilities: Record<string, ParsedFile & { scope?: string, toolType?: string, command?: string, mcp?: string, package?: string, parameters?: unknown, builtinMapping?: string }> = {}
+  const capabilities: Record<
+    string,
+    ParsedFile & {
+      scope?: string
+      toolType?: string
+      command?: string
+      mcp?: string
+      package?: string
+      parameters?: unknown
+      builtinMapping?: string
+    }
+  > = {}
   const memory: Record<string, ParsedFile> = {}
   const skills: Record<string, SkillEntry> = {}
   let descriptorFile: ParsedFile | undefined
   const reservedSet = new Set(RESERVED_DIRS)
 
   for (const file of allFiles) {
-    const relDir = file.relativePath.includes('/')
-      ? file.relativePath.split('/').slice(0, -1).join('/') : ''
+    const relDir = file.relativePath.includes('/') ? file.relativePath.split('/').slice(0, -1).join('/') : ''
     const isRootLevel = !relDir
 
-    if (isRootLevel && !descriptorFile &&
-      ((file.frontmatter && file.frontmatter.type === 'agents') ||
-        file.relativePath.split('/').pop() === 'AGENTS.md')) {
+    if (
+      isRootLevel &&
+      !descriptorFile &&
+      ((file.frontmatter && file.frontmatter.type === 'agents') || file.relativePath.split('/').pop() === 'AGENTS.md')
+    ) {
       descriptorFile = file
     }
 
@@ -366,14 +398,15 @@ export function parseFromFiles(
     const categoryFromDir = firstSegment ? DIR_TO_CATEGORY[firstSegment] : undefined
     const parts = file.relativePath.split('/')
     const secondSegment = parts.length >= 3 ? parts[1] : ''
-    const categoryFromWfDir = (!categoryFromDir && secondSegment) ? DIR_TO_CATEGORY[secondSegment] : undefined
+    const categoryFromWfDir = !categoryFromDir && secondSegment ? DIR_TO_CATEGORY[secondSegment] : undefined
     const categoryFromType = file.resourceType ? RESOURCE_TYPE_TO_CATEGORY[file.resourceType] : undefined
     const categoryName: CategoryName | undefined = categoryFromType || categoryFromDir || categoryFromWfDir
     if (!categoryName) continue
 
-    const key = (file.frontmatter && file.frontmatter.name)
-      ? file.frontmatter.name as string
-      : (file.relativePath.split('/').pop() || '').replace(/\.md$/, '')
+    const key =
+      file.frontmatter && file.frontmatter.name
+        ? (file.frontmatter.name as string)
+        : (file.relativePath.split('/').pop() || '').replace(/\.md$/, '')
 
     if (categoryName === 'instructions') {
       instructions[key] = file
@@ -405,9 +438,7 @@ export function parseFromFiles(
   for (const skillId of skillDirs) {
     const prefix = `skills/${skillId}/`
     const filesInSkill = skillsDirFiles.filter(f => f.relativePath.startsWith(prefix))
-    const primaryFile = filesInSkill.find(f =>
-      f.relativePath.split('/').pop() === 'SKILL.md',
-    )
+    const primaryFile = filesInSkill.find(f => f.relativePath.split('/').pop() === 'SKILL.md')
     if (!primaryFile) continue
     const fm = primaryFile.frontmatter || {}
     const references: string[] = []
@@ -436,18 +467,18 @@ export function parseFromFiles(
   const topDirs = new Set<string>()
   for (const p of mdPaths) {
     const seg = p.split('/')[0]
-    if (p.split('/').length >= 2 && !reservedSet.has(seg) &&
-        !ARTIFACT_DIRS.has(seg) && !seg.startsWith('.')) {
+    if (p.split('/').length >= 2 && !reservedSet.has(seg) && !ARTIFACT_DIRS.has(seg) && !seg.startsWith('.')) {
       topDirs.add(seg)
     }
   }
 
   for (const wfId of topDirs) {
     const wfFiles = mdPaths.filter(p => p.startsWith(wfId + '/'))
-    const hasDescriptor = wfFiles.some(p =>
-      p === wfId + '/AGENTS.md' ||
-      (fileMap[p] && /type:\s*agents/.test(
-        (fileMap[p].match(/^---\n([\s\S]*?)\n---/) || [])[1] || '')))
+    const hasDescriptor = wfFiles.some(
+      p =>
+        p === wfId + '/AGENTS.md' ||
+        (fileMap[p] && /type:\s*agents/.test((fileMap[p].match(/^---\n([\s\S]*?)\n---/) || [])[1] || '')),
+    )
     const hasNodeDirs = wfFiles.some(p => p.split('/').length >= 3)
     if (!hasDescriptor && !hasNodeDirs) continue
 
@@ -460,8 +491,7 @@ export function parseFromFiles(
       const relParts = rel.split('/')
       if (relParts.length === 1) {
         const parsed = allFiles.find(f => f.relativePath === p)
-        if (parsed && (rel === 'AGENTS.md' ||
-          (parsed.frontmatter && parsed.frontmatter.type === 'agents'))) {
+        if (parsed && (rel === 'AGENTS.md' || (parsed.frontmatter && parsed.frontmatter.type === 'agents'))) {
           wfDescriptor = parsed
         }
       } else if (relParts.length >= 2) {
@@ -479,8 +509,11 @@ export function parseFromFiles(
       if (!parsedNodeFiles.length) continue
 
       let primaryFile: ParsedFile
-      try { primaryFile = identifyPrimaryFile(parsedNodeFiles) }
-      catch { primaryFile = parsedNodeFiles[0] }
+      try {
+        primaryFile = identifyPrimaryFile(parsedNodeFiles)
+      } catch {
+        primaryFile = parsedNodeFiles[0]
+      }
       const contextFiles = parsedNodeFiles.filter(f => f !== primaryFile)
       const fm = primaryFile.frontmatter || {}
       const nodeRefs: Ref[] = []
@@ -490,15 +523,18 @@ export function parseFromFiles(
         id: nodeId,
         name: (fm.name as string) || nodeId,
         description: (fm.description as string) || '',
-        nodeType: fm.type && NODE_TYPE_ALIASES.has(fm.type as string) ? fm.type as string : 'step',
+        nodeType: fm.type && NODE_TYPE_ALIASES.has(fm.type as string) ? (fm.type as string) : 'step',
         isRouter: false,
         entry: fm.entry === true,
         entryInferred: false,
-        primaryFile, contextFiles,
+        primaryFile,
+        contextFiles,
         allRefs: nodeRefs,
         frontmatter: fm,
-        contextBudget: fm.context && (fm.context as Record<string, unknown>).max_tokens
-          ? (fm.context as Record<string, unknown>).max_tokens : undefined,
+        contextBudget:
+          fm.context && (fm.context as Record<string, unknown>).max_tokens
+            ? (fm.context as Record<string, unknown>).max_tokens
+            : undefined,
         outputDeclarations: (fm.outputs as unknown[]) || undefined,
       }
     }
@@ -530,7 +566,7 @@ export function parseFromFiles(
     // Entry points
     let entryPoints = Object.keys(nodes).filter(id => nodes[id].entry === true)
     if (!entryPoints.length && wfDescriptor) {
-      for (const ref of (wfDescriptor.refs || [])) {
+      for (const ref of wfDescriptor.refs || []) {
         const t = resolveEdgeTarget(ref, nodeIds)
         if (t && !entryPoints.includes(t)) entryPoints.push(t)
       }
@@ -545,13 +581,16 @@ export function parseFromFiles(
       }
     }
 
-    const wfFm = wfDescriptor ? (wfDescriptor.frontmatter || {}) : {}
+    const wfFm = wfDescriptor ? wfDescriptor.frontmatter || {} : {}
     workflows[wfId] = {
-      id: wfId, dir: wfId,
+      id: wfId,
+      dir: wfId,
       name: (wfFm.name as string) || wfId,
       description: (wfFm.description as string) || '',
       descriptorFile: wfDescriptor || null,
-      nodes, edges, entryPoints,
+      nodes,
+      edges,
+      entryPoints,
     }
   }
 
@@ -572,8 +611,7 @@ export function parseFromFiles(
   const customFiles: Record<string, ParsedFile> = {}
   for (const file of allFiles) {
     if (!categorizedPaths.has(file.relativePath)) {
-      const key = file.relativePath.endsWith('.md')
-        ? file.relativePath.slice(0, -3) : file.relativePath
+      const key = file.relativePath.endsWith('.md') ? file.relativePath.slice(0, -3) : file.relativePath
       if (!file.resourceType || file.resourceType === 'untyped') file.resourceType = 'untyped'
       customFiles[key] = file
     }
@@ -588,7 +626,9 @@ export function parseFromFiles(
     if (!isRootHook && !isWfHook) continue
     try {
       hooks[segments[segments.length - 1].replace(/\.json$/, '')] = JSON.parse(fileMap[p])
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   // 6. Identity
@@ -598,28 +638,33 @@ export function parseFromFiles(
   }
 
   // 7. AGENTS.md ref resolution for L0/L1 assembly
-  const resolvedIdentityRefs: { workspace: Ref[], workflows: Record<string, Ref[]> } = {
+  const resolvedIdentityRefs: { workspace: Ref[]; workflows: Record<string, Ref[]> } = {
     workspace: [],
     workflows: {},
   }
   if (descriptorFile) {
-    resolvedIdentityRefs.workspace = (descriptorFile.refs || []).filter(
-      r => r.semanticType === 'mention',
-    )
+    resolvedIdentityRefs.workspace = (descriptorFile.refs || []).filter(r => r.semanticType === 'mention')
   }
   for (const [wfId, wf] of Object.entries(workflows)) {
     if (wf.descriptorFile) {
-      resolvedIdentityRefs.workflows[wfId] = (wf.descriptorFile.refs || []).filter(
-        r => r.semanticType === 'mention',
-      )
+      resolvedIdentityRefs.workflows[wfId] = (wf.descriptorFile.refs || []).filter(r => r.semanticType === 'mention')
     }
   }
 
   const graph: ParsedGraph = {
-    rootDir: '.', descriptorFile, identity,
-    instructions, capabilities, skills, memory,
-    hooks, customFiles, workflows, allFiles,
-    mcpServers: {}, mcpErrors: [],
+    rootDir: '.',
+    descriptorFile,
+    identity,
+    instructions,
+    capabilities,
+    skills,
+    memory,
+    hooks,
+    customFiles,
+    workflows,
+    allFiles,
+    mcpServers: {},
+    mcpErrors: [],
     resolvedIdentityRefs,
   }
   // Resolve + load AGENTS.md references so L0/L1 identity content is in the model.
@@ -693,12 +738,10 @@ function resolveIdentityRefs(refs: Ref[], graph: ParsedGraph): ResolvedIdentityR
   for (const ref of refs) {
     if (ref.semanticType !== 'mention') continue
     const resolved = resolveRef(ref, graph)
-    const target = resolved && resolved.resolvedBy !== 'ambiguous'
-      ? (resolved.target as ParsedFile | null)
-      : null
+    const target = resolved && resolved.resolvedBy !== 'ambiguous' ? (resolved.target as ParsedFile | null) : null
     out.push({
       ref,
-      path: target ? (target.relativePath || null) : null,
+      path: target ? target.relativePath || null : null,
       content: target ? (target.content ?? target.rawContent ?? null) : null,
       resolvedBy: resolved ? resolved.resolvedBy : null,
     })

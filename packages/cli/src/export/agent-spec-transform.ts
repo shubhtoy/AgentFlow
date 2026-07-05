@@ -5,13 +5,7 @@
  * When tsagentspec is vendored, this can be replaced with type-safe builders.
  */
 
-import type {
-  ParsedGraph,
-  ParsedWorkflow,
-  ParsedNode,
-  Edge,
-  ParsedFile,
-} from '@agentflow/core/parser-core'
+import type { ParsedGraph, ParsedWorkflow, ParsedNode, Edge } from '@agentflow/core/parser-core'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -76,11 +70,7 @@ export function toAgentSpec(graph: ParsedGraph): AgentSpecOutput {
 
 // ── Flow builder ───────────────────────────────────────────────────────
 
-function buildFlow(
-  wf: ParsedWorkflow,
-  graph: ParsedGraph,
-  components: Record<string, AgentSpecComponent>,
-): unknown {
+function buildFlow(wf: ParsedWorkflow, graph: ParsedGraph, components: Record<string, AgentSpecComponent>): unknown {
   const nodes: Record<string, unknown> = {}
   const controlFlowEdges: unknown[] = []
 
@@ -218,7 +208,7 @@ function buildAgent(
 
   const agent: AgentSpecComponent = {
     component_type: 'Agent',
-    name: node.frontmatter?.agent as string || node.name,
+    name: (node.frontmatter?.agent as string) || node.name,
     description: node.description || undefined,
     system_prompt: promptParts.join('\n\n'),
   }
@@ -231,13 +221,10 @@ function buildAgent(
   return agent
 }
 
-function buildBranchingNode(
-  node: ParsedNode,
-  edges: Edge[],
-): unknown {
+function buildBranchingNode(node: ParsedNode, edges: Edge[]): unknown {
   const branches = edges
-    .filter((e) => e.from === node.id && e.condition)
-    .map((e) => ({
+    .filter(e => e.from === node.id && e.condition)
+    .map(e => ({
       branch: e.condition,
       target: e.to,
     }))
@@ -263,15 +250,20 @@ function buildFlowNode(node: ParsedNode): unknown {
 
 function mapToolType(type?: string): ToolType {
   switch (type) {
-    case 'script': return 'ServerTool'
-    case 'package': return 'ClientTool'
-    case 'mcp': return 'MCPTool'
-    case 'builtin': return 'BuiltinTool'
-    default: return 'BuiltinTool'
+    case 'script':
+      return 'ServerTool'
+    case 'package':
+      return 'ClientTool'
+    case 'mcp':
+      return 'MCPTool'
+    case 'builtin':
+      return 'BuiltinTool'
+    default:
+      return 'BuiltinTool'
   }
 }
 
 function findTerminalNodes(wf: ParsedWorkflow): string[] {
-  const sources = new Set(wf.edges.map((e) => e.from))
-  return Object.keys(wf.nodes).filter((id) => !sources.has(id))
+  const sources = new Set(wf.edges.map(e => e.from))
+  return Object.keys(wf.nodes).filter(id => !sources.has(id))
 }

@@ -13,11 +13,15 @@ export const agentConfigSchema = z.object({
 
 /** Chat request validation */
 export const agentChatSchema = z.object({
-  messages: z.array(z.object({
-    role: z.enum(['user', 'assistant', 'tool']),
-    content: z.string(),
-    toolCalls: z.array(z.any()).optional(),
-  })).min(1),
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant', 'tool']),
+        content: z.string(),
+        toolCalls: z.array(z.any()).optional(),
+      }),
+    )
+    .min(1),
   provider: z.enum(['anthropic', 'openai']),
   model: z.string().optional(),
   apiKey: z.string().min(1),
@@ -29,4 +33,4 @@ export const SSE_EVENT_TYPES = ['text_delta', 'tool_call', 'tool_result', 'error
 
 export type AgentConfig = z.infer<typeof agentConfigSchema>
 export type AgentChat = z.infer<typeof agentChatSchema>
-export type SSEEventType = typeof SSE_EVENT_TYPES[number]
+export type SSEEventType = (typeof SSE_EVENT_TYPES)[number]

@@ -12,11 +12,13 @@ export const HookDefinitionSchema = z.object({
   version: z.string().default('1.0.0'),
   description: z.string().optional(),
   event: z.string().min(1),
-  condition: z.object({
-    field: z.string(),
-    operator: z.enum(['equals', 'contains', 'matches', 'startsWith', 'endsWith']),
-    value: z.union([z.string(), z.number(), z.boolean()]),
-  }).optional(),
+  condition: z
+    .object({
+      field: z.string(),
+      operator: z.enum(['equals', 'contains', 'matches', 'startsWith', 'endsWith']),
+      value: z.union([z.string(), z.number(), z.boolean()]),
+    })
+    .optional(),
   action: z.object({
     type: z.enum(['trigger-workflow', 'run-script', 'notify', 'log']),
     target: z.string(),

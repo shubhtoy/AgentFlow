@@ -7,9 +7,9 @@
 
 import { resolveRef, RESERVED_DIRS } from '../parser-core'
 import type { ParsedGraph, Ref } from '../parser-core'
-import type { ValidationIssue, ValidationResult } from './types'
 import { SCHEMAS, validateSchema } from './schema'
 import { detectCycles, findUnreachable } from './structure'
+import type { ValidationIssue, ValidationResult } from './types'
 import { validateVariables } from './variables'
 
 // ── Re-exports (public API) ────────────────────────────────────────────

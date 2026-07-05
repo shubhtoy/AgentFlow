@@ -2,10 +2,10 @@
  * MCP Bridge.
  */
 
+import fs from 'fs'
+import path from 'path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
-import path from 'path'
-import fs from 'fs'
 
 interface ServerConfig {
   command?: string
@@ -36,12 +36,16 @@ const DEFAULT_SERVERS: Record<string, ServerConfig> = {
   git: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-git', '--repository', '{rootDir}'], enabled: true },
   memory: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-memory'], enabled: true },
   fetch: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-fetch'], enabled: true },
-  sequentialthinking: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequentialthinking'], enabled: true },
+  sequentialthinking: {
+    command: 'npx',
+    args: ['-y', '@modelcontextprotocol/server-sequentialthinking'],
+    enabled: true,
+  },
 }
 
 export function createMCPBridge(ctx: ServiceContext) {
   const { rootDir, logger } = ctx
-  const connections = new Map<string, { client: Client, transport: StdioClientTransport }>()
+  const connections = new Map<string, { client: Client; transport: StdioClientTransport }>()
   const toolCache = new Map<string, ToolDef[]>()
   let initialized = false
 
@@ -102,7 +106,10 @@ export function createMCPBridge(ctx: ServiceContext) {
         }
         try {
           const result = await client.listTools()
-          const tools: ToolDef[] = ((result as { tools?: { name: string, description?: string, inputSchema?: Record<string, unknown> }[] }).tools || []).map(t => ({
+          const tools: ToolDef[] = (
+            (result as { tools?: { name: string; description?: string; inputSchema?: Record<string, unknown> }[] })
+              .tools || []
+          ).map(t => ({
             server: serverName,
             name: t.name,
             description: t.description || '',
@@ -121,7 +128,7 @@ export function createMCPBridge(ctx: ServiceContext) {
       const conn = connections.get(serverName)
       if (!conn) throw new Error(`MCP server "${serverName}" not connected`)
       const result = await conn.client.callTool({ name: toolName, arguments: args })
-      const textParts = ((result as { content?: { type: string, text: string }[] }).content || [])
+      const textParts = ((result as { content?: { type: string; text: string }[] }).content || [])
         .filter(c => c.type === 'text')
         .map(c => c.text)
       return textParts.join('\n') || JSON.stringify((result as { content?: unknown }).content)
@@ -135,8 +142,17 @@ export function createMCPBridge(ctx: ServiceContext) {
 
     async shutdown() {
       for (const [name, { client, transport }] of connections) {
-        try { await client.close() } catch { /* ignore */ }
-        try { if ((transport as { close?: () => Promise<void> }).close) await (transport as { close: () => Promise<void> }).close() } catch { /* ignore */ }
+        try {
+          await client.close()
+        } catch {
+          /* ignore */
+        }
+        try {
+          if ((transport as { close?: () => Promise<void> }).close)
+            await (transport as { close: () => Promise<void> }).close()
+        } catch {
+          /* ignore */
+        }
         logger.info(`MCP server "${name}" shut down`)
       }
       connections.clear()
@@ -144,7 +160,9 @@ export function createMCPBridge(ctx: ServiceContext) {
       initialized = false
     },
 
-    isInitialized() { return initialized },
+    isInitialized() {
+      return initialized
+    },
   }
 }
 
