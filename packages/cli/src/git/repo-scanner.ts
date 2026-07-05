@@ -5,8 +5,8 @@
 import fs from 'fs'
 import path from 'path'
 import { glob } from 'glob'
-import { parseMarkdownContent } from '@agentflow/core/parser-core'
 import { RESERVED_DIRS } from '@agentflow/core/taxonomy'
+import { parseMarkdownFile } from '../parser'
 
 export const DEFAULT_MAX_DEPTH = 5
 export { RESERVED_DIRS }
@@ -34,13 +34,6 @@ interface ScanResult {
   workflows: WorkflowEntry[]
   stats: { totalFiles: number, totalWorkflows: number, totalResources: number, scanDurationMs: number }
   warnings: { path: string, message: string, severity: string }[]
-}
-
-function parseMarkdownFile(filePath: string, mode: 'metadata-only' | 'full' = 'metadata-only') {
-  try {
-    const raw = fs.readFileSync(filePath, 'utf-8')
-    return parseMarkdownContent(raw, filePath, mode)
-  } catch { return null }
 }
 
 export function findAgentflowDirs(rootDir: string, maxDepth: number): string[] {

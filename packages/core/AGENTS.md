@@ -1,0 +1,24 @@
+# packages/core — Parser, Resolver, Validator
+
+Browser-safe TypeScript, **zero Node.js APIs**. Consumed by both `packages/cli` (Node) and
+`studio` (browser) — this is the one place shared logic must live. See root `AGENTS.md` for
+repo-wide rules; `docs/FEATURE-MAP.md` for what's already built here.
+
+## Files
+
+| File | What |
+|---|---|
+| `src/parser-core.ts` | Ref extraction (`{{...}}` DSL), graph building (`parseFromFiles`), ref resolution (`resolveRef`), identity assembly (`assembleIdentity`) |
+| `src/ref-paths.ts` | Resolves `{{...}}` refs to plain relative file paths for export (`resolveRefsToPaths`) |
+| `src/validator/` | `index.ts` composes `schema.ts` + `structure.ts` + `variables.ts` into `validate()` |
+| `src/taxonomy.ts` | Canonical directory ↔ category ↔ resource-type mappings — single source of truth |
+| `src/schemas/` | Frontmatter validation schemas per resource type |
+| `src/services/` | `event-hook-engine.ts`, `validation-service.ts` — thin wrappers for consumers |
+
+## Rules specific to this directory
+
+- **No `fs`, no `path` module, no Node globals.** If you need file I/O, that belongs in
+  `packages/cli`, which imports from here.
+- Anything two or more of {core, cli, studio} need must live here, not be copy-pasted.
+- Ref/graph model changes ripple everywhere — update `docs/FEATURE-MAP.md` and check
+  `packages/cli/src/parser.ts`'s re-export block still matches.
