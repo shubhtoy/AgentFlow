@@ -13,8 +13,8 @@
     "dev:all": "npm run dev"
   },
   "dependencies": {
-    "@agentflow/cli": "workspace:*",
-    "@agentflow/core": "workspace:*",
+    "@agentflow/cli": "*",
+    "@agentflow/core": "*",
     "@auth/core": "^0.41.2",
     "@copilotkit/react-core": "^1.56.2",
     "@copilotkit/react-ui": "^1.56.2",
