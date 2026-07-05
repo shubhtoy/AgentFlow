@@ -1,6 +1,6 @@
 # AgentFlow — Master Plan
 
-**Status:** Planning locked · **Board:** https://github.com/users/shubhtoy/projects/4 · **Repo:** shubhtoy/AgentFlowTest
+**Status:** Planning locked · **Board:** https://github.com/users/shubhtoy/projects/4 · **Repo:** shubhtoy/AgentFlow
 **Execution:** does not start until explicitly requested.
 
 ---

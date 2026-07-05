@@ -44,7 +44,7 @@ describe('InstructionManager', () => {
 
     // Skipped: 'inclusion' (auto/manual) was never implemented in instruction-manager.ts
     // (add/parseFile/getInstructionContext all lack the field). Needs a design decision
-    // before implementing, not a quick patch. Tracked: github.com/shubhtoy/AgentFlowTest#35
+    // before implementing, not a quick patch. Tracked: github.com/shubhtoy/AgentFlow#35
     it.skip('loads .md files and parses frontmatter', () => {
       writeInstructionFile('code-style', { inclusion: 'auto', description: 'Style guide' }, '# Code Style\nUse single quotes.')
       writeInstructionFile('security', { inclusion: 'manual', description: 'Security rules', tags: ['sec'] }, '# Security')
@@ -62,7 +62,7 @@ describe('InstructionManager', () => {
       expect(security.tags).toEqual(['sec'])
     })
 
-    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlowTest#35
+    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlow#35
     it.skip('defaults inclusion to manual when missing', () => {
       writeInstructionFile('bare', {}, '# Bare doc')
       mgr.loadAll()
@@ -78,7 +78,7 @@ describe('InstructionManager', () => {
       mgr.loadAll()
     })
 
-    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlowTest#35
+    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlow#35
     it.skip('returns only auto-included docs when requestedNames is null', () => {
       const ctx = mgr.getInstructionContext(null)
       expect(ctx).toContain('<instruction name="auto-doc">')
@@ -87,7 +87,7 @@ describe('InstructionManager', () => {
       expect(ctx).not.toContain('manual-doc')
     })
 
-    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlowTest#35
+    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlow#35
     it.skip('returns auto + explicitly requested docs', () => {
       const ctx = mgr.getInstructionContext(['manual-doc'])
       expect(ctx).toContain('<instruction name="auto-doc">')
@@ -103,7 +103,7 @@ describe('InstructionManager', () => {
   })
 
   describe('add()', () => {
-    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlowTest#35
+    // Skipped: see tracking note above. github.com/shubhtoy/AgentFlow#35
     it.skip('creates a new instruction file with frontmatter', () => {
       mgr.add('new-doc', '# New Doc\nContent here.', {
         inclusion: 'auto',

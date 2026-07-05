@@ -57,7 +57,7 @@ third option.
 `studio/public/dashboard.html` — quick-glance test/lint/typecheck health, board epic status,
 recent commits, and durable-doc sizes. Not a PM tool, just an overview. Deployed to GitHub
 Pages (`.github/workflows/dashboard.yml`) on every push to `main` — live at
-https://shubhtoy.github.io/AgentFlowTest/. The workflow regenerates the file itself in CI (using
+https://shubhtoy.github.io/AgentFlow/. The workflow regenerates the file itself in CI (using
 the run's own `GITHUB_TOKEN` for the board section), so the committed file is a local-dev
 convenience, not the deploy source of truth. `npm run docs:check` and `npm run dashboard` both
 also run in `.husky/pre-push`; the dashboard step warns (doesn't auto-commit — see git-safety)

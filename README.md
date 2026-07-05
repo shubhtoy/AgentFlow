@@ -80,7 +80,7 @@ Copy `.env.example` to `studio/.env.local` and fill in your API keys. The studio
 ## Dashboard
 
 A living status snapshot (tests/lint/typecheck health, board progress, recent commits) is
-deployed to GitHub Pages on every push to `main`: **https://shubhtoy.github.io/AgentFlowTest/**.
+deployed to GitHub Pages on every push to `main`: **https://shubhtoy.github.io/AgentFlow/**.
 Not a project-management tool — just a quick-glance overview. Source: `scripts/generate-dashboard.js`.
 
 ## License

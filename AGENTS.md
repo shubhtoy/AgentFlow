@@ -46,7 +46,7 @@ Full architecture + roadmap: `docs/planning/MASTER-PLAN.md`.
   `.gen.js` build artifacts, MCP-service assertion drift, a `relativePath` contract ambiguity
   in `parseMarkdownFile`). Lint is clean project-wide — keep it that way.
 - **Git safety**: never commit without being explicitly asked. Stage specific files, not `git add .`.
-- **Project board**: github.com/users/shubhtoy/projects/4 (repo: `shubhtoy/AgentFlowTest`). Epics
+- **Project board**: github.com/users/shubhtoy/projects/4 (repo: `shubhtoy/AgentFlow`). Epics
   are `Setup: <subsystem>` issues with sub-issues + story points. Update status as work lands.
 
 ## Build & test

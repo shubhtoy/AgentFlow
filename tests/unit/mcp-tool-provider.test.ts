@@ -454,7 +454,7 @@ describe('buildToolEntry', () => {
 
   // Skipped: buildToolEntry doesn't derive input_schema from builtin_mapping; builtins get
   // an empty schema unless params are manually redeclared. Design question on intrinsic param
-  // schemas. Tracked: github.com/shubhtoy/AgentFlowTest#35
+  // schemas. Tracked: github.com/shubhtoy/AgentFlow#35
   it.skip('builds a builtin tool entry with schema and executor', () => {
     const toolDef = {
       frontmatter: {
@@ -473,7 +473,7 @@ describe('buildToolEntry', () => {
     expect(entry.execute).toBeTypeOf('function');
   });
 
-  // Skipped: see tracking note above. github.com/shubhtoy/AgentFlowTest#35
+  // Skipped: see tracking note above. github.com/shubhtoy/AgentFlow#35
   it.skip('builds a script tool entry', () => {
     const toolDef = {
       frontmatter: {
@@ -582,7 +582,7 @@ describe('NodeToolProvider', () => {
   // Skipped: needs an examples/.agentflow fixture directory that doesn't exist, AND
   // getToolsForNode has no context.inputs frontmatter handling (only reads capabilities/tools
   // mention refs) — confirmed by reading source, not fixable by adding a fixture alone.
-  // Tracked: github.com/shubhtoy/AgentFlowTest#35
+  // Tracked: github.com/shubhtoy/AgentFlow#35
   describe.skip('getToolsForNode', () => {
     let graph;
 

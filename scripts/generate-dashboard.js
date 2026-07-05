@@ -19,10 +19,10 @@ const path = require('path')
 
 const ROOT = path.join(__dirname, '..')
 const OUT = path.join(ROOT, 'studio', 'public', 'dashboard.html')
-const REPO = 'shubhtoy/AgentFlowTest'
+const REPO = 'shubhtoy/AgentFlow'
 const REPO_URL = `https://github.com/${REPO}`
 const BOARD_URL = 'https://github.com/users/shubhtoy/projects/4'
-const PAGES_URL = 'https://shubhtoy.github.io/AgentFlowTest/'
+const PAGES_URL = 'https://shubhtoy.github.io/AgentFlow/'
 
 function sh(cmd, opts = {}) {
   try {
