@@ -58,5 +58,5 @@ already covered there.
 - Coding standards: `docs/CODING-STANDARDS.md`.
 - `npm run lint` is 0 errors/0 warnings project-wide — keep it that way.
 - `npm run dashboard` — static living-status snapshot at `studio/public/dashboard.html`,
-  deployed via the existing studio Vercel pipeline. Runs on every `git push` (`.husky/pre-push`).
+  deployed to GitHub Pages (https://shubhtoy.github.io/AgentFlowTest/) on every push to `main`.
 - `npm ci` requires plain npm workspace syntax (`"*"`, not `"workspace:*"` — that's pnpm/yarn).

@@ -70,14 +70,18 @@ tests/                # Unit, integration, property tests (vitest)
 | `npm test` | Run all tests (vitest) |
 | `npm run lint` | Lint packages |
 | `npm run format` | Format with prettier |
+| `npm run dashboard` | Regenerate the status dashboard (`studio/public/dashboard.html`) |
+| `npm run docs:check` | Advisory check for durable docs worth consolidating |
 
 ## Environment Variables
 
 Copy `.env.example` to `studio/.env.local` and fill in your API keys. The studio will start without them, but AI features (copilot, chat) require at least one LLM provider key.
 
-## Deployment
+## Dashboard
 
-The studio deploys to Vercel. Set the Root Directory to `studio/` in Vercel project settings — the `installCommand` in `studio/vercel.json` handles the monorepo install automatically.
+A living status snapshot (tests/lint/typecheck health, board progress, recent commits) is
+deployed to GitHub Pages on every push to `main`: **https://shubhtoy.github.io/AgentFlowTest/**.
+Not a project-management tool — just a quick-glance overview. Source: `scripts/generate-dashboard.js`.
 
 ## License
 

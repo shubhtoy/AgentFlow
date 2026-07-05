@@ -55,11 +55,13 @@ third option.
 
 `npm run dashboard` (`scripts/generate-dashboard.js`) writes a static snapshot to
 `studio/public/dashboard.html` — quick-glance test/lint/typecheck health, board epic status,
-recent commits, and durable-doc sizes. Not a PM tool, just an overview. It's a static file
-committed to the repo (not fetched live by the deployed page — no credentials exposed to
-visitors), served automatically by the existing studio Vercel deploy. `npm run docs:check` and
-`npm run dashboard` both run in `.husky/pre-push`; the dashboard step warns (doesn't
-auto-commit — see git-safety) if the snapshot changed and needs staging before the push.
+recent commits, and durable-doc sizes. Not a PM tool, just an overview. Deployed to GitHub
+Pages (`.github/workflows/dashboard.yml`) on every push to `main` — live at
+https://shubhtoy.github.io/AgentFlowTest/. The workflow regenerates the file itself in CI (using
+the run's own `GITHUB_TOKEN` for the board section), so the committed file is a local-dev
+convenience, not the deploy source of truth. `npm run docs:check` and `npm run dashboard` both
+also run in `.husky/pre-push`; the dashboard step warns (doesn't auto-commit — see git-safety)
+if the local snapshot changed and needs staging before the push.
 
 ## Commits & PRs
 
