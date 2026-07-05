@@ -28,8 +28,9 @@ Full architecture + roadmap: `docs/planning/MASTER-PLAN.md`.
 ## Standing rules for this repo
 
 - **Coding standards**: `docs/CODING-STANDARDS.md` — lint/TS conventions, DRY rules, how to
-  handle a lint rule that doesn't fit a file. Read it before writing new code, not after
-  `npm run lint` turns up red — lint must stay at 0 errors/0 warnings.
+  handle a lint rule that doesn't fit a file, and how to capture a durable correction without
+  bloating these docs (see "Learning from corrections" in that file). Read it before writing
+  new code, not after `npm run lint` turns up red — lint must stay at 0 errors/0 warnings.
 - **DRY across `core`/`cli`**: `packages/core` is browser-safe and consumed by both the CLI and
   the studio (browser). Never duplicate parsing/resolution/validation logic into `cli` or
   `studio` — add it once in `core` and import it. If you find a private copy of core logic

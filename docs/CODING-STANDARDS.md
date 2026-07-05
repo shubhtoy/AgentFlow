@@ -56,3 +56,38 @@ third option.
 - Never commit without being explicitly asked. Stage specific files, not `git add .`.
 - One logical change per commit (e.g. "core engine change" separate from "lint config fix").
 - Never commit generated/build artifacts (`.next/`, `.source/`, `dist/`, `tsconfig.tsbuildinfo`).
+
+## Learning from corrections (keep docs improving without bloat)
+
+When a human correction reveals something these docs got wrong or missed, don't just fix the
+code and move on — decide whether it's worth capturing so the next session doesn't repeat it.
+This follows the standard "feedback loop, not perfect prompts" pattern (Warp's internal agent
+work is the clearest public writeup): **principles beat rules**. A pile of one-off exceptions
+("never do X in file Y because it broke on Tuesday") is how docs balloon into noise nobody
+reads. A short, transferable principle is worth keeping; a one-off fact usually isn't.
+
+Procedure, each time a correction lands:
+1. **Would this recur?** If it's genuinely one-off (a typo, a fact about this one call), just
+   fix it and stop — don't write anything down.
+2. **Zoom out** — what's the general pattern behind the correction, not just this instance?
+3. **Check for overlap first.** Read `.kiro/steering/decisions.md` and
+   `.kiro/steering/user-corrections.md` before adding anything. If a new correction sharpens,
+   contradicts, or is a special case of something already there, **edit that entry in place**
+   — merge or replace it, don't append a near-duplicate.
+4. **Write a principle, not a transcript.** Not "user said X in turn 47" — the durable rule
+   behind it, one or two lines. If it belongs in a specific directory's own `AGENTS.md` or in
+   `docs/CODING-STANDARDS.md` instead (i.e. it's really a coding/architecture standard, not a
+   one-off workflow preference), put it there instead and don't duplicate it into steering.
+5. **Where it goes:**
+   - `.kiro/steering/decisions.md` — durable architectural/product decisions ("we chose X over
+     Y because Z") that would otherwise get re-litigated or re-derived next session.
+   - `.kiro/steering/user-corrections.md` — durable behavioral corrections about how to work in
+     this repo specifically (communication style, process preferences) — not project facts.
+   - Anything that's actually a coding standard belongs in `docs/CODING-STANDARDS.md`; anything
+     that's a directory-specific implementation fact belongs in that directory's `AGENTS.md`.
+6. **Never silently rewrite in bulk.** Add/edit one entry at a time, in the same commit as the
+   work that prompted it, so it's reviewable in the diff — same reasoning as never auto-merging
+   agent-authored rule changes without a human seeing the diff first.
+7. **Prune, don't just accumulate.** If a steering file is growing long, that's a signal to
+   consolidate overlapping entries into a sharper principle, not to keep appending. A short file
+   of real principles beats a long file of accumulated exceptions.
