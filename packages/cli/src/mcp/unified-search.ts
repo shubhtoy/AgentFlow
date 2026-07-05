@@ -2,7 +2,7 @@
  * Unified Search.
  */
 
-import registryClient from '@agentflow/core/mcp/registry-client'
+import { searchRegistry } from '@agentflow/core/mcp/registry-client'
 import { search } from '../library'
 
 interface LibraryRegistry {
@@ -42,7 +42,7 @@ export async function unifiedSearch(
 
   if (!opts.localOnly) {
     try {
-      const result = await registryClient.searchRegistry(query, { limit: opts.mcpLimit || 10 })
+      const result = await searchRegistry(query, { limit: opts.mcpLimit || 10 })
       results.push(
         ...result.entries.map(
           (r: { name: string; description?: string; packages?: unknown[]; remotes?: unknown[] }) => ({

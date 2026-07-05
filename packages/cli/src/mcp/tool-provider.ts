@@ -129,8 +129,8 @@ export class McpToolManager {
     this._deps = { ...defaultMcpDeps(), ...opts._deps }
   }
 
-  async initialize(mcpConfig: { servers: Record<string, Record<string, unknown>> }) {
-    for (const [name, serverEntry] of Object.entries(mcpConfig.servers || {})) {
+  async initialize(mcpConfig: { servers: Record<string, Record<string, unknown>> } | undefined) {
+    for (const [name, serverEntry] of Object.entries(mcpConfig?.servers || {})) {
       try {
         const { client, tools } = await this._connectServer(name, serverEntry)
         this.servers.set(name, { client, tools })

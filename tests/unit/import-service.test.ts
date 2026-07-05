@@ -137,15 +137,15 @@ describe('ImportService', () => {
 
   describe('importFromLibrary', () => {
     it('imports a single-file library item (skill)', () => {
-      const result = svc.importFromLibrary('skill', 'code-search', rootDir)
+      const result = svc.importFromLibrary('skill', 'code-review', rootDir)
       expect(result.success).toBe(true)
       expect(result.data.filesWritten.length).toBeGreaterThan(0)
     })
 
     it('imports a workflow directory', () => {
-      const result = svc.importFromLibrary('workflow', 'code-review', rootDir)
+      const result = svc.importFromLibrary('workflow', 'build-feature', rootDir)
       expect(result.success).toBe(true)
-      expect(fs.existsSync(path.join(rootDir, 'code-review', 'AGENTS.md'))).toBe(true)
+      expect(fs.existsSync(path.join(rootDir, 'build-feature', 'AGENTS.md'))).toBe(true)
     })
 
     it('fails on non-existent item', () => {

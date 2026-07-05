@@ -711,9 +711,12 @@ describe('resolveEnvTokens', () => {
   it('passes through non-string values unchanged', () => {
     const result = resolveEnvTokens({ NUM: 42, BOOL: true, OBJ: { nested: true } });
 
-    expect(result.NUM).toBe(42);
-    expect(result.BOOL).toBe(true);
-    expect(result.OBJ).toEqual({ nested: true });
+    // resolveEnvTokens' declared return type is Record<string, string> — its output
+    // feeds a child process's env, which only accepts string values. Non-string inputs
+    // are coerced with String(), not passed through with their original type.
+    expect(result.NUM).toBe('42');
+    expect(result.BOOL).toBe('true');
+    expect(result.OBJ).toBe(String({ nested: true }));
   });
 
   it('does not resolve partial token patterns', () => {

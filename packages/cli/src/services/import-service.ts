@@ -172,7 +172,9 @@ export function createImportService(ctx: ServiceContext) {
 
     importFromLibrary(type: string, name: string, targetRoot?: string) {
       try {
-        const libraryDir = path.join(__dirname, '..', '..', 'library')
+        // CWD-relative, matching the convention in library.ts / template-service.ts — not
+        // __dirname math, which pointed at packages/cli/library (two levels too shallow).
+        const libraryDir = path.resolve('library')
         const registryPath = path.join(libraryDir, 'registry.json')
         if (!fs.existsSync(registryPath)) return fail(ErrorCode.FILE_NOT_FOUND, 'Library registry not found', 404)
 
