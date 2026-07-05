@@ -21,8 +21,9 @@ Full architecture + roadmap: `docs/planning/MASTER-PLAN.md`.
 | Unit / integration / property / generator tests | `tests/` | — |
 | Planning docs, master plan, session handoffs | `docs/planning/` | — |
 
-**Feature map** (cross-package pointers + tracked gaps — per-directory `AGENTS.md` is the
-source of truth for what lives where, read those first): `docs/FEATURE-MAP.md`.
+**Feature map** (every feature that exists, one line each, for orientation — per-directory
+`AGENTS.md` is where you go for implementation detail on any one of them):
+`docs/FEATURE-MAP.md`. Update it in the same commit whenever you ship a new capability.
 
 ## Standing rules for this repo
 
