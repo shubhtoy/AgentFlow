@@ -83,6 +83,13 @@
 
   .footer { color: var(--n-300); font-size: 0.75rem; font-family: var(--font-mono); margin-top: var(--sp-5); line-height: 1.7; }
 
+  .live-badge {
+    display: inline-block; font-size: 0.625rem; font-weight: 500; text-transform: none;
+    letter-spacing: normal; color: var(--primary); border: 1px solid var(--primary);
+    border-radius: 999px; padding: 1px 6px; margin-left: var(--sp-2); vertical-align: middle;
+  }
+  .stale-note { font-size: 0.6875rem; font-style: italic; margin: var(--sp-2) 0 0; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
@@ -92,9 +99,9 @@
 <main>
   <h1>AgentFlow</h1>
   <p class="subtitle">
-    generated <span class="mono">2026-07-05T23:28:07.975Z</span> &middot;
-    <a href="https://github.com/shubhtoy/AgentFlow/commit/df7f165">main@df7f165</a> <span class="badge-uncommitted">uncommitted</span>
-    &middot; 65 commits total
+    generated <span class="mono">2026-07-05T23:33:36.012Z</span> &middot;
+    <a href="https://github.com/shubhtoy/AgentFlow/commit/23362f3">main@23362f3</a> <span class="badge-uncommitted">uncommitted</span>
+    &middot; 66 commits total
   </p>
 
   <div class="stat-grid" role="group" aria-label="Build health summary">
@@ -117,7 +124,7 @@
     </div>
     <div class="stat">
       <div class="stat-label">Open issues</div>
-      <div class="stat-value mono"><a href="https://github.com/shubhtoy/AgentFlow/issues">31</a></div>
+      <div class="stat-value mono" id="issues-count">&hellip;</div>
     </div>
     <div class="stat">
       <div class="stat-label">Code size</div>
@@ -190,66 +197,29 @@
           </tr>
         </tbody>
       </table>
+      <p class="meta-line stale-note">snapshot at build time &mdash; not live</p>
     </section>
     
     <section class="card" aria-labelledby="ci-heading">
-      <h2 id="ci-heading">CI runs</h2>
+      <h2 id="ci-heading">CI runs <span class="live-badge">live</span></h2>
       <table>
         <caption class="sr-only">Recent CI workflow runs with status, commit, and time</caption>
         <thead><tr><th scope="col">status</th><th scope="col">sha</th><th scope="col" class="num">when</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><a href="https://github.com/shubhtoy/AgentFlow/actions/runs/28758508952">→</a> <span class="badge badge-bad"><span class="dot"></span>failure</span></td>
-            <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/df7f165">df7f165</a></td>
-            <td class="num muted">3m ago</td>
-          </tr>
-<tr>
-            <td><a href="https://github.com/shubhtoy/AgentFlow/actions/runs/28758387589">→</a> <span class="badge badge-bad"><span class="dot"></span>failure</span></td>
-            <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/8c06c53">8c06c53</a></td>
-            <td class="num muted">8m ago</td>
-          </tr>
-<tr>
-            <td><a href="https://github.com/shubhtoy/AgentFlow/actions/runs/28758147069">→</a> <span class="badge badge-bad"><span class="dot"></span>failure</span></td>
-            <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/cd81bb7">cd81bb7</a></td>
-            <td class="num muted">17m ago</td>
-          </tr>
-<tr>
-            <td><a href="https://github.com/shubhtoy/AgentFlow/actions/runs/28757969891">→</a> <span class="badge badge-bad"><span class="dot"></span>failure</span></td>
-            <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/70596d6">70596d6</a></td>
-            <td class="num muted">24m ago</td>
-          </tr>
-<tr>
-            <td><a href="https://github.com/shubhtoy/AgentFlow/actions/runs/28757957482">→</a> <span class="badge badge-bad"><span class="dot"></span>failure</span></td>
-            <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/b2e1450">b2e1450</a></td>
-            <td class="num muted">25m ago</td>
-          </tr>
-        </tbody>
+        <tbody id="ci-rows"><tr><td colspan="3" class="muted">loading&hellip;</td></tr></tbody>
       </table>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: <a href="https://github.com/shubhtoy/AgentFlow/actions">actions</a>.</p></noscript>
     </section>
   </div>
 
   <div class="section-grid">
     <section class="card" aria-labelledby="commits-heading">
-      <h2 id="commits-heading">Recent commits</h2>
+      <h2 id="commits-heading">Recent commits <span class="live-badge">live</span></h2>
       <table>
         <caption class="sr-only">Last 15 commits with hash, subject, and relative time</caption>
         <thead><tr><th scope="col">sha</th><th scope="col">subject</th><th scope="col" class="num">when</th></tr></thead>
-        <tbody><tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/df7f16570bd28ccba095779eadb06879d5371ce7">df7f165</a></td><td>feat: expand dashboard with CI runs, code size, issues, and links</td><td class="num muted">3 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/8c06c53f1d3b2154711e64b1455d75c5566e2374">8c06c53</a></td><td>style: redesign dashboard per frontend-design skill (technical, monospace, accessible)</td><td class="num muted">8 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/cd81bb768a5bbadf47d9a3284b52c10017fd9791">cd81bb7</a></td><td>fix: pin public npm registry, purge internal CodeArtifact lockfile URLs</td><td class="num muted">18 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/70596d67b730d878da3683797433820a144a4400">70596d6</a></td><td>docs: point README/standards at GitHub Pages dashboard</td><td class="num muted">24 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/b2e1450ff5187cdd9df59ff12f9d7acb70b80fe6">b2e1450</a></td><td>feat: replace Vercel studio deploy with GitHub Pages dashboard</td><td class="num muted">25 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/af2e0f5711e3e167bef9099b7462744fc08bec9e">af2e0f5</a></td><td>chore: refresh dashboard snapshot</td><td class="num muted">33 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/c75e8b7210f6e2b4faf61d25d2f2367f79fb465b">c75e8b7</a></td><td>feat: make pre-push mandatory, add living status dashboard</td><td class="num muted">33 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/793bbe0bc8cb28479f2d097d75d88b6614775c67">793bbe0</a></td><td>test: skip 15 tests needing design decisions, tracked in #35</td><td class="num muted">33 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/ea09c22c9993e6c5386807a262e075ce96c069e5">ea09c22</a></td><td>fix: guard undefined mcpConfig, use named registryClient import, fix library path resolution</td><td class="num muted">33 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/2d2cd79d5edc4aaea354797689d52a8ea5e7b8b7">2d2cd79</a></td><td>fix: dedupe conditional-edge refs by span, strip output. prefix, export parseRef</td><td class="num muted">33 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/443a2d086feb22cc57267465e38a2b6c5cd2a5f2">443a2d0</a></td><td>fix: correct .gen.js require() paths to .gen.ts</td><td class="num muted">33 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/95632f9e95067bb73fba929df910e2725d40ac3d">95632f9</a></td><td>chore: run tests in pre-push alongside docs-check</td><td class="num muted">63 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/4a096b3f195ee46457b1155dd45f4d65d17c4371">4a096b3</a></td><td>fix: move durable-memory docs out of .kiro; add prune-check + pre-push hook</td><td class="num muted">63 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/e559897a67fc726078d40df57ff58084eb02e527">e559897</a></td><td>docs: add learning-from-corrections procedure; populate steering files</td><td class="num muted">72 minutes ago</td></tr>
-<tr><td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/commit/5be94cbbdba72f5716f1e9174065a4a244025f05">5be94cb</a></td><td>docs: rewrite FEATURE-MAP.md as a real feature inventory</td><td class="num muted">74 minutes ago</td></tr></tbody>
+        <tbody id="commit-rows"><tr><td colspan="3" class="muted">loading&hellip;</td></tr></tbody>
       </table>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: <a href="https://github.com/shubhtoy/AgentFlow/commits/main">commit history</a>.</p></noscript>
     </section>
 
     <section class="card" aria-labelledby="codesize-heading">
@@ -267,8 +237,9 @@
 
   
     <section class="card" aria-labelledby="issues-heading">
-      <h2 id="issues-heading">Open issues</h2>
-      <p class="meta-line"><a href="https://github.com/shubhtoy/AgentFlow/issues">31 open</a> &middot; <a href="https://github.com/shubhtoy/AgentFlow/issues/35">#35 Resolve 15 skipped tests (instruction inclusion, NodeToolProvider fixture, buildToolEntry schema, convertParameters)</a></p>
+      <h2 id="issues-heading">Open issues <span class="live-badge">live</span></h2>
+      <p class="meta-line" id="issues-summary">loading&hellip;</p>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: <a href="https://github.com/shubhtoy/AgentFlow/issues">issues</a>.</p></noscript>
     </section>
   
     <section class="card" aria-labelledby="skipped-heading">
@@ -319,5 +290,92 @@
     <a href="https://github.com/shubhtoy/AgentFlow/actions">actions</a> &middot; <a href="https://shubhtoy.github.io/AgentFlow/">this page</a>
   </p>
 </main>
+<script>
+(function () {
+  'use strict';
+  var API = 'https://api.github.com/repos/shubhtoy/AgentFlow';
+  var REPO_URL = 'https://github.com/shubhtoy/AgentFlow';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function relTime(iso) {
+    var mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.round(hrs / 24) + 'd ago';
+  }
+
+  function ciBadge(conclusion) {
+    if (conclusion === 'success') return '<span class="badge badge-ok"><span class="dot"></span>pass</span>';
+    if (conclusion === 'in_progress' || conclusion === 'queued')
+      return '<span class="badge badge-progress"><span class="dot"></span>running</span>';
+    return '<span class="badge badge-bad"><span class="dot"></span>' + esc(conclusion) + '</span>';
+  }
+
+  function fail(el, msg) {
+    if (el) el.innerHTML = '<tr><td colspan="3" class="muted">' + esc(msg) + '</td></tr>';
+  }
+
+  // Recent commits
+  fetch(API + '/commits?per_page=15')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (commits) {
+      var rows = commits.map(function (c) {
+        var sha = c.sha.slice(0, 7);
+        var subject = (c.commit.message || '').split('\n')[0];
+        var when = relTime(c.commit.author.date);
+        return '<tr><td class="mono"><a href="' + REPO_URL + '/commit/' + c.sha + '">' + sha + '</a></td>' +
+          '<td>' + esc(subject) + '</td><td class="num muted">' + esc(when) + '</td></tr>';
+      });
+      document.getElementById('commit-rows').innerHTML = rows.join('') || '<tr><td colspan="3" class="muted">no commits found</td></tr>';
+    })
+    .catch(function (err) { fail(document.getElementById('commit-rows'), 'failed to load: ' + err.message); });
+
+  // Open issues + skipped-test tracking
+  fetch(API + '/issues?state=open&per_page=100')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (issues) {
+      var real = issues.filter(function (i) { return !i.pull_request; });
+      var tracked = real.filter(function (i) {
+        return (i.labels || []).some(function (l) { return (l.name || l) === 'skipped-test'; });
+      });
+      var html = '<a href="' + REPO_URL + '/issues">' + real.length + ' open</a>';
+      if (tracked.length) {
+        html += ' &middot; ' + tracked.map(function (i) {
+          return '<a href="' + REPO_URL + '/issues/' + i.number + '">#' + i.number + ' ' + esc(i.title) + '</a>';
+        }).join(', ');
+      }
+      document.getElementById('issues-summary').innerHTML = html;
+      document.getElementById('issues-count').innerHTML = '<a href="' + REPO_URL + '/issues">' + real.length + '</a>';
+    })
+    .catch(function (err) {
+      var el = document.getElementById('issues-summary');
+      if (el) el.textContent = 'failed to load: ' + err.message;
+      var count = document.getElementById('issues-count');
+      if (count) count.textContent = 'n/a';
+    });
+
+  // CI runs
+  fetch(API + '/actions/workflows/ci.yml/runs?per_page=5')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) {
+      var runs = data.workflow_runs || [];
+      var rows = runs.map(function (r) {
+        var sha = (r.head_sha || '').slice(0, 7);
+        return '<tr><td><a href="' + r.html_url + '">→</a> ' + ciBadge(r.conclusion || r.status) + '</td>' +
+          '<td class="mono"><a href="' + REPO_URL + '/commit/' + r.head_sha + '">' + sha + '</a></td>' +
+          '<td class="num muted">' + esc(relTime(r.created_at)) + '</td></tr>';
+      });
+      document.getElementById('ci-rows').innerHTML = rows.join('') || '<tr><td colspan="3" class="muted">no runs found</td></tr>';
+    })
+    .catch(function (err) { fail(document.getElementById('ci-rows'), 'failed to load: ' + err.message); });
+})();
+</script>
 </body>
 </html>

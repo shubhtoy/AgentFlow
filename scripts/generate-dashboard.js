@@ -1,17 +1,24 @@
 #!/usr/bin/env node
 /**
- * Generates studio/public/dashboard.html — a living, static snapshot of project state.
+ * Generates studio/public/dashboard.html — a living status snapshot of project state.
  *
- * Not a project-management tool: a quick-glance overview (test/lint/build health, recent
- * commits, epic/task progress, code size, CI status) so you can see where things stand without
- * digging through the board or running commands yourself. Deployed via GitHub Pages
- * (.github/workflows/dashboard.yml) on every push to main.
+ * Not a project-management tool: a quick-glance overview so you can see where things stand
+ * without digging through the board or running commands yourself.
  *
- * Run manually (`npm run dashboard`) or wire into CI/pre-push. Requires `gh` auth for the
- * board/issues/CI sections — each falls back gracefully (omits itself) if `gh` isn't available,
- * so it never blocks on a missing credential. All data is a snapshot as of generation time, not
- * fetched live by the deployed page (keeps the page a static file, no exposed credentials, no
- * runtime dependency on GitHub auth from a visitor's browser).
+ * Hybrid live/static, chosen per section based on what's actually possible:
+ *   - Commits, open issues, CI runs: rendered by client-side JS on page load, calling GitHub's
+ *     public REST API directly (api.github.com) — no auth needed since the repo is public, so
+ *     these are always current, not a build-time snapshot. No server, no token, nothing to keep
+ *     fresh on our end.
+ *   - Project board: server-baked at build time. The GitHub Projects (v2) API requires auth
+ *     even for a public repo's board, so this can't be fetched from a visitor's browser without
+ *     exposing a credential — stays a snapshot, regenerated on every push.
+ *   - Tests/lint/typecheck/code-size: server-baked at build time. These require actually
+ *     running the code (vitest, eslint, tsc) — there is no API to "ask" for a live test result;
+ *     something has to execute the suite once and record what happened.
+ * Deployed via GitHub Pages (.github/workflows/dashboard.yml) on every push to main. Run
+ * manually (`npm run dashboard`) for a local preview; the deploy doesn't depend on this being
+ * run by hand.
  */
 const { execSync } = require('child_process')
 const fs = require('fs')
@@ -47,17 +54,9 @@ function link(url, text) {
 function getGitInfo() {
   const branch = sh('git rev-parse --abbrev-ref HEAD') || 'unknown'
   const sha = sh('git rev-parse --short HEAD') || 'unknown'
-  const log = sh("git log -15 --pretty=format:'%h|||%H|||%s|||%ar|||%an'") || ''
-  const commits = log
-    .split('\n')
-    .filter(Boolean)
-    .map(line => {
-      const [hash, fullHash, subject, when, author] = line.split('|||')
-      return { hash, fullHash, subject, when, author }
-    })
   const dirty = sh('git status --porcelain') || ''
   const totalCommits = sh('git rev-list --count HEAD') || '?'
-  return { branch, sha, commits, clean: dirty.length === 0, totalCommits }
+  return { branch, sha, clean: dirty.length === 0, totalCommits }
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────
@@ -115,7 +114,7 @@ function getCodeSizeInfo() {
   return { rows, total }
 }
 
-// ── GitHub: board, issues, CI (optional — requires gh auth) ─────────────
+// ── GitHub: project board (requires gh auth — Projects v2 API has no public read) ──────
 
 function ghJson(cmd) {
   const raw = sh(cmd)
@@ -156,25 +155,6 @@ function getBoardInfo() {
   return { total: items.length, byStatus, epics, totalPoints, donePoints }
 }
 
-function getIssuesInfo() {
-  const data = ghJson(`gh issue list --repo ${REPO} --state open --limit 100 --json number,title,labels`)
-  if (!data) return null
-  const skippedTests = data.filter(i => (i.labels || []).some(l => l.name === 'skipped-test'))
-  return { openCount: data.length, skippedTests }
-}
-
-function getCiInfo() {
-  const data = ghJson(`gh run list --repo ${REPO} --workflow=ci.yml --limit 5 --json conclusion,status,url,headSha,createdAt,displayTitle`)
-  if (!data) return null
-  return data.map(r => ({
-    conclusion: r.conclusion || r.status,
-    url: r.url,
-    sha: (r.headSha || '').slice(0, 7),
-    createdAt: r.createdAt,
-    title: r.displayTitle,
-  }))
-}
-
 // ── Docs snapshot ──────────────────────────────────────────────────────
 
 function getDocsInfo() {
@@ -209,36 +189,11 @@ function epicStatusBadge(status) {
   return '<span class="badge badge-todo"><span class="dot"></span>Todo</span>'
 }
 
-function ciBadge(conclusion) {
-  if (conclusion === 'success') return '<span class="badge badge-ok"><span class="dot"></span>pass</span>'
-  if (conclusion === 'in_progress' || conclusion === 'queued')
-    return '<span class="badge badge-progress"><span class="dot"></span>running</span>'
-  return `<span class="badge badge-bad"><span class="dot"></span>${esc(conclusion)}</span>`
-}
-
-function relTime(iso) {
-  if (!iso) return ''
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const mins = Math.round(diffMs / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.round(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.round(hrs / 24)}d ago`
-}
-
 // ── Render ─────────────────────────────────────────────────────────────
 
 function render(data) {
-  const { git, tests, lint, typecheck, codeSize, board, issues, ci, docs } = data
+  const { git, tests, lint, typecheck, codeSize, board, docs } = data
   const generatedAt = new Date().toISOString()
-
-  const commitRows = git.commits
-    .map(c => {
-      const url = `${REPO_URL}/commit/${c.fullHash}`
-      return `<tr><td class="mono">${link(url, c.hash)}</td><td>${esc(c.subject)}</td><td class="num muted">${esc(c.when)}</td></tr>`
-    })
-    .join('\n')
 
   const boardSection = board
     ? `
@@ -266,6 +221,7 @@ function render(data) {
             .join('\n')}
         </tbody>
       </table>
+      <p class="meta-line stale-note">snapshot at build time &mdash; not live</p>
     </section>`
     : `
     <section class="card" aria-labelledby="board-heading">
@@ -273,41 +229,23 @@ function render(data) {
       <p class="meta-line">Not available in this build environment (needs <code>gh</code> auth) &mdash; regenerate locally with <code>npm run dashboard</code> to refresh this section. Live: ${link(BOARD_URL, 'project board')}.</p>
     </section>`
 
-  const ciSection = ci
-    ? `
+  const ciSection = `
     <section class="card" aria-labelledby="ci-heading">
-      <h2 id="ci-heading">CI runs</h2>
+      <h2 id="ci-heading">CI runs <span class="live-badge">live</span></h2>
       <table>
         <caption class="sr-only">Recent CI workflow runs with status, commit, and time</caption>
         <thead><tr><th scope="col">status</th><th scope="col">sha</th><th scope="col" class="num">when</th></tr></thead>
-        <tbody>
-          ${ci
-            .map(
-              r => `<tr>
-            <td>${link(r.url, '\u2192')} ${ciBadge(r.conclusion)}</td>
-            <td class="mono">${link(`${REPO_URL}/commit/${r.sha}`, r.sha)}</td>
-            <td class="num muted">${relTime(r.createdAt)}</td>
-          </tr>`,
-            )
-            .join('\n')}
-        </tbody>
+        <tbody id="ci-rows"><tr><td colspan="3" class="muted">loading&hellip;</td></tr></tbody>
       </table>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: ${link(`${REPO_URL}/actions`, 'actions')}.</p></noscript>
     </section>`
-    : ''
 
-  const issuesSection = issues
-    ? `
+  const issuesSection = `
     <section class="card" aria-labelledby="issues-heading">
-      <h2 id="issues-heading">Open issues</h2>
-      <p class="meta-line">${link(`${REPO_URL}/issues`, `${issues.openCount} open`)}${
-        issues.skippedTests.length
-          ? ` &middot; ${issues.skippedTests
-              .map(i => link(`${REPO_URL}/issues/${i.number}`, `#${i.number} ${i.title}`))
-              .join(', ')}`
-          : ''
-      }</p>
+      <h2 id="issues-heading">Open issues <span class="live-badge">live</span></h2>
+      <p class="meta-line" id="issues-summary">loading&hellip;</p>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: ${link(`${REPO_URL}/issues`, 'issues')}.</p></noscript>
     </section>`
-    : ''
 
   const codeSizeRows = codeSize.rows
     .map(r => `<tr><td>${esc(r.label)}</td><td class="num mono">${r.lines.toLocaleString()}</td></tr>`)
@@ -428,6 +366,13 @@ function render(data) {
 
   .footer { color: var(--n-300); font-size: 0.75rem; font-family: var(--font-mono); margin-top: var(--sp-5); line-height: 1.7; }
 
+  .live-badge {
+    display: inline-block; font-size: 0.625rem; font-weight: 500; text-transform: none;
+    letter-spacing: normal; color: var(--primary); border: 1px solid var(--primary);
+    border-radius: 999px; padding: 1px 6px; margin-left: var(--sp-2); vertical-align: middle;
+  }
+  .stale-note { font-size: 0.6875rem; font-style: italic; margin: var(--sp-2) 0 0; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
@@ -462,7 +407,7 @@ function render(data) {
     </div>
     <div class="stat">
       <div class="stat-label">Open issues</div>
-      <div class="stat-value mono">${issues ? link(`${REPO_URL}/issues`, String(issues.openCount)) : 'n/a'}</div>
+      <div class="stat-value mono" id="issues-count">&hellip;</div>
     </div>
     <div class="stat">
       <div class="stat-label">Code size</div>
@@ -478,12 +423,13 @@ function render(data) {
 
   <div class="section-grid">
     <section class="card" aria-labelledby="commits-heading">
-      <h2 id="commits-heading">Recent commits</h2>
+      <h2 id="commits-heading">Recent commits <span class="live-badge">live</span></h2>
       <table>
         <caption class="sr-only">Last 15 commits with hash, subject, and relative time</caption>
         <thead><tr><th scope="col">sha</th><th scope="col">subject</th><th scope="col" class="num">when</th></tr></thead>
-        <tbody>${commitRows}</tbody>
+        <tbody id="commit-rows"><tr><td colspan="3" class="muted">loading&hellip;</td></tr></tbody>
       </table>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: ${link(`${REPO_URL}/commits/main`, 'commit history')}.</p></noscript>
     </section>
 
     <section class="card" aria-labelledby="codesize-heading">
@@ -515,6 +461,93 @@ function render(data) {
     ${link(`${REPO_URL}/actions`, 'actions')} &middot; ${link(PAGES_URL, 'this page')}
   </p>
 </main>
+<script>
+(function () {
+  'use strict';
+  var API = 'https://api.github.com/repos/${REPO}';
+  var REPO_URL = '${REPO_URL}';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function relTime(iso) {
+    var mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.round(hrs / 24) + 'd ago';
+  }
+
+  function ciBadge(conclusion) {
+    if (conclusion === 'success') return '<span class="badge badge-ok"><span class="dot"></span>pass</span>';
+    if (conclusion === 'in_progress' || conclusion === 'queued')
+      return '<span class="badge badge-progress"><span class="dot"></span>running</span>';
+    return '<span class="badge badge-bad"><span class="dot"></span>' + esc(conclusion) + '</span>';
+  }
+
+  function fail(el, msg) {
+    if (el) el.innerHTML = '<tr><td colspan="3" class="muted">' + esc(msg) + '</td></tr>';
+  }
+
+  // Recent commits
+  fetch(API + '/commits?per_page=15')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (commits) {
+      var rows = commits.map(function (c) {
+        var sha = c.sha.slice(0, 7);
+        var subject = (c.commit.message || '').split('\\n')[0];
+        var when = relTime(c.commit.author.date);
+        return '<tr><td class="mono"><a href="' + REPO_URL + '/commit/' + c.sha + '">' + sha + '</a></td>' +
+          '<td>' + esc(subject) + '</td><td class="num muted">' + esc(when) + '</td></tr>';
+      });
+      document.getElementById('commit-rows').innerHTML = rows.join('') || '<tr><td colspan="3" class="muted">no commits found</td></tr>';
+    })
+    .catch(function (err) { fail(document.getElementById('commit-rows'), 'failed to load: ' + err.message); });
+
+  // Open issues + skipped-test tracking
+  fetch(API + '/issues?state=open&per_page=100')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (issues) {
+      var real = issues.filter(function (i) { return !i.pull_request; });
+      var tracked = real.filter(function (i) {
+        return (i.labels || []).some(function (l) { return (l.name || l) === 'skipped-test'; });
+      });
+      var html = '<a href="' + REPO_URL + '/issues">' + real.length + ' open</a>';
+      if (tracked.length) {
+        html += ' &middot; ' + tracked.map(function (i) {
+          return '<a href="' + REPO_URL + '/issues/' + i.number + '">#' + i.number + ' ' + esc(i.title) + '</a>';
+        }).join(', ');
+      }
+      document.getElementById('issues-summary').innerHTML = html;
+      document.getElementById('issues-count').innerHTML = '<a href="' + REPO_URL + '/issues">' + real.length + '</a>';
+    })
+    .catch(function (err) {
+      var el = document.getElementById('issues-summary');
+      if (el) el.textContent = 'failed to load: ' + err.message;
+      var count = document.getElementById('issues-count');
+      if (count) count.textContent = 'n/a';
+    });
+
+  // CI runs
+  fetch(API + '/actions/workflows/ci.yml/runs?per_page=5')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) {
+      var runs = data.workflow_runs || [];
+      var rows = runs.map(function (r) {
+        var sha = (r.head_sha || '').slice(0, 7);
+        return '<tr><td><a href="' + r.html_url + '">\u2192</a> ' + ciBadge(r.conclusion || r.status) + '</td>' +
+          '<td class="mono"><a href="' + REPO_URL + '/commit/' + r.head_sha + '">' + sha + '</a></td>' +
+          '<td class="num muted">' + esc(relTime(r.created_at)) + '</td></tr>';
+      });
+      document.getElementById('ci-rows').innerHTML = rows.join('') || '<tr><td colspan="3" class="muted">no runs found</td></tr>';
+    })
+    .catch(function (err) { fail(document.getElementById('ci-rows'), 'failed to load: ' + err.message); });
+})();
+</script>
 </body>
 </html>
 `
@@ -528,15 +561,13 @@ function main() {
   const typecheck = getTypecheckInfo()
   const codeSize = getCodeSizeInfo()
   const board = getBoardInfo()
-  const issues = getIssuesInfo()
-  const ci = getCiInfo()
   const docs = getDocsInfo()
 
-  const html = render({ git, tests, lint, typecheck, codeSize, board, issues, ci, docs })
+  const html = render({ git, tests, lint, typecheck, codeSize, board, docs })
   fs.mkdirSync(path.dirname(OUT), { recursive: true })
   fs.writeFileSync(OUT, html)
   console.log(`Dashboard written to ${path.relative(ROOT, OUT)}`)
-  if (!board) console.log('  (board/issues/CI sections omitted where gh is not authenticated in this environment)')
+  if (!board) console.log('  (board section omitted — gh not authenticated in this environment; commits/issues/CI load live client-side regardless)')
 }
 
 main()
