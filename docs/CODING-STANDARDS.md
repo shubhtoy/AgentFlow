@@ -113,6 +113,10 @@ deletion, conversation resolution required before merge. Everything lands via PR
   inventory), plus `DECISIONS.md`/`USER-CORRECTIONS.md` when a durable decision/correction
   applies. A code change that leaves its `AGENTS.md`/FEATURE-MAP stale is incomplete — this is
   how drift (Epic #39) started. Reviewer/self-check: "did the docs move with the code?"
+  **Enforced** by `scripts/check-docs-affinity.js` in `.husky/pre-push`: it maps each changed
+  source file to its nearest ancestor `AGENTS.md` and blocks the push if that area's `AGENTS.md`
+  isn't in the same push. Escape hatch for genuine no-doc-change pushes: `SKIP_DOCS_CHECK=1` or
+  `[skip-docs]` in the commit message.
 - **Required approvals: 0** (solo repo) — the PR *flow* is the gate, not review sign-off. Merge
   your own PRs once conversations are resolved.
 - **CI status check (`check`)** is not yet a required merge gate because it is red from
