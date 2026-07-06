@@ -12,6 +12,7 @@
     "./validator": "./src/validator.ts",
     "./errors": "./src/errors.ts",
     "./taxonomy": "./src/taxonomy.ts",
+    "./host-targets": "./src/host-targets.ts",
     "./schemas": "./src/schemas/index.ts",
     "./schemas/*": "./src/schemas/*.ts",
     "./utils/*": "./src/utils/*.ts",
