@@ -19,6 +19,10 @@ already covered there.
   path/schema + always-on-channel predicate (Kiro/Cursor/Claude Code today). Facts verified by
   live-testing `rulesync`'s output, copied (not the dependency) — see DECISIONS.md. Feeds #13's
   placement guardrail; adding a host = one registry entry.
+- **5-layer placement guardrail** (`export/placement-guardrail.ts`, Epic 2 #13) — enforces that
+  L1-L4 files never load through a host's always-on channel; throws before any file is written
+  if a violation is found (no partial export on failure). Opt-in via `hostId`/`--host` on
+  `emitWalkableDirectory`/`export --format walkable` — omitted, the export stays host-agnostic.
 - **Frontmatter schemas** — per-resource-type YAML validation.
 
 ## CLI / export engine — `packages/cli/` (Node) → `packages/cli/AGENTS.md`
@@ -48,14 +52,16 @@ already covered there.
 
 ## Cross-package notes
 
-- Walkable-directory export (Epic 2, #11/#12) is done; native per-host selector emission (#14) and the always-on-channel guardrail (#13) are the remaining Epic 2 sub-issues.
+- Walkable-directory export (Epic 2, #11/#12) is done; the always-on-channel guardrail (#13) is done. Native per-host selector emission (#14) is the remaining Epic 2 sub-issue.
 - Agent Spec export exists but is off the critical path (see `docs/planning/MASTER-PLAN.md`).
 
 ## Known gaps / not yet built (see GitHub Project #4 for tracked epics)
 
 - Capability/tool binding on export (Epic 4, #20-23) — the one unproven mechanic.
-- 5-layer placement rules + always-on-channel guardrail (Epic 2, #13) — walkable-directory export (#11/#12) doesn't yet enforce that L1-L4 never land in an eager/always-on channel per host.
-- Native per-host selective-context selectors beyond directory-walk (Epic 2, #14).
+- Native per-host selective-context selectors beyond directory-walk (Epic 2, #14) — until this
+  lands, the walkable emitter never writes `inclusion:`/`alwaysApply:` frontmatter itself, so
+  the #13 guardrail mostly protects against an author's own SKILL.md/reference frontmatter
+  accidentally being eager on a target host, not against anything the exporter introduces.
 - Claude Code / Cursor export targets (Epic 3, #16-17) — Kiro only so far.
 - MCP execution controller (Epic 5) and packaging/versioning (Epic 6) — later scope.
 - `library/registry.json` is missing the `agent-builder` workflow (Epic 7, #32).

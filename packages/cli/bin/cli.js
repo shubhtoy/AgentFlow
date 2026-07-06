@@ -105,6 +105,7 @@ program
   .option('-w, --workflow <name>', 'workflow to export (omit for full workspace)')
   .option('-f, --format <format>', 'export format: json, zip, dir, share, raw, parsed, walkable')
   .option('--platform <name>', 'target platform (kiro, cursor, claude-code, vscode-copilot, windsurf, agent-spec)')
+  .option('--host <id>', 'target host for the walkable format\'s placement guardrail (kiro, cursor, claude-code) — #13')
   .action(async (dir, opts) => {
     const rootDir = path.resolve(dir);
 
@@ -181,7 +182,7 @@ program
           else { console.error(`\u2717 Multiple workflows found. Use --workflow <name>: ${workflowIds.join(', ')}`); process.exit(1); }
         }
         const outDir = opts.output || path.join('export', `${workflowId}-walkable`);
-        const result = emitWalkableDirectory(graph, outDir, { workflowId });
+        const result = emitWalkableDirectory(graph, outDir, { workflowId, hostId: opts.host });
         console.log(`\u2713 Exported walkable directory to ${outDir}/ (${result.filesWritten.length} files)`);
         if (result.unresolved.length) {
           console.log(`  \u26a0 ${result.unresolved.length} unresolved ref(s):`);

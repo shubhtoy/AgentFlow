@@ -197,3 +197,36 @@ start actually hurting** — not before. Do not re-research "can we get this fro
 without new information beyond what's documented here (mirrors the pattern already established
 for the project-board-scraping question earlier in this file — don't re-litigate a settled,
 actually-researched question).
+
+## Placement guardrail (#13): fail-before-write, empty files exempt (2026-07-06)
+
+Implemented `packages/core/src/export/placement-guardrail.ts` + wired it into
+`emitWalkableDirectory` via an optional `hostId` (CLI: `export --format walkable --host <id>`).
+Two design decisions worth keeping:
+
+1. **Fail before any write, not after a partial one.** `emitWalkableDirectory` now builds the
+   full list of pending files (tagged by layer) first, runs the guardrail over the whole set,
+   and only writes to disk if there are zero violations. An export that fails outright is far
+   easier to reason about than one that left a half-written directory on disk.
+2. **Empty files (e.g. `output/.gitkeep` scaffolds) are exempt**, via a `PlacementCandidate.isEmpty`
+   flag. "Always-on" describes what loads into context; a zero-byte file loads nothing, so
+   flagging it is a false-positive noise source, not a real placement risk. Found by writing a
+   real integration test against the existing walkable-export test fixture, which has no
+   `output/.gitkeep` frontmatter at all — without this exemption every single walkable export
+   with a host set would fail on its own scaffold files, which is clearly wrong.
+
+**Also fixed while implementing this**: `memory/` files were being emitted as part of the L3
+group (alongside instructions/capabilities) in the original `emitWalkableDirectory` — but
+MASTER-PLAN.md's own 5-layer table places memory in **L4** ("Artifacts + memory"), not L3
+("Reference"). Moved to its own L4 loop. This didn't change *where* memory files are written
+(same relative path either way) — only which layer they're tagged as for the guardrail's
+purposes — so it's not a behavior break, just a categorization fix that the guardrail's
+existence surfaced.
+
+**Current real scope, stated plainly**: since the walkable emitter doesn't yet write
+`inclusion:`/`alwaysApply:` frontmatter itself (that's #14, native-selector emission), the
+guardrail today mainly protects against an *author's own* SKILL.md/reference frontmatter
+happening to be eager on a target host — not against anything the exporter introduces. It
+becomes fully load-bearing once #14 lands and the exporter starts writing host-native
+selector frontmatter. Both #13 and #14 read from the same `HOST_TARGET_REGISTRY`
+(`packages/core/src/host-targets.ts`), so there's no duplicated per-host logic between them.
