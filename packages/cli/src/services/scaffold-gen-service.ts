@@ -9,6 +9,7 @@ import fs from 'fs'
 import path from 'path'
 import { AgentScaffoldSchema } from '@agentflow/core/schemas/builder-schemas'
 import { ok, fail, ErrorCode } from '@agentflow/core/services/types'
+import type { ServiceResultFail } from '@agentflow/core/services/types'
 import { atomicWrite } from '../svc-utils/file-io'
 
 interface ServiceContext {
@@ -255,7 +256,12 @@ export function createScaffoldGenService(ctx: ServiceContext) {
 
           if (!validationResult.success) {
             fs.rmSync(agentflowDir, { recursive: true, force: true })
-            return fail(ErrorCode.SCAFFOLD_INVALID, 'Roundtrip verification failed', 422, validationResult.error)
+            return fail(
+              ErrorCode.SCAFFOLD_INVALID,
+              'Roundtrip verification failed',
+              422,
+              (validationResult as ServiceResultFail).error,
+            )
           }
 
           return ok(graph)

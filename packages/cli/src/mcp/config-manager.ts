@@ -18,6 +18,7 @@ interface McpServerEntry {
   registryName?: string
   version?: string
   discoveredTools?: string[]
+  disabled?: boolean
 }
 
 interface McpConfig {

@@ -13,7 +13,7 @@ export function sanitiseOutput(text: string): string {
 }
 
 function git(cwd?: string): SimpleGit {
-  return simpleGit(cwd ? { baseDir: cwd } : undefined)
+  return cwd ? simpleGit({ baseDir: cwd }) : simpleGit()
 }
 
 async function safe<T>(promise: Promise<T>): Promise<T> {
@@ -76,7 +76,7 @@ export async function pull(repoDir: string, branch: string) {
     return {
       hasConflicts: false,
       conflictFiles: [] as string[],
-      output: (result as { summary?: string }).summary || '',
+      output: (result as unknown as { summary?: string }).summary || '',
     }
   } catch (err: unknown) {
     const conflicts = parsePullConflicts((err as Error).message)
@@ -161,7 +161,7 @@ export async function stage(repoDir: string, filePath: string) {
 
 export async function commit(repoDir: string, message: string) {
   const result = await safe(exports._git(repoDir).commit(message))
-  return (result as { summary?: string }).summary || ''
+  return (result as unknown as { summary?: string }).summary || ''
 }
 
 export async function stagedFileCount(repoDir: string): Promise<number> {
