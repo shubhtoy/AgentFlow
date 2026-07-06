@@ -43,6 +43,26 @@ host agent walks the directory → L1–L4 load on demand → honors gates
 
 **Hard rule:** never push L1–L4 or memory into an eager/always-on channel (Kiro `inclusion:always`, Claude `@import`/root CLAUDE.md, Cursor `alwaysApply:true`) — that flattens the layers and defeats the model.
 
+**Related work:** Van Clief & McDermott, "Interpretable Context Methodology: Folder Structure
+as Agent Architecture" (Model Workspace Protocol / MWP, arXiv:2603.16021, MIT-licensed,
+2026-03-17) independently arrives at a 5-layer context hierarchy (identity → task routing →
+stage contract → reference material → working artifacts) for the same reason we did: avoiding
+Liu et al.'s "lost in the middle" degradation by scoping context per step instead of loading
+everything upfront. Worth reading as validation that the architecture shape is sound, not as a
+spec to match exactly — two real divergences:
+- MWP's L0 is identity-only (routing lives in its L1); our L0 (`l0-contract.ts`) also carries
+  the entry-node pointer and walk order — closer to a merge of MWP's L0+L1.
+- MWP's L3/L4 split is temporal (stable-across-runs vs. changes-per-run); ours is categorical
+  (`instructions/capabilities/skills` vs. `outputs/memory`, per `taxonomy.ts`) — it tracks the
+  same stable/mutating line in practice (`memory` is the only `writable: true` category) but
+  isn't defined the same way.
+MWP is also single-agent/sequential-stage (numbered folders, one agent walks stage to stage);
+we're graph-based with conditional edges and legitimate revision cycles. And MWP treats MCP as
+fully orthogonal to its layers (matches our own treatment — MCP config is plumbing, not one of
+the 5 layers). Its own "Threats to Validity" section is honest that this is early-stage: no
+controlled comparison against monolithic prompting, self-reported observations from an
+invite-only 52-person community, single model family tested. Useful confirmation, not proof.
+
 ## Engineering principles (Definition of Done for every task)
 
 - Clean, readable code; **maximum reusability** (shared logic in core, no duplication).
