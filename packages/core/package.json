@@ -9,6 +9,7 @@
     "./parser-browser": "./src/parser-browser.ts",
     "./ref-paths": "./src/ref-paths.ts",
     "./export/l0-contract": "./src/export/l0-contract.ts",
+    "./export/placement-guardrail": "./src/export/placement-guardrail.ts",
     "./validator": "./src/validator.ts",
     "./errors": "./src/errors.ts",
     "./taxonomy": "./src/taxonomy.ts",

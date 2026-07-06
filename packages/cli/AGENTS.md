@@ -10,6 +10,7 @@ what's already built here.
 |---|---|
 | `src/parser.ts` | Reads `.agentflow/` from disk, delegates parsing to core (`parseRoot`, `parseWorkflow`, `parseNode`, `parseMarkdownFile`); re-exports all core parser/ref-paths functions |
 | `src/export/engine.ts` | `exportForPlatform` — maps a `ParsedGraph` to per-platform output files via `configs/platforms.json` transform rules |
+| `src/export/walkable-export.ts` | `emitWalkableDirectory` — writes the L0 contract + one directory per node to disk (Epic 2, #11/#12). Optional `hostId` opts into the 5-layer placement guardrail (#13, `@agentflow/core/export/placement-guardrail`): every L1-L4 file is checked against that host's always-on-channel rule before anything is written — a violation throws and nothing is written (no partial export). Wired to the CLI's `export --format walkable --host <id>` flag. Omitting `hostId` skips the guardrail (host-agnostic export, the default). |
 | `src/export/transforms/` | One file per reusable transform (concatenate, flatten-skill, split-identity, merge-mcp-config, to-mdc, to-skill-dir, copy, rename) |
 | `src/export/agent-spec-transform.ts` | Oracle Agent Spec serializer — only needed for runtime-framework interop, not the IDE export path |
 | `src/git/repo-scanner.ts` | `findAgentflowDirs` — discovers workspaces/resources across a repo tree |

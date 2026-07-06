@@ -19,6 +19,9 @@
 import fs from 'fs'
 import path from 'path'
 import { generateL0Contract } from '@agentflow/core/export/l0-contract'
+import type { PlacementCandidate, PlacementLayer } from '@agentflow/core/export/placement-guardrail'
+import { checkAllPlacements } from '@agentflow/core/export/placement-guardrail'
+import type { HostId } from '@agentflow/core/host-targets'
 import type { ParsedGraph } from '@agentflow/core/parser-core'
 import { resolveRefsToPaths } from '@agentflow/core/ref-paths'
 import { atomicWrite } from '../svc-utils/file-io'
@@ -27,6 +30,12 @@ import { validatePath } from '../svc-utils/validate-path'
 export interface WalkableExportOptions {
   /** Workflow to export. Required when the graph has more than one. */
   workflowId?: string
+  /**
+   * Target host for the always-on-channel guardrail (#13). When omitted, the
+   * guardrail is skipped entirely — matches today's host-agnostic default so
+   * existing callers/tests are unaffected until they opt in to a target.
+   */
+  hostId?: HostId | string
 }
 
 export interface WalkableExportResult {
@@ -105,24 +114,31 @@ export function emitWalkableDirectory(
   const resolved = resolveRefsToPaths(graph)
   const l0 = generateL0Contract(graph, { workflowId })
 
-  const filesWritten: string[] = []
+  // Every file about to be written, tagged with its layer and final frontmatter,
+  // built up first so the guardrail (#13) can check the whole set before anything
+  // touches disk — a placement violation must fail the export outright, not leave
+  // a partially-written directory behind.
+  const pending: {
+    relPath: string
+    content: string
+    layer: PlacementLayer
+    frontmatter: Record<string, unknown>
+    isEmpty?: boolean
+  }[] = []
 
-  const writeAt = (relPath: string, content: string): void => {
-    const check = validatePath(relPath, outDir)
-    if (!check.valid)
-      throw new Error(`emitWalkableDirectory: refusing to write outside outDir (${relPath}): ${check.error}`)
-    fs.mkdirSync(path.dirname(check.resolved), { recursive: true })
-    atomicWrite(check.resolved, content)
-    filesWritten.push(relPath)
-  }
-
-  // L0 — root AGENTS.md, always-on channel.
-  writeAt('AGENTS.md', l0)
+  // L0 — root AGENTS.md, always-on channel. Exempt from the guardrail by definition.
+  pending.push({ relPath: 'AGENTS.md', content: l0, layer: 'L0', frontmatter: {} })
 
   // L1 — workflow descriptor, if present, with refs resolved.
   if (wf.descriptorFile?.relativePath) {
+    const frontmatter = wf.descriptorFile.frontmatter || {}
     const body = resolved.files[wf.descriptorFile.relativePath] ?? wf.descriptorFile.content ?? ''
-    writeAt(wf.descriptorFile.relativePath, withFrontmatter(wf.descriptorFile.frontmatter || {}, {}, body))
+    pending.push({
+      relPath: wf.descriptorFile.relativePath,
+      content: withFrontmatter(frontmatter, {}, body),
+      layer: 'L1',
+      frontmatter,
+    })
   }
 
   // L2 — one directory per node: SKILL.md (name sanitized to match dir), context
@@ -134,41 +150,94 @@ export function emitWalkableDirectory(
     const dirName = sanitizeSkillName(node.id)
     const nodeDir = path.posix.dirname(primaryPath)
 
+    const frontmatter = node.primaryFile.frontmatter || {}
     const body = resolved.files[primaryPath] ?? node.primaryFile.content ?? ''
-    const overrides = (node.primaryFile.frontmatter || {}).name !== undefined ? { name: dirName } : {}
-    const content = withFrontmatter(node.primaryFile.frontmatter || {}, overrides, body)
-    writeAt(path.posix.join(nodeDir, 'SKILL.md'), content)
+    const overrides = frontmatter.name !== undefined ? { name: dirName } : {}
+    const content = withFrontmatter(frontmatter, overrides, body)
+    pending.push({ relPath: path.posix.join(nodeDir, 'SKILL.md'), content, layer: 'L2', frontmatter })
 
     for (const cf of node.contextFiles || []) {
       if (!cf.relativePath) continue
+      const cfFrontmatter = cf.frontmatter || {}
       const cfBody = resolved.files[cf.relativePath] ?? cf.content ?? ''
-      writeAt(cf.relativePath, withFrontmatter(cf.frontmatter || {}, {}, cfBody))
+      pending.push({
+        relPath: cf.relativePath,
+        content: withFrontmatter(cfFrontmatter, {}, cfBody),
+        layer: 'L2',
+        frontmatter: cfFrontmatter,
+      })
     }
 
     // output/ scaffold — AgentFlow's own addition on top of the Agent Skills
     // spec (which recommends scripts/, references/, assets/ for skill inputs);
     // this directory is where the node's own execution artifacts land.
-    writeAt(path.posix.join(nodeDir, 'output', '.gitkeep'), '')
+    pending.push({
+      relPath: path.posix.join(nodeDir, 'output', '.gitkeep'),
+      content: '',
+      layer: 'L4',
+      frontmatter: {},
+      isEmpty: true,
+    })
   }
 
-  // L3 — top-level referenced resources (instructions/capabilities/skills/memory),
-  // refs resolved, written at their original workspace-relative path.
-  const l3Sources = [
-    ...Object.values(graph.instructions || {}),
-    ...Object.values(graph.capabilities || {}),
-    ...Object.values(graph.memory || {}),
-  ]
+  // L3 — top-level referenced resources (instructions/capabilities/skills), refs
+  // resolved, written at their original workspace-relative path.
+  const l3Sources = [...Object.values(graph.instructions || {}), ...Object.values(graph.capabilities || {})]
   for (const f of l3Sources) {
     if (!f?.relativePath) continue
+    const frontmatter = f.frontmatter || {}
     const body = resolved.files[f.relativePath] ?? f.content ?? ''
-    writeAt(f.relativePath, withFrontmatter(f.frontmatter || {}, {}, body))
+    pending.push({ relPath: f.relativePath, content: withFrontmatter(frontmatter, {}, body), layer: 'L3', frontmatter })
   }
   for (const skill of Object.values(graph.skills || {})) {
     const primaryPath = skill.primaryFile?.relativePath
     if (!primaryPath) continue
+    const frontmatter = skill.primaryFile.frontmatter || {}
     const body = resolved.files[primaryPath] ?? skill.primaryFile.content ?? ''
-    writeAt(primaryPath, withFrontmatter(skill.primaryFile.frontmatter || {}, {}, body))
+    pending.push({ relPath: primaryPath, content: withFrontmatter(frontmatter, {}, body), layer: 'L3', frontmatter })
   }
+
+  // L4 — memory files, refs resolved. Grouped with output/ scaffolds above as the
+  // "artifacts + memory" layer per MASTER-PLAN.md.
+  for (const f of Object.values(graph.memory || {})) {
+    if (!f?.relativePath) continue
+    const frontmatter = f.frontmatter || {}
+    const body = resolved.files[f.relativePath] ?? f.content ?? ''
+    pending.push({ relPath: f.relativePath, content: withFrontmatter(frontmatter, {}, body), layer: 'L4', frontmatter })
+  }
+
+  // Guardrail (#13): every L1-L4 file must load on-demand, never through the
+  // target host's eager/always-on channel. Runs over the whole pending set before
+  // any write, so a violation fails the export cleanly rather than leaving a
+  // partially-written directory. Skipped when no hostId is given (host-agnostic
+  // export, today's default for existing callers).
+  if (options.hostId) {
+    const candidates: PlacementCandidate[] = pending.map(p => ({
+      relativePath: p.relPath,
+      layer: p.layer,
+      frontmatter: p.frontmatter,
+      isEmpty: p.isEmpty,
+    }))
+    const violations = checkAllPlacements(candidates, options.hostId)
+    if (violations.length > 0) {
+      const details = violations.map(v => `  - ${v.message}`).join('\n')
+      throw new Error(
+        `emitWalkableDirectory: ${violations.length} placement violation(s) for host "${options.hostId}":\n${details}`,
+      )
+    }
+  }
+
+  const filesWritten: string[] = []
+  const writeAt = (relPath: string, content: string): void => {
+    const check = validatePath(relPath, outDir)
+    if (!check.valid)
+      throw new Error(`emitWalkableDirectory: refusing to write outside outDir (${relPath}): ${check.error}`)
+    fs.mkdirSync(path.dirname(check.resolved), { recursive: true })
+    atomicWrite(check.resolved, content)
+    filesWritten.push(relPath)
+  }
+
+  for (const p of pending) writeAt(p.relPath, p.content)
 
   return { filesWritten, unresolved: resolved.unresolved }
 }

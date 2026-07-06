@@ -134,6 +134,74 @@ describe('emitWalkableDirectory', () => {
   })
 })
 
+describe('emitWalkableDirectory — placement guardrail (#13)', () => {
+  let outDir: string
+
+  beforeEach(() => {
+    outDir = makeTmpDir()
+  })
+
+  afterEach(() => {
+    fs.rmSync(outDir, { recursive: true, force: true })
+  })
+
+  it('no hostId given: exports host-agnostic, guardrail skipped entirely (default behaviour unaffected)', () => {
+    // The validated rig's SKILL.md files carry no inclusion/alwaysApply frontmatter
+    // at all — that would violate Kiro's guardrail (absent = eager) if checked,
+    // but omitting hostId must not trigger it.
+    expect(() => emitWalkableDirectory(graph(), outDir, { workflowId: 'wf' })).not.toThrow()
+  })
+
+  it('hostId: "kiro" — the validated rig\'s SKILL.md files have no inclusion frontmatter, which violates Kiro\'s guardrail', () => {
+    // This is the real, current behaviour of the emitter today: it does not yet
+    // write inclusion: frontmatter to L2 files (that's #14's job), so opting a
+    // Kiro export into the guardrail now correctly fails until #14 lands. This
+    // test exists to prove the guardrail is truly wired in, not to bless the gap.
+    expect(() => emitWalkableDirectory(graph(), outDir, { workflowId: 'wf', hostId: 'kiro' })).toThrow(/placement violation/i)
+  })
+
+  it('hostId: "kiro" — a node file with inclusion: fileMatch passes the guardrail', () => {
+    const g = parseFromFiles({
+      'AGENTS.md': '---\ntype: agents\n---\n# WS\n',
+      'wf/AGENTS.md': '---\ntype: agents\ninclusion: manual\n---\n# WF\nBegin at {{-> step}}\n',
+      'wf/step/SKILL.md': '---\nname: step\nentry: true\ninclusion: fileMatch\n---\n# Step\n',
+    })
+    expect(() => emitWalkableDirectory(g, outDir, { workflowId: 'wf', hostId: 'kiro' })).not.toThrow()
+  })
+
+  it('hostId: "cursor" — a node file with alwaysApply: true violates the guardrail', () => {
+    const g = parseFromFiles({
+      'AGENTS.md': '---\ntype: agents\n---\n# WS\n',
+      'wf/AGENTS.md': '---\ntype: agents\n---\n# WF\nBegin at {{-> step}}\n',
+      'wf/step/SKILL.md': '---\nname: step\nentry: true\nalwaysApply: true\n---\n# Step\n',
+    })
+    expect(() => emitWalkableDirectory(g, outDir, { workflowId: 'wf', hostId: 'cursor' })).toThrow(/alwaysApply/i)
+  })
+
+  it('hostId: "cursor" — a node file with no alwaysApply key passes the guardrail (absence is on-demand for Cursor)', () => {
+    const g = parseFromFiles({
+      'AGENTS.md': '---\ntype: agents\n---\n# WS\n',
+      'wf/AGENTS.md': '---\ntype: agents\n---\n# WF\nBegin at {{-> step}}\n',
+      'wf/step/SKILL.md': '---\nname: step\nentry: true\n---\n# Step\n',
+    })
+    expect(() => emitWalkableDirectory(g, outDir, { workflowId: 'wf', hostId: 'cursor' })).not.toThrow()
+  })
+
+  it('a violation leaves the output directory empty — no partial write', () => {
+    const g = parseFromFiles({
+      'AGENTS.md': '---\ntype: agents\n---\n# WS\n',
+      'wf/AGENTS.md': '---\ntype: agents\n---\n# WF\nBegin at {{-> step}}\n',
+      'wf/step/SKILL.md': '---\nname: step\nentry: true\n---\n# Step\n', // violates on kiro: no inclusion key
+    })
+    expect(() => emitWalkableDirectory(g, outDir, { workflowId: 'wf', hostId: 'kiro' })).toThrow()
+    expect(fs.existsSync(path.join(outDir, 'AGENTS.md'))).toBe(false)
+  })
+
+  it('throws for an unregistered hostId', () => {
+    expect(() => emitWalkableDirectory(graph(), outDir, { workflowId: 'wf', hostId: 'windsurf' })).toThrow(/unknown host target/i)
+  })
+})
+
 describe('emitWalkableDirectory — round trip', () => {
   it('author -> export -> re-parse: the exported directory parses back into an equivalent workflow', async () => {
     const outDir = makeTmpDir()
