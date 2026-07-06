@@ -262,8 +262,8 @@ function render(data) {
         ${link(BOARD_URL, 'AgentFlow')} &middot; <span class="mono muted">loading live status&hellip;</span>
       </p>
       <table>
-        <caption class="sr-only">Epic status by number and sub-issue progress</caption>
-        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col" class="num">Sub-issues</th></tr></thead>
+        <caption class="sr-only">Epic status, priority, story points, and sub-issue progress</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col">Priority</th><th scope="col" class="num">Points</th><th scope="col" class="num">Sub-issues</th></tr></thead>
         <tbody id="board-rows">
           ${board.epics
             .map(
@@ -271,13 +271,15 @@ function render(data) {
             <td class="mono">${link(`${REPO_URL}/issues/${e.number}`, `#${e.number}`)}</td>
             <td>${esc(e.title)}</td>
             <td>${epicStatusBadge(e.status)}</td>
+            <td>\u2014</td>
+            <td class="num mono">\u2014</td>
             <td class="num mono">${e.points ?? '\u2014'}</td>
           </tr>`,
             )
             .join('\n')}
         </tbody>
       </table>
-      <p class="meta-line stale-note">rows shown are a build-time snapshot until the live fetch (via a small Cloudflare Worker, see footer) finishes loading &mdash; then replaced with current data. Story points/priority aren't shown here: the public live data source only exposes the board's default-view columns, which don't include those custom fields &mdash; see ${link(BOARD_URL, 'the board itself')} for those.</p>
+      <p class="meta-line stale-note">rows shown are a build-time snapshot until the live fetch (via a small Cloudflare Worker, see footer) finishes loading &mdash; then replaced with current data, including Priority/Points (fetched per-epic from ${link('https://github.com/shubhtoy/github-project-info-mcp', 'github-project-info-mcp')}'s per-item endpoint, since the bulk endpoint doesn't expose custom fields).</p>
       <noscript><p class="meta-line">Enable JavaScript for live board data, or view directly: ${link(BOARD_URL, 'project board')}.</p></noscript>
     </section>`
     : `
@@ -285,9 +287,9 @@ function render(data) {
       <h2 id="board-heading">Project board <span class="live-badge">live</span></h2>
       <p class="meta-line" id="board-live-meta">loading live status&hellip;</p>
       <table>
-        <caption class="sr-only">Epic status by number and sub-issue progress</caption>
-        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col" class="num">Sub-issues</th></tr></thead>
-        <tbody id="board-rows"><tr><td colspan="4" class="muted">loading&hellip;</td></tr></tbody>
+        <caption class="sr-only">Epic status, priority, story points, and sub-issue progress</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col">Priority</th><th scope="col" class="num">Points</th><th scope="col" class="num">Sub-issues</th></tr></thead>
+        <tbody id="board-rows"><tr><td colspan="6" class="muted">loading&hellip;</td></tr></tbody>
       </table>
       <p class="meta-line">Build-time snapshot unavailable (needs <code>gh</code> auth in this environment) &mdash; live fetch above should still work. Live: ${link(BOARD_URL, 'project board')}.</p>
       <noscript><p class="meta-line">Enable JavaScript for live board data, or view directly: ${link(BOARD_URL, 'project board')}.</p></noscript>
@@ -573,9 +575,11 @@ function render(data) {
   // adds CORS to an otherwise-unauthenticated-but-CORS-blocked GitHub endpoint. See
   // github.com/shubhtoy/github-project-info-mcp for what this Worker does and why it exists.
   var BOARD_WORKER = 'https://github-project-info-api.shubhmittal-sm.workers.dev';
+  var boardProjectId = null; // filled in by the metadata fetch below, needed for per-item detail calls
 
   getJSON('https://api.github.com/users/shubhtoy/projectsV2/4')
     .then(function (p) {
+      boardProjectId = p.id;
       var el = document.getElementById('board-live-meta');
       if (!el) return;
       el.innerHTML = '<a href="' + REPO_URL.replace('/AgentFlow', '') + '/users/shubhtoy/projects/4">' + esc(p.title) + '</a>' +
@@ -598,6 +602,28 @@ function render(data) {
     return '<span class="badge badge-todo"><span class="dot"></span>' + esc(name || 'Todo') + '</span>';
   }
 
+  function renderBoardRows(epics, detailsById) {
+    var rows = epics.map(function (it) {
+      var status = fieldValue(it, 'Status');
+      var statusName = status ? status.name : (it.state === 'closed' ? 'Done' : 'Todo');
+      var subIssues = fieldValue(it, 'Sub-issues progress');
+      var subIssuesText = subIssues ? (subIssues.completed + '/' + subIssues.total) : '\u2014';
+      var detail = detailsById[it.id];
+      var priority = detail ? fieldValue(detail, 'Priority') : null;
+      var points = detail ? fieldValue(detail, 'Story Points') : null;
+      var priorityText = priority ? esc(priority.name) : '\u2014';
+      var pointsText = (points && typeof points.value === 'number') ? points.value : '\u2014';
+      return '<tr><td class="mono"><a href="' + REPO_URL + '/issues/' + it.issueNumber + '">#' + it.issueNumber + '</a></td>' +
+        '<td>' + esc(it.title) + '</td>' +
+        '<td>' + boardStatusBadge(statusName) + '</td>' +
+        '<td>' + priorityText + '</td>' +
+        '<td class="num mono">' + esc(pointsText) + '</td>' +
+        '<td class="num mono">' + esc(subIssuesText) + '</td></tr>';
+    });
+    var el = document.getElementById('board-rows');
+    if (el) el.innerHTML = rows.join('') || '<tr><td colspan="6" class="muted">no epics found</td></tr>';
+  }
+
   getJSON(BOARD_WORKER + '/projects/shubhtoy/4/items')
     .then(function (data) {
       var items = data.items || [];
@@ -607,20 +633,33 @@ function render(data) {
         return /^Setup:|^Stabilization/.test(it.title || '');
       });
       epics.sort(function (a, b) { return (a.issueNumber || 0) - (b.issueNumber || 0); });
-      var rows = epics.map(function (it) {
-        var status = fieldValue(it, 'Status');
-        var statusName = status ? status.name : (it.state === 'closed' ? 'Done' : 'Todo');
-        var subIssues = fieldValue(it, 'Sub-issues progress');
-        var subIssuesText = subIssues ? (subIssues.completed + '/' + subIssues.total) : '\u2014';
-        return '<tr><td class="mono"><a href="' + REPO_URL + '/issues/' + it.issueNumber + '">#' + it.issueNumber + '</a></td>' +
-          '<td>' + esc(it.title) + '</td>' +
-          '<td>' + boardStatusBadge(statusName) + '</td>' +
-          '<td class="num mono">' + esc(subIssuesText) + '</td></tr>';
-      });
-      var el = document.getElementById('board-rows');
-      if (el) el.innerHTML = rows.join('') || '<tr><td colspan="4" class="muted">no epics found</td></tr>';
+
+      // First paint without Priority/Points (bulk endpoint doesn't include custom fields —
+      // they're outside the board's default view, see github-project-info-mcp's README).
+      renderBoardRows(epics, {});
+
+      // Then enrich with Priority/Story Points via the per-item detail endpoint, one request
+      // per epic, in parallel. Needs boardProjectId from the metadata fetch above — if that
+      // hasn't resolved yet, wait briefly rather than skip the enrichment entirely.
+      function enrich() {
+        if (!boardProjectId) { setTimeout(enrich, 200); return; }
+        Promise.all(
+          epics.map(function (it) {
+            var url = BOARD_WORKER + '/projects/shubhtoy/4/items/' + boardProjectId + '/' + it.id;
+            return getJSON(url).then(
+              function (detail) { return { id: it.id, detail: detail }; },
+              function () { return { id: it.id, detail: null }; }, // one failed epic shouldn't block the rest
+            );
+          }),
+        ).then(function (results) {
+          var detailsById = {};
+          results.forEach(function (r) { if (r.detail) detailsById[r.id] = r.detail; });
+          renderBoardRows(epics, detailsById);
+        });
+      }
+      enrich();
     })
-    .catch(function (err) { fail(document.getElementById('board-rows'), 'live board fetch failed: ' + err.message, 4); });
+    .catch(function (err) { fail(document.getElementById('board-rows'), 'live board fetch failed: ' + err.message, 6); });
 
   // Recent commits
   fetch(API + '/commits?per_page=15')

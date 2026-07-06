@@ -65,11 +65,15 @@ directly (public REST, sends CORS headers, no auth needed). The board's item-lev
 (GitHub Projects v2 API requires auth even for a public repo, and the unauthenticated
 board-page fallback has no CORS header) is fetched through a small self-hosted Cloudflare
 Worker — [`github-project-info-mcp`](https://github.com/shubhtoy/github-project-info-mcp), a
-separate standalone project — which adds the missing CORS header. A server-baked snapshot of
-the board (via `gh`/scrape, generated at build time) is still rendered into the initial HTML
-as a progressive-enhancement fallback for no-JS or if the Worker is ever down; the live fetch
-replaces it once it loads. Tests/lint/typecheck/code-size stay server-baked — there's no API
-that returns a live test result; something has to actually run the suite once. `npm run
+separate standalone project — which adds the missing CORS header. The board table renders in
+two passes: first the bulk item list (status, sub-issues progress — whatever's in the board's
+default view), then Priority/Story Points per epic via one parallel per-item request each
+(that data isn't in the bulk endpoint at all, only the per-item one — see that project's
+README for why). A server-baked snapshot of the board (via `gh`/scrape, generated at build
+time) is still rendered into the initial HTML as a progressive-enhancement fallback for no-JS
+or if the Worker is ever down; the live fetch replaces it once it loads. Tests/lint/typecheck/
+code-size stay server-baked — there's no API that returns a live test result; something has to
+actually run the suite once. `npm run
 docs:check` and `npm run dashboard` both also run in `.husky/pre-push`; the dashboard step
 warns (doesn't auto-commit — see git-safety) if the local snapshot changed and needs staging.
 

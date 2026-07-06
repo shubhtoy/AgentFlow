@@ -99,9 +99,9 @@
 <main>
   <h1>AgentFlow</h1>
   <p class="subtitle">
-    generated <span class="mono">2026-07-06T01:21:37.251Z</span> &middot;
-    <a href="https://github.com/shubhtoy/AgentFlow/commit/31d1b29">main@31d1b29</a> <span class="badge-uncommitted">uncommitted</span>
-    &middot; 69 commits total
+    generated <span class="mono">2026-07-06T06:39:16.839Z</span> &middot;
+    <a href="https://github.com/shubhtoy/AgentFlow/commit/577288b">main@577288b</a> <span class="badge-uncommitted">uncommitted</span>
+    &middot; 70 commits total
   </p>
 
   <div class="stat-grid" role="group" aria-label="Build health summary">
@@ -141,54 +141,68 @@
         <a href="https://github.com/users/shubhtoy/projects/4">AgentFlow</a> &middot; <span class="mono muted">loading live status&hellip;</span>
       </p>
       <table>
-        <caption class="sr-only">Epic status by number and sub-issue progress</caption>
-        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col" class="num">Sub-issues</th></tr></thead>
+        <caption class="sr-only">Epic status, priority, story points, and sub-issue progress</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col">Priority</th><th scope="col" class="num">Points</th><th scope="col" class="num">Sub-issues</th></tr></thead>
         <tbody id="board-rows">
           <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/1">#1</a></td>
             <td>Setup: Core Engine</td>
             <td><span class="badge badge-ok"><span class="dot"></span>Done</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">13</td>
           </tr>
 <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/2">#2</a></td>
             <td>Setup: Export / Compile Engine</td>
             <td><span class="badge badge-todo"><span class="dot"></span>Todo</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">26</td>
           </tr>
 <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/3">#3</a></td>
             <td>Setup: Host Targets</td>
             <td><span class="badge badge-todo"><span class="dot"></span>Todo</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">21</td>
           </tr>
 <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/4">#4</a></td>
             <td>Setup: Capabilities &amp; MCP Binding</td>
             <td><span class="badge badge-todo"><span class="dot"></span>Todo</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">15</td>
           </tr>
 <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/5">#5</a></td>
             <td>Setup: MCP Execution Controller</td>
             <td><span class="badge badge-todo"><span class="dot"></span>Todo</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">15</td>
           </tr>
 <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/6">#6</a></td>
             <td>Setup: Packaging &amp; Distribution</td>
             <td><span class="badge badge-todo"><span class="dot"></span>Todo</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">19</td>
           </tr>
 <tr>
             <td class="mono"><a href="https://github.com/shubhtoy/AgentFlow/issues/7">#7</a></td>
             <td>Stabilization &amp; Housekeeping</td>
             <td><span class="badge badge-todo"><span class="dot"></span>Todo</span></td>
+            <td>—</td>
+            <td class="num mono">—</td>
             <td class="num mono">13</td>
           </tr>
         </tbody>
       </table>
-      <p class="meta-line stale-note">rows shown are a build-time snapshot until the live fetch (via a small Cloudflare Worker, see footer) finishes loading &mdash; then replaced with current data. Story points/priority aren't shown here: the public live data source only exposes the board's default-view columns, which don't include those custom fields &mdash; see <a href="https://github.com/users/shubhtoy/projects/4">the board itself</a> for those.</p>
+      <p class="meta-line stale-note">rows shown are a build-time snapshot until the live fetch (via a small Cloudflare Worker, see footer) finishes loading &mdash; then replaced with current data, including Priority/Points (fetched per-epic from <a href="https://github.com/shubhtoy/github-project-info-mcp">github-project-info-mcp</a>'s per-item endpoint, since the bulk endpoint doesn't expose custom fields).</p>
       <noscript><p class="meta-line">Enable JavaScript for live board data, or view directly: <a href="https://github.com/users/shubhtoy/projects/4">project board</a>.</p></noscript>
     </section>
     
@@ -330,9 +344,11 @@
   // adds CORS to an otherwise-unauthenticated-but-CORS-blocked GitHub endpoint. See
   // github.com/shubhtoy/github-project-info-mcp for what this Worker does and why it exists.
   var BOARD_WORKER = 'https://github-project-info-api.shubhmittal-sm.workers.dev';
+  var boardProjectId = null; // filled in by the metadata fetch below, needed for per-item detail calls
 
   getJSON('https://api.github.com/users/shubhtoy/projectsV2/4')
     .then(function (p) {
+      boardProjectId = p.id;
       var el = document.getElementById('board-live-meta');
       if (!el) return;
       el.innerHTML = '<a href="' + REPO_URL.replace('/AgentFlow', '') + '/users/shubhtoy/projects/4">' + esc(p.title) + '</a>' +
@@ -355,6 +371,28 @@
     return '<span class="badge badge-todo"><span class="dot"></span>' + esc(name || 'Todo') + '</span>';
   }
 
+  function renderBoardRows(epics, detailsById) {
+    var rows = epics.map(function (it) {
+      var status = fieldValue(it, 'Status');
+      var statusName = status ? status.name : (it.state === 'closed' ? 'Done' : 'Todo');
+      var subIssues = fieldValue(it, 'Sub-issues progress');
+      var subIssuesText = subIssues ? (subIssues.completed + '/' + subIssues.total) : '—';
+      var detail = detailsById[it.id];
+      var priority = detail ? fieldValue(detail, 'Priority') : null;
+      var points = detail ? fieldValue(detail, 'Story Points') : null;
+      var priorityText = priority ? esc(priority.name) : '—';
+      var pointsText = (points && typeof points.value === 'number') ? points.value : '—';
+      return '<tr><td class="mono"><a href="' + REPO_URL + '/issues/' + it.issueNumber + '">#' + it.issueNumber + '</a></td>' +
+        '<td>' + esc(it.title) + '</td>' +
+        '<td>' + boardStatusBadge(statusName) + '</td>' +
+        '<td>' + priorityText + '</td>' +
+        '<td class="num mono">' + esc(pointsText) + '</td>' +
+        '<td class="num mono">' + esc(subIssuesText) + '</td></tr>';
+    });
+    var el = document.getElementById('board-rows');
+    if (el) el.innerHTML = rows.join('') || '<tr><td colspan="6" class="muted">no epics found</td></tr>';
+  }
+
   getJSON(BOARD_WORKER + '/projects/shubhtoy/4/items')
     .then(function (data) {
       var items = data.items || [];
@@ -364,20 +402,33 @@
         return /^Setup:|^Stabilization/.test(it.title || '');
       });
       epics.sort(function (a, b) { return (a.issueNumber || 0) - (b.issueNumber || 0); });
-      var rows = epics.map(function (it) {
-        var status = fieldValue(it, 'Status');
-        var statusName = status ? status.name : (it.state === 'closed' ? 'Done' : 'Todo');
-        var subIssues = fieldValue(it, 'Sub-issues progress');
-        var subIssuesText = subIssues ? (subIssues.completed + '/' + subIssues.total) : '—';
-        return '<tr><td class="mono"><a href="' + REPO_URL + '/issues/' + it.issueNumber + '">#' + it.issueNumber + '</a></td>' +
-          '<td>' + esc(it.title) + '</td>' +
-          '<td>' + boardStatusBadge(statusName) + '</td>' +
-          '<td class="num mono">' + esc(subIssuesText) + '</td></tr>';
-      });
-      var el = document.getElementById('board-rows');
-      if (el) el.innerHTML = rows.join('') || '<tr><td colspan="4" class="muted">no epics found</td></tr>';
+
+      // First paint without Priority/Points (bulk endpoint doesn't include custom fields —
+      // they're outside the board's default view, see github-project-info-mcp's README).
+      renderBoardRows(epics, {});
+
+      // Then enrich with Priority/Story Points via the per-item detail endpoint, one request
+      // per epic, in parallel. Needs boardProjectId from the metadata fetch above — if that
+      // hasn't resolved yet, wait briefly rather than skip the enrichment entirely.
+      function enrich() {
+        if (!boardProjectId) { setTimeout(enrich, 200); return; }
+        Promise.all(
+          epics.map(function (it) {
+            var url = BOARD_WORKER + '/projects/shubhtoy/4/items/' + boardProjectId + '/' + it.id;
+            return getJSON(url).then(
+              function (detail) { return { id: it.id, detail: detail }; },
+              function () { return { id: it.id, detail: null }; }, // one failed epic shouldn't block the rest
+            );
+          }),
+        ).then(function (results) {
+          var detailsById = {};
+          results.forEach(function (r) { if (r.detail) detailsById[r.id] = r.detail; });
+          renderBoardRows(epics, detailsById);
+        });
+      }
+      enrich();
     })
-    .catch(function (err) { fail(document.getElementById('board-rows'), 'live board fetch failed: ' + err.message, 4); });
+    .catch(function (err) { fail(document.getElementById('board-rows'), 'live board fetch failed: ' + err.message, 6); });
 
   // Recent commits
   fetch(API + '/commits?per_page=15')
