@@ -157,3 +157,43 @@ own deprecation docs): `kiro` is a deprecated alias — Kiro IDE and Kiro CLI di
 subagent (`.md` vs `.json`) and hook formats, though L0/MCP-config paths are identical between
 them. Irrelevant to our current L0+MCP-only scope; will matter if/when subagents or hooks
 become per-host.
+
+## Confirmed: no zero-custom-code library exists for host-target facts (2026-07-06)
+
+Follow-up to the #18/#59/#60 decisions above. Directly asked and researched (via two parallel
+subagents, not solo speculation): can `HOST_TARGET_REGISTRY` (`packages/core/src/host-targets.ts`)
+be sourced from an external library at runtime instead of hand-porting facts per host? **No —
+confirmed, not assumed.**
+
+**Rulesync DOES have a real, documented library API** — verified by downloading the actual
+published package and reading its compiled `dist/index.d.ts`:
+```ts
+import { generate, importFromTool, convertFromTool } from "rulesync"
+```
+This is real and works (confirmed against their own docs site's "Programmatic API" page). BUT
+it only exposes 3 high-level pipeline functions. **The individual facts we need (e.g. "Kiro's
+MCP file is named `mcp.json`, lives at `.kiro/settings/`") are NOT exported anywhere in the
+public API**, root or subpath — `rulesync`'s `package.json` `exports` map has exactly one key
+(`"."`), so `import { KIRO_MCP_FILE_NAME } from 'rulesync/constants'` is not just undocumented,
+it is blocked by Node's own module resolution (`ERR_PACKAGE_PATH_NOT_EXPORTED`). Reaching those
+constants would require an unsupported deep import into `rulesync/dist/...` internals — fragile
+across any patch release, not a real dependency contract.
+
+**Checked and rejected as alternatives** (same research pass): `ruler`/`@intellectronica/ruler`
+(has a `main`/`types` entry, actively maintained, 44K weekly downloads — but no documented
+stable API for the specific per-host facts either, same problem as rulesync); Google's OKF
+tooling (explicitly "no SDK, no runtime" by design — wrong problem domain entirely, it's a
+knowledge-bundle format, not a host-config registry); `cursor-windsurf-convert` (real API but
+covers only Cursor↔Windsurf, 13 weekly downloads, not viable); vendor SDKs from Anthropic/Cursor
+(agent-execution runtimes for their own single tool, not cross-tool config registries).
+
+**Decision: keep the current hand-ported `host-targets.ts` (Option A).** The only real
+alternative (Option B, not pursued) would be calling rulesync's real `generate()` at runtime,
+letting it write real files to disk, and inspecting the paths it actually wrote — that removes
+hand-porting but adds a genuine runtime dependency + filesystem side-effect coupling to the
+critical-path export, which is a worse trade for 3 hosts than the manual cost of porting facts
+by hand. **Revisit Option B only if/when adding host #4 or #5 makes the manual-porting cost
+start actually hurting** — not before. Do not re-research "can we get this from a library" again
+without new information beyond what's documented here (mirrors the pattern already established
+for the project-board-scraping question earlier in this file — don't re-litigate a settled,
+actually-researched question).
