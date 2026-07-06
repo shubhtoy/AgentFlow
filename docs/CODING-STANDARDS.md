@@ -95,8 +95,24 @@ deletion, conversation resolution required before merge. Everything lands via PR
 - **Branch naming**: `type/short-slug` matching the commit type — `feat/*`, `fix/*`, `docs/*`,
   `chore/*`, `ci/*`, `refactor/*`. One branch per logical change / issue.
 - **Flow**: branch off `main` → commit (semantic one-liners) → push → `gh pr create` → merge
-  (squash) → delete branch. Reference the issue it closes (`Closes #NN`) in the PR body.
-- **PR description** carries the detail (what/why/tested/found), since commit subjects stay terse.
+  (squash) → delete branch.
+- **Auto-close issues, don't close them by hand**: put `Closes #NN` (or `Fixes #NN`) — one per
+  issue — in the PR body. GitHub closes them automatically on merge. Never `gh issue close`
+  manually for work a PR completes; a bare `#NN` mention does *not* auto-close, so use the keyword.
+- **PR description format is mandatory — four sections, in this order:**
+  - **What** — what changed, concretely (files/behaviour).
+  - **Why** — the problem or issue this solves (link the issue).
+  - **How** — the approach / key decisions, so a reviewer understands the shape without reading
+    every line.
+  - **Testing** — what was run and the result (test counts, lint, manual verification). "Not
+    tested" is a valid answer only with a stated reason.
+  Commit subjects stay terse; all detail lives here.
+- **Mandatory docs update per PR (git rule):** every PR that adds, removes, or changes a
+  capability MUST update the affected docs *in the same PR* — the relevant per-directory
+  `AGENTS.md` (implementation detail for that area) and `docs/FEATURE-MAP.md` (the one-line
+  inventory), plus `DECISIONS.md`/`USER-CORRECTIONS.md` when a durable decision/correction
+  applies. A code change that leaves its `AGENTS.md`/FEATURE-MAP stale is incomplete — this is
+  how drift (Epic #39) started. Reviewer/self-check: "did the docs move with the code?"
 - **Required approvals: 0** (solo repo) — the PR *flow* is the gate, not review sign-off. Merge
   your own PRs once conversations are resolved.
 - **CI status check (`check`)** is not yet a required merge gate because it is red from
