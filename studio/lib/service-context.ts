@@ -39,7 +39,11 @@ export function getServices() {
 
   const hookRegistry = new HookRegistry(ROOT_DIR)
   hookRegistry.loadAll()
-  const hookEngine = new EventHookEngine(hookRegistry, { execute: async () => ({}) }, consoleLogger)
+  const hookEngine = new EventHookEngine(
+    hookRegistry as unknown as ConstructorParameters<typeof EventHookEngine>[0],
+    { execute: async () => ({}) },
+    consoleLogger,
+  )
   const im = createInstructionManager(ctx)
   im.loadAll()
 

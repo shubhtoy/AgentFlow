@@ -46,7 +46,7 @@ export function serializeGraph(graph: ParsedGraph, rootDir: string): void {
   fs.mkdirSync(rootDir, { recursive: true })
 
   for (const cat of CANONICAL_CATEGORIES) {
-    const resources = (graph as Record<string, Record<string, ParsedFile>>)[cat]
+    const resources = (graph as unknown as Record<string, Record<string, ParsedFile>>)[cat]
     if (!resources) continue
     for (const key of Object.keys(resources)) {
       const file = resources[key]

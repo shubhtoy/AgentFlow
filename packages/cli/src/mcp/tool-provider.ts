@@ -259,7 +259,8 @@ export class NodeToolProvider extends ToolProvider {
     this.rootDir = graph.rootDir || null
     if (this.rootDir) {
       const mcpConfig = loadMcpConfig(this.rootDir)
-      if (Object.keys(mcpConfig.servers).length > 0) await this.mcpManager.initialize(mcpConfig)
+      if (Object.keys(mcpConfig.servers).length > 0)
+        await this.mcpManager.initialize(mcpConfig as unknown as { servers: Record<string, Record<string, unknown>> })
     }
   }
 

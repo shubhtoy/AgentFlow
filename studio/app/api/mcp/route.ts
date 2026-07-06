@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
       await Promise.race([client.connect(transport), new Promise((_, rej) => setTimeout(() => rej(new Error('Connection timed out')), 15000))])
       const toolsResult = await Promise.race([client.listTools(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('listTools timed out')), 15000))])
       const tools = (toolsResult.tools || []).map((t: any) => ({ name: t.name, description: t.description || '' }))
-      cfg.discoveredTools = tools; servers[name] = cfg; saveMcpConfig(s.rootDir, servers)
+      cfg.discoveredTools = tools.map((t: { name: string }) => t.name); servers[name] = cfg; saveMcpConfig(s.rootDir, servers)
       try { await client.close() } catch {}
       return json({ ok: true, source: cfg.url ? 'live' : 'stdio', toolCount: tools.length, tools })
     } catch (err: any) {
