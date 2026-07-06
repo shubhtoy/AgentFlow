@@ -59,11 +59,16 @@ Not a PM tool, just an overview. Deployed to GitHub Pages (`.github/workflows/da
 on every push to `main` &mdash; live at https://shubhtoy.github.io/AgentFlow/.
 
 **Hybrid live/static, chosen per section based on what's actually possible** (the repo is
-public, so this matters): commits, open issues, and CI runs are fetched **live, client-side**
-from `api.github.com` on page load — no auth needed for a public repo, always current, no
-server involved. The project board stays server-baked at build time (GitHub Projects v2 API
-requires auth even for a public repo, so it can't be called from a visitor's browser without
-exposing a credential). Tests/lint/typecheck/code-size also stay server-baked — there's no API
+public, so this matters): commits, open issues, CI runs, and the project board's epic table
+are all fetched **live, client-side** on page load. Commits/issues/CI call `api.github.com`
+directly (public REST, sends CORS headers, no auth needed). The board's item-level data
+(GitHub Projects v2 API requires auth even for a public repo, and the unauthenticated
+board-page fallback has no CORS header) is fetched through a small self-hosted Cloudflare
+Worker — [`github-project-info-mcp`](https://github.com/shubhtoy/github-project-info-mcp), a
+separate standalone project — which adds the missing CORS header. A server-baked snapshot of
+the board (via `gh`/scrape, generated at build time) is still rendered into the initial HTML
+as a progressive-enhancement fallback for no-JS or if the Worker is ever down; the live fetch
+replaces it once it loads. Tests/lint/typecheck/code-size stay server-baked — there's no API
 that returns a live test result; something has to actually run the suite once. `npm run
 docs:check` and `npm run dashboard` both also run in `.husky/pre-push`; the dashboard step
 warns (doesn't auto-commit — see git-safety) if the local snapshot changed and needs staging.

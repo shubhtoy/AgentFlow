@@ -114,7 +114,62 @@ function getCodeSizeInfo() {
   return { rows, total }
 }
 
-// ── GitHub: project board (requires gh auth — Projects v2 API has no public read) ──────
+// ── GitHub: project board ────────────────────────────────────────────────
+//
+// The Projects v2 REST/GraphQL APIs require auth for item-level data even on a public
+// project (confirmed: /users/{u}/projectsV2/{n}/items -> 401 regardless of visibility).
+// The board page's embedded JSON works unauthenticated, but has no CORS header, so a
+// browser can't read it directly from a different origin (shubhtoy.github.io).
+//
+// Resolved: github-project-info-mcp (github.com/shubhtoy/github-project-info-mcp) ships a
+// small Cloudflare Worker that runs this same scrape server-side and adds the CORS header
+// itself. Deployed at github-project-info-api.shubhmittal-sm.workers.dev. The dashboard's
+// client-side script now fetches the full epic table (status, points would need custom
+// fields not exposed by that endpoint's current fields, so status/title/state only for now)
+// through that Worker — genuinely live, no server-side bake needed for this section anymore.
+//
+// Server-side gh/scrape kept ONLY as the no-JS/failure fallback rendered into the initial
+// HTML (progressive enhancement) — if the live fetch fails, this snapshot is what's shown.
+const STATUS_ID_LABELS = {
+  f75ad846: 'Todo',
+  '47fc9ee4': 'In Progress',
+  '98236657': 'Done',
+}
+
+function scrapeBoardFromPublicPage() {
+  const html = sh(`curl -sL "${BOARD_URL}"`)
+  if (!html) return null
+  const match = html.match(/<script type="application\/json" id="memex-paginated-items-data">(.*?)<\/script>/s)
+  if (!match) return null
+  let data
+  try {
+    data = JSON.parse(match[1])
+  } catch {
+    return null
+  }
+  const nodes = data.nodes || []
+  const byStatus = {}
+  const epics = []
+  for (const n of nodes) {
+    const cols = n.memexProjectColumnValues || []
+    const titleCol = cols.find(c => c.memexProjectColumnId === 'Title')
+    const statusCol = cols.find(c => c.memexProjectColumnId === 'Status')
+    const statusId = statusCol && statusCol.value && statusCol.value.id
+    const status = STATUS_ID_LABELS[statusId] || (n.state === 'closed' ? 'Done' : '(unknown)')
+    byStatus[status] = (byStatus[status] || 0) + 1
+    if (titleCol) {
+      epics.push({
+        number: titleCol.value.number,
+        title: titleCol.value.title.raw,
+        status,
+        priority: '',
+        points: null,
+      })
+    }
+  }
+  epics.sort((a, b) => (a.number || 0) - (b.number || 0))
+  return { total: nodes.length, byStatus, epics, totalPoints: 0, donePoints: 0, source: 'scrape' }
+}
 
 function ghJson(cmd) {
   const raw = sh(cmd)
@@ -126,7 +181,7 @@ function ghJson(cmd) {
   }
 }
 
-function getBoardInfo() {
+function getBoardInfoViaGh() {
   const data = ghJson(`gh project item-list 4 --owner shubhtoy --format json --limit 100`)
   if (!data) return null
   const items = data.items || []
@@ -152,7 +207,11 @@ function getBoardInfo() {
     }
   }
   epics.sort((a, b) => (a.number || 0) - (b.number || 0))
-  return { total: items.length, byStatus, epics, totalPoints, donePoints }
+  return { total: items.length, byStatus, epics, totalPoints, donePoints, source: 'gh' }
+}
+
+function getBoardInfo() {
+  return getBoardInfoViaGh() || scrapeBoardFromPublicPage()
 }
 
 // ── Docs snapshot ──────────────────────────────────────────────────────
@@ -198,35 +257,40 @@ function render(data) {
   const boardSection = board
     ? `
     <section class="card" aria-labelledby="board-heading">
-      <h2 id="board-heading">Project board</h2>
-      <p class="meta-line">
-        ${link(BOARD_URL, `${board.total} tracked items`)} &middot;
-        ${board.donePoints}/${board.totalPoints} story points done &middot;
-        ${Object.entries(board.byStatus).map(([k, v]) => `${esc(k)} ${v}`).join(' &middot; ')}
+      <h2 id="board-heading">Project board <span class="live-badge">live</span></h2>
+      <p class="meta-line" id="board-live-meta">
+        ${link(BOARD_URL, 'AgentFlow')} &middot; <span class="mono muted">loading live status&hellip;</span>
       </p>
       <table>
-        <caption class="sr-only">Epic status by number, priority, and story points</caption>
-        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col">Priority</th><th scope="col" class="num">Points</th></tr></thead>
-        <tbody>
+        <caption class="sr-only">Epic status by number and sub-issue progress</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col" class="num">Sub-issues</th></tr></thead>
+        <tbody id="board-rows">
           ${board.epics
             .map(
               e => `<tr>
             <td class="mono">${link(`${REPO_URL}/issues/${e.number}`, `#${e.number}`)}</td>
             <td>${esc(e.title)}</td>
             <td>${epicStatusBadge(e.status)}</td>
-            <td>${esc(e.priority)}</td>
             <td class="num mono">${e.points ?? '\u2014'}</td>
           </tr>`,
             )
             .join('\n')}
         </tbody>
       </table>
-      <p class="meta-line stale-note">snapshot at build time &mdash; not live</p>
+      <p class="meta-line stale-note">rows shown are a build-time snapshot until the live fetch (via a small Cloudflare Worker, see footer) finishes loading &mdash; then replaced with current data. Story points/priority aren't shown here: the public live data source only exposes the board's default-view columns, which don't include those custom fields &mdash; see ${link(BOARD_URL, 'the board itself')} for those.</p>
+      <noscript><p class="meta-line">Enable JavaScript for live board data, or view directly: ${link(BOARD_URL, 'project board')}.</p></noscript>
     </section>`
     : `
     <section class="card" aria-labelledby="board-heading">
-      <h2 id="board-heading">Project board</h2>
-      <p class="meta-line">Not available in this build environment (needs <code>gh</code> auth) &mdash; regenerate locally with <code>npm run dashboard</code> to refresh this section. Live: ${link(BOARD_URL, 'project board')}.</p>
+      <h2 id="board-heading">Project board <span class="live-badge">live</span></h2>
+      <p class="meta-line" id="board-live-meta">loading live status&hellip;</p>
+      <table>
+        <caption class="sr-only">Epic status by number and sub-issue progress</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Epic</th><th scope="col">Status</th><th scope="col" class="num">Sub-issues</th></tr></thead>
+        <tbody id="board-rows"><tr><td colspan="4" class="muted">loading&hellip;</td></tr></tbody>
+      </table>
+      <p class="meta-line">Build-time snapshot unavailable (needs <code>gh</code> auth in this environment) &mdash; live fetch above should still work. Live: ${link(BOARD_URL, 'project board')}.</p>
+      <noscript><p class="meta-line">Enable JavaScript for live board data, or view directly: ${link(BOARD_URL, 'project board')}.</p></noscript>
     </section>`
 
   const ciSection = `
@@ -457,6 +521,7 @@ function render(data) {
 
   <p class="footer">
     regenerate: <code>npm run dashboard</code> &middot; source: ${link(`${REPO_URL}/blob/main/scripts/generate-dashboard.js`, 'scripts/generate-dashboard.js')}<br />
+    board data fetched live via ${link('https://github.com/shubhtoy/github-project-info-mcp', 'github-project-info-mcp')}'s Cloudflare Worker<br />
     ${link(REPO_URL, 'repo')} &middot; ${link(BOARD_URL, 'project board')} &middot;
     ${link(`${REPO_URL}/actions`, 'actions')} &middot; ${link(PAGES_URL, 'this page')}
   </p>
@@ -489,9 +554,73 @@ function render(data) {
     return '<span class="badge badge-bad"><span class="dot"></span>' + esc(conclusion) + '</span>';
   }
 
-  function fail(el, msg) {
-    if (el) el.innerHTML = '<tr><td colspan="3" class="muted">' + esc(msg) + '</td></tr>';
+  function fail(el, msg, colspan) {
+    if (el) el.innerHTML = '<tr><td colspan="' + (colspan || 3) + '" class="muted">' + esc(msg) + '</td></tr>';
   }
+
+  // Small, focused fetch helper — respects CORS (relies on GitHub's REST API sending
+  // Access-Control-Allow-Origin: *, confirmed on api.github.com; does not attempt to bypass
+  // CORS on endpoints that don't send it, like the Projects *web* page or the GraphQL API).
+  function getJSON(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  // Project board — metadata via GitHub's official REST API (CORS-open, no proxy needed),
+  // items via a small self-hosted Cloudflare Worker (github-project-info-mcp project) that
+  // adds CORS to an otherwise-unauthenticated-but-CORS-blocked GitHub endpoint. See
+  // github.com/shubhtoy/github-project-info-mcp for what this Worker does and why it exists.
+  var BOARD_WORKER = 'https://github-project-info-api.shubhmittal-sm.workers.dev';
+
+  getJSON('https://api.github.com/users/shubhtoy/projectsV2/4')
+    .then(function (p) {
+      var el = document.getElementById('board-live-meta');
+      if (!el) return;
+      el.innerHTML = '<a href="' + REPO_URL.replace('/AgentFlow', '') + '/users/shubhtoy/projects/4">' + esc(p.title) + '</a>' +
+        ' &middot; <span class="mono">' + esc(p.state) + '</span>' +
+        ' &middot; updated ' + esc(relTime(p.updated_at));
+    })
+    .catch(function (err) {
+      var el = document.getElementById('board-live-meta');
+      if (el) el.innerHTML = '<span class="muted">live status unavailable: ' + esc(err.message) + '</span>';
+    });
+
+  function fieldValue(item, name) {
+    var f = (item.fields || []).find(function (x) { return x.name === name; });
+    return f ? f.value : null;
+  }
+
+  function boardStatusBadge(name) {
+    if (name === 'Done') return '<span class="badge badge-ok"><span class="dot"></span>Done</span>';
+    if (name === 'In Progress') return '<span class="badge badge-progress"><span class="dot"></span>In Progress</span>';
+    return '<span class="badge badge-todo"><span class="dot"></span>' + esc(name || 'Todo') + '</span>';
+  }
+
+  getJSON(BOARD_WORKER + '/projects/shubhtoy/4/items')
+    .then(function (data) {
+      var items = data.items || [];
+      // Epics only (top-level "Setup: ..." / "Stabilization ..." issues, matching the
+      // server-side snapshot's own filter, kept consistent between both render paths).
+      var epics = items.filter(function (it) {
+        return /^Setup:|^Stabilization/.test(it.title || '');
+      });
+      epics.sort(function (a, b) { return (a.issueNumber || 0) - (b.issueNumber || 0); });
+      var rows = epics.map(function (it) {
+        var status = fieldValue(it, 'Status');
+        var statusName = status ? status.name : (it.state === 'closed' ? 'Done' : 'Todo');
+        var subIssues = fieldValue(it, 'Sub-issues progress');
+        var subIssuesText = subIssues ? (subIssues.completed + '/' + subIssues.total) : '\u2014';
+        return '<tr><td class="mono"><a href="' + REPO_URL + '/issues/' + it.issueNumber + '">#' + it.issueNumber + '</a></td>' +
+          '<td>' + esc(it.title) + '</td>' +
+          '<td>' + boardStatusBadge(statusName) + '</td>' +
+          '<td class="num mono">' + esc(subIssuesText) + '</td></tr>';
+      });
+      var el = document.getElementById('board-rows');
+      if (el) el.innerHTML = rows.join('') || '<tr><td colspan="4" class="muted">no epics found</td></tr>';
+    })
+    .catch(function (err) { fail(document.getElementById('board-rows'), 'live board fetch failed: ' + err.message, 4); });
 
   // Recent commits
   fetch(API + '/commits?per_page=15')
