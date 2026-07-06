@@ -89,3 +89,39 @@ Decision: keep the board section server-baked via `gh project item-list` at buil
 (already the case, already reliable in CI). Don't scrape the undocumented endpoints above for
 production use — they work today but have zero stability contract. Revisit only if GitHub
 ships a documented, CORS-enabled, unauthenticated items API.
+
+## Host-target config: copy the facts from rulesync, don't depend on it (2026-07-06, #18)
+
+Evaluated `rulesync` (dyoshikawa/rulesync, MIT, npm) as a build-vs-adopt-vs-copy decision for
+per-host L0 bootstrap + MCP config knowledge, ahead of #13/#14/#21. Live-tested (network
+blocked to confirm no phone-home; ran `init`/`generate` for kiro/cursor/claudecode).
+
+**Findings:**
+- Healthy: MIT, published same-day, 178K weekly downloads, real `@modelcontextprotocol/sdk`
+  dependency. Not a toy.
+- Correct output for our 3 target hosts: `AGENTS.md`+`.kiro/settings/mcp.json` (Kiro),
+  `.cursor/rules/*.mdc`+`.cursor/mcp.json` (Cursor), `CLAUDE.md`+`.mcp.json` (Claude Code).
+  All three use the same `{ mcpServers: {...} }` JSON shape — no schema translation needed
+  between them today.
+- Pure local CLI, no infra/service dependency — confirmed by running with network blocked.
+- **Rejected as a dependency anyway**: it's a CLI you'd shell out to, not a library import —
+  extra subprocess-failure surface on the critical-path export. And its actual per-host
+  knowledge needed here is tiny (2 file paths per host) — importing a multi-feature CLI
+  (also generates commands/subagents/skills/hooks, which we don't need) for that is
+  disproportionate. Also single-maintainer risk on a critical path.
+- **Scope correction**: L2-L4 (node contracts, references, artifacts, memory) are plain
+  on-demand directory-walk — every host can open a file, zero per-host knowledge needed.
+  Only L0 (always-on bootstrap path/format) and L1/MCP config (path/schema) genuinely vary
+  per host. Earlier framing that pulled commands/skills/hooks into this scope was wrong.
+
+**Decision:** copy the *verified facts*, not the package. `packages/core/src/host-targets.ts`
+is a small, dependency-free `HOST_TARGET_REGISTRY` (Kiro/Cursor/Claude Code today) holding
+exactly: L0 path+format, MCP config path+schema, and the always-on-channel predicate used by
+#13's guardrail. Adding a host = one registry entry, not new branch logic. Re-evaluate rulesync
+only if per-host knowledge grows enough (e.g. real commands/subagents scope) to outweigh the
+subprocess-coupling cost.
+
+Also worth knowing for later: rulesync's own docs note `kiro` is a **deprecated alias** —
+Kiro IDE and Kiro CLI have diverging subagent (`.md` vs `.json`) and hook formats, though L0/
+MCP-config paths are identical between them. Not relevant to our current L0+MCP-only scope,
+but will matter if/when we touch subagents or hooks per-host.

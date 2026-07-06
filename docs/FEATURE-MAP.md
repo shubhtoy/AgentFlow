@@ -15,6 +15,10 @@ already covered there.
 - **L0 contract generator** (`export/l0-contract.ts`) — generates the root AGENTS.md handed to a host agent: entry-node pointer, walk order, gate behaviour. Plain-prose Markdown, no forced frontmatter, matching the real agents.md standard.
 - **Graph validator** — schema checks, broken refs, entry-point rules, cycle detection (as warnings — revision loops are legitimate), unreachable nodes, sub-workflow loop detection, MCP tool reference checks.
 - **Taxonomy** — canonical directory ↔ category ↔ resource-type mapping used everywhere else.
+- **Host target registry** (`host-targets.ts`) — per-host L0 bootstrap path/format + MCP config
+  path/schema + always-on-channel predicate (Kiro/Cursor/Claude Code today). Facts verified by
+  live-testing `rulesync`'s output, copied (not the dependency) — see DECISIONS.md. Feeds #13's
+  placement guardrail; adding a host = one registry entry.
 - **Frontmatter schemas** — per-resource-type YAML validation.
 
 ## CLI / export engine — `packages/cli/` (Node) → `packages/cli/AGENTS.md`

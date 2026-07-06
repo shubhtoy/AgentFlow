@@ -12,6 +12,7 @@ repo-wide rules; `docs/FEATURE-MAP.md` for what's already built here.
 | `src/ref-paths.ts` | Resolves `{{...}}` refs to plain relative file paths for export (`resolveRefsToPaths`) |
 | `src/validator/` | `index.ts` composes `schema.ts` + `structure.ts` + `variables.ts` into `validate()` |
 | `src/taxonomy.ts` | Canonical directory ↔ category ↔ resource-type mappings — single source of truth |
+| `src/host-targets.ts` | `HOST_TARGET_REGISTRY` — per-host L0 bootstrap path/format + MCP config path/schema + always-on-channel predicate (Kiro/Cursor/Claude Code). Add a host by adding one entry here, not by branching elsewhere. |
 | `src/schemas/` | Frontmatter validation schemas per resource type |
 | `src/services/` | `event-hook-engine.ts`, `validation-service.ts` — thin wrappers for consumers |
 
