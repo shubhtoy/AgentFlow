@@ -46,6 +46,11 @@ Full architecture + roadmap: `docs/planning/MASTER-PLAN.md`.
   `.gen.js` build artifacts, MCP-service assertion drift, a `relativePath` contract ambiguity
   in `parseMarkdownFile`). Lint is clean project-wide — keep it that way.
 - **Git safety**: never commit without being explicitly asked. Stage specific files, not `git add .`.
+- **PR flow (mandatory)**: `main` is branch-protected — no direct pushes. All work lands via a
+  `type/slug` branch → PR → squash-merge. PR bodies use the **What / Why / How / Testing** format
+  and `Closes #NN` to auto-close issues. **Every PR updates the docs that moved with the code** —
+  the relevant per-directory `AGENTS.md` + `docs/FEATURE-MAP.md` (and `DECISIONS.md` when a durable
+  decision applies). Full detail: `docs/CODING-STANDARDS.md` → "Branch & PR workflow".
 - **Project board**: github.com/users/shubhtoy/projects/4 (repo: `shubhtoy/AgentFlow`). Epics
   are `Setup: <subsystem>` issues with sub-issues + story points. Update status as work lands.
 
