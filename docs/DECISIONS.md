@@ -125,3 +125,35 @@ Also worth knowing for later: rulesync's own docs note `kiro` is a **deprecated 
 Kiro IDE and Kiro CLI have diverging subagent (`.md` vs `.json`) and hook formats, though L0/
 MCP-config paths are identical between them. Not relevant to our current L0+MCP-only scope,
 but will matter if/when we touch subagents or hooks per-host.
+
+## Ported real always-on semantics from rulesync source, not guessed (2026-07-06, #59)
+
+Follow-up to the #18 decision above. The first `HOST_TARGET_REGISTRY` cut (PR #58) guessed at
+each host's always-on-detection as a simple boolean-frontmatter check. Cloned
+`dyoshikawa/rulesync` at commit `08834fd107c270167b4970a033f2ec303b24d9b8` (MIT) and read its
+actual per-host rule generators (`src/features/rules/*.ts`) to port the real semantics instead:
+
+- **Kiro** (`kiro-rule.ts`, `deriveKiroInclusion`): eagerness is the ABSENCE of an `inclusion`
+  frontmatter block, not an explicit flag — a steering file with no frontmatter at all is
+  Kiro's `always` default. `inclusion: fileMatch`/`manual` are the on-demand modes. Got this
+  wrong in #58 (treated it as a boolean check).
+- **Cursor** (`cursor-rule.ts`): eagerness IS an explicit boolean, `alwaysApply: true`.
+  Absence/false is on-demand. #58 had this one right.
+- **Claude Code** (`claudecode-rule.ts`): eagerness is POSITIONAL — the root rule (project-root
+  `CLAUDE.md` or an alternate root) is always-loaded; every non-root `.claude/rules/*.md` file
+  is on-demand regardless of its content. There's no frontmatter key that means "always-on" at
+  all for this host. #58's `isAlwaysOn` didn't model this distinction (always returned false,
+  which is only correct for non-root files).
+
+`packages/core/src/host-targets.ts`'s `isAlwaysOn` signature was extended to
+`(frontmatter, isRootFile?)` to model Claude Code's positional case correctly.
+
+**31 hosts total** exist in rulesync's `src/constants/*-paths.ts` (see #59 for the full list).
+Only Kiro/Cursor/Claude Code are ported — matches the 3 hosts actually on the critical path
+(#15/#16/#17). Adding a host later: read that host's `<id>-paths.ts` +
+`src/features/rules/<id>-rule.ts` + `src/features/mcp/<id>-mcp.ts` in rulesync, add one
+registry entry, cite what was ported (same pattern as this entry). Note also (from rulesync's
+own deprecation docs): `kiro` is a deprecated alias — Kiro IDE and Kiro CLI diverge on
+subagent (`.md` vs `.json`) and hook formats, though L0/MCP-config paths are identical between
+them. Irrelevant to our current L0+MCP-only scope; will matter if/when subagents or hooks
+become per-host.

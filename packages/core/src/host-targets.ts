@@ -4,16 +4,20 @@
  * Scope is deliberately narrow: L2-L4 (node contracts, references, artifacts, memory) are
  * plain on-demand directory-walk and need ZERO per-host knowledge — every host can open a
  * file. Only two things genuinely differ per host:
- *   1. L0 (always-on bootstrap): which file, what format.
+ *   1. L0 (always-on bootstrap): which file, what format, and how "always-on" is detected.
  *   2. MCP server config: which file, and whether the host needs an inline mcpServers wrapper.
  *
- * Facts below were verified by running the real `rulesync` CLI (github.com/dyoshikawa/rulesync,
- * MIT, live-tested 2026-07-06) end-to-end for each host and inspecting its output — not
- * guessed. We copy the *facts*, not the dependency: no subprocess coupling, no package
- * dependency on our critical-path export. See docs/DECISIONS.md for the adopt-vs-copy call.
+ * Facts + always-on semantics below are PORTED from `rulesync` (github.com/dyoshikawa/rulesync,
+ * MIT license, commit 08834fd107c270167b4970a033f2ec303b24d9b8, verified 2026-07-06) — its own
+ * per-host rule/MCP generator source, not guessed or reverse-engineered from CLI output alone.
+ * We copy the verified facts, not the runtime dependency: no subprocess coupling on our
+ * critical-path export. See docs/DECISIONS.md for the adopt-vs-copy rationale (#18) and #59
+ * for the porting task this file resolves.
  *
- * Adding a new host = one new registry entry. No branch logic elsewhere should hardcode a
- * host name — always look up this registry.
+ * Adding a new host = one new registry entry, sourced the same way (read rulesync's
+ * `src/constants/<host>-paths.ts` + `src/features/rules/<host>-rule.ts` +
+ * `src/features/mcp/<host>-mcp.ts`, cite what was ported). No branch logic elsewhere should
+ * hardcode a host name — always look up this registry.
  */
 
 export type HostId = 'kiro' | 'cursor' | 'claude-code'
@@ -44,8 +48,12 @@ export interface HostTarget {
    */
   alwaysOnChannel: {
     mechanism: string
-    /** Returns true if the given frontmatter would make this file load eagerly. */
-    isAlwaysOn: (frontmatter: Record<string, unknown>) => boolean
+    /**
+     * Returns true if the given file (frontmatter + whether it IS the L0 root file) would
+     * load eagerly on this host. `frontmatter` is the parsed YAML frontmatter of a candidate
+     * L1-L4 file; `isRootFile` is true only for the file at `l0.path` itself.
+     */
+    isAlwaysOn: (frontmatter: Record<string, unknown>, isRootFile?: boolean) => boolean
   }
 }
 
@@ -56,8 +64,21 @@ export const HOST_TARGET_REGISTRY: Record<HostId, HostTarget> = {
     l0: { path: 'AGENTS.md', format: 'markdown' },
     mcpConfig: { path: '.kiro/settings/mcp.json', schema: 'mcpServers-json' },
     alwaysOnChannel: {
-      mechanism: 'inclusion: always',
-      isAlwaysOn: fm => fm.inclusion === 'always',
+      mechanism: 'inclusion: always (the default when no frontmatter block is present)',
+      // Ported from rulesync `src/features/rules/kiro-rule.ts` (`deriveKiroInclusion`):
+      // Kiro's steering docs (`.kiro/steering/*.md`) default to `always` when a file carries
+      // NO `inclusion` frontmatter at all — `always` is never written explicitly, it's the
+      // absence of the block. An explicit `inclusion: "always"` is equally eager if present.
+      // `fileMatch` and `manual` are the two on-demand modes. Our exporter never writes
+      // steering-style frontmatter to L1-L4 files (they're plain walkable-dir files), so this
+      // predicate exists to guard against that ever being introduced (e.g. by future native-
+      // selector emission) rather than to fire on today's output.
+      isAlwaysOn: fm => {
+        if (isRootExempt(fm)) return false
+        const inclusion = fm.inclusion
+        if (inclusion === undefined) return true // absent block = eager, Kiro's real default
+        return inclusion === 'always'
+      },
     },
   },
   cursor: {
@@ -66,7 +87,10 @@ export const HOST_TARGET_REGISTRY: Record<HostId, HostTarget> = {
     l0: { path: '.cursor/rules/00-index.mdc', format: 'markdown' },
     mcpConfig: { path: '.cursor/mcp.json', schema: 'mcpServers-json' },
     alwaysOnChannel: {
-      mechanism: 'alwaysApply: true',
+      mechanism: 'alwaysApply: true (explicit boolean; absent/false is on-demand)',
+      // Ported from rulesync `src/features/rules/cursor-rule.ts`: unlike Kiro, Cursor's
+      // eagerness is an explicit boolean flag — `alwaysApply: true` written, or omitted/false
+      // for on-demand. No "absence means eager" trap here.
       isAlwaysOn: fm => fm.alwaysApply === true,
     },
   },
@@ -76,14 +100,27 @@ export const HOST_TARGET_REGISTRY: Record<HostId, HostTarget> = {
     l0: { path: 'CLAUDE.md', format: 'markdown' },
     mcpConfig: { path: '.mcp.json', schema: 'mcpServers-json' },
     alwaysOnChannel: {
-      // Claude Code has no per-file frontmatter equivalent to inclusion/alwaysApply; the only
-      // eager channel is the root CLAUDE.md itself (or an @import chain rooted there). Content
-      // placed outside CLAUDE.md/@import is on-demand by construction, so this always returns
-      // false for L1-L4 files (which are never written to that path/chain by the exporter).
-      mechanism: 'root CLAUDE.md / @import',
-      isAlwaysOn: () => false,
+      mechanism: 'root CLAUDE.md (positional, not a frontmatter flag)',
+      // Ported from rulesync `src/features/rules/claudecode-rule.ts`: eagerness is POSITIONAL,
+      // not a frontmatter key. The root rule (root: true -> project-root CLAUDE.md, or an
+      // alternate root) is always-loaded; every non-root modular rule under `.claude/rules/*.md`
+      // is on-demand by construction, regardless of its frontmatter. So this predicate is
+      // driven by `isRootFile`, not by any key inside `frontmatter` -- there is no boolean or
+      // sentinel value inside a Claude Code rule file that means "always-on".
+      isAlwaysOn: (_fm, isRootFile = false) => isRootFile,
     },
   },
+}
+
+/**
+ * Shared escape hatch: a file can declare `inclusion`/`alwaysOn` metadata that explicitly
+ * marks it as exempt from a host's eager-channel default (used by no host today, reserved
+ * for #13's guardrail to attach an override if a legitimate on-demand file needs to disable
+ * an inherited default). Currently always false; kept as a single seam so hosts don't each
+ * need their own escape-hatch key added ad hoc later.
+ */
+function isRootExempt(_frontmatter: Record<string, unknown>): boolean {
+  return false
 }
 
 export const SUPPORTED_HOST_IDS: HostId[] = Object.keys(HOST_TARGET_REGISTRY) as HostId[]

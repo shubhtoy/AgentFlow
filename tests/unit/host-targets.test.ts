@@ -36,25 +36,32 @@ describe('host target registry', () => {
   });
 });
 
-describe('alwaysOnChannel.isAlwaysOn — the #13 guardrail predicate', () => {
-  it('kiro: inclusion:always is flagged, anything else is not', () => {
+describe('alwaysOnChannel.isAlwaysOn — ported from rulesync (#59)', () => {
+  it('kiro: ABSENT inclusion frontmatter is eager (the real Kiro default, not a boolean flag)', () => {
     const { isAlwaysOn } = HOST_TARGET_REGISTRY.kiro.alwaysOnChannel;
-    expect(isAlwaysOn({ inclusion: 'always' })).toBe(true);
-    expect(isAlwaysOn({ inclusion: 'manual' })).toBe(false);
-    expect(isAlwaysOn({})).toBe(false);
+    expect(isAlwaysOn({})).toBe(true); // no frontmatter at all -> Kiro treats as always-on
+    expect(isAlwaysOn({ inclusion: 'always' })).toBe(true); // explicit, equally eager
   });
 
-  it('cursor: alwaysApply:true is flagged, false/absent is not', () => {
+  it('kiro: fileMatch / manual are on-demand', () => {
+    const { isAlwaysOn } = HOST_TARGET_REGISTRY.kiro.alwaysOnChannel;
+    expect(isAlwaysOn({ inclusion: 'fileMatch', fileMatchPattern: '**/*.ts' })).toBe(false);
+    expect(isAlwaysOn({ inclusion: 'manual' })).toBe(false);
+  });
+
+  it('cursor: alwaysApply:true is flagged; absent/false is not (explicit boolean, no absence trap)', () => {
     const { isAlwaysOn } = HOST_TARGET_REGISTRY.cursor.alwaysOnChannel;
     expect(isAlwaysOn({ alwaysApply: true })).toBe(true);
     expect(isAlwaysOn({ alwaysApply: false })).toBe(false);
-    expect(isAlwaysOn({})).toBe(false);
+    expect(isAlwaysOn({})).toBe(false); // absent means on-demand for Cursor (unlike Kiro)
   });
 
-  it('claude-code: on-demand files never register as always-on', () => {
+  it('claude-code: eagerness is positional (isRootFile), not a frontmatter key', () => {
     const { isAlwaysOn } = HOST_TARGET_REGISTRY['claude-code'].alwaysOnChannel;
-    expect(isAlwaysOn({})).toBe(false);
-    expect(isAlwaysOn({ anything: 'goes' })).toBe(false);
+    expect(isAlwaysOn({}, true)).toBe(true); // the root CLAUDE.md file itself
+    expect(isAlwaysOn({}, false)).toBe(false); // a .claude/rules/*.md modular file
+    expect(isAlwaysOn({ anything: 'goes' }, false)).toBe(false); // no frontmatter key overrides position
+    expect(isAlwaysOn({})).toBe(false); // isRootFile defaults to false when omitted
   });
 });
 
