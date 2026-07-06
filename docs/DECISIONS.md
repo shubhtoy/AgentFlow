@@ -22,6 +22,17 @@ bootstrap (placed where the host auto-loads it) + native selectors + MCP config.
 always-on; L1-L4 (including memory) load on demand via the directory walk. Full detail:
 `docs/planning/MASTER-PLAN.md`.
 
+## Known bug: node names collide with ARTIFACT_DIRS exclusion (2026-07-06, tracked as #38)
+
+`packages/cli/src/parser.ts`'s `parseWorkflow` applies core's `ARTIFACT_DIRS` set (`dist`,
+`build`, `output`, `.next`, `venv`, `.cache`, etc — meant to exclude compiled-output dirs during
+repo-wide `.agentflow/` discovery) when scanning for *node directories inside an already-found
+workflow*. A node legitimately named `build` is silently dropped from the graph — no error, it
+just doesn't exist after parsing. Found while implementing Epic 2 #12; not fixed there since
+it's a pre-existing parser issue, out of that issue's scope. Fix belongs in `parseWorkflow`: a
+node directory containing a `.md` file is unambiguously a node regardless of name; `ARTIFACT_DIRS`
+should only gate `repo-scanner.ts`'s repo-wide walk. Until fixed, avoid these names for nodes.
+
 ## Dashboard: project board stays build-time via `gh` (2026-07-06)
 
 Investigated whether the board section could go fully client-side/live like commits, issues,

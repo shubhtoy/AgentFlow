@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateL0Contract > produces a stable snapshot for the validated rig 1`] = `
+"# wf
+
+## How to run this workflow
+
+Start by opening \`wf/research/SKILL.md\`. It is the entry point — read it before doing anything else.
+
+Each node file names the next file to open, as a relative path. Follow that path — do not
+guess, skip ahead, or jump to a later node. Treat the directory as the source of truth for
+what happens next, not this file.
+
+Expected order for the unconditional path through this workflow:
+
+1. research
+2. plan
+3. review
+4. build
+
+Conditional branches may change this order — the node file you are on always wins over
+this summary.
+
+## Gates
+
+Some transitions in this workflow are conditional on explicit approval. When a node file
+says to wait for approval before continuing, stop and wait — do not proceed to the next
+node on your own judgement.
+
+## Setup commands
+
+None — this is a static, portable export. No install step is required to read or follow it."
+`;

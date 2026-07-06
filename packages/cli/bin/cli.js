@@ -103,7 +103,7 @@ program
   .argument('[dir]', 'workspace directory', brandConfig.dir)
   .option('-o, --output <path>', 'output path (file or directory)')
   .option('-w, --workflow <name>', 'workflow to export (omit for full workspace)')
-  .option('-f, --format <format>', 'export format: json, zip, dir, share, raw, parsed')
+  .option('-f, --format <format>', 'export format: json, zip, dir, share, raw, parsed, walkable')
   .option('--platform <name>', 'target platform (kiro, cursor, claude-code, vscode-copilot, windsurf, agent-spec)')
   .action(async (dir, opts) => {
     const rootDir = path.resolve(dir);
@@ -164,6 +164,30 @@ program
         fs.writeFileSync(fullPath, content);
       }
       console.log(`Exported ${opts.format} to ${outDir}/ (${Object.keys(files).length} files)`);
+      return;
+    }
+
+    // Walkable directory export (#12): L0 contract + one folder per node with
+    // SKILL.md + output/, refs resolved to plain relative paths.
+    if (opts.format === 'walkable') {
+      try {
+        const { emitWalkableDirectory } = require(path.join(srcDir, 'export', 'walkable-export'));
+        const graph = await cli.parseRoot(rootDir);
+        const workflowIds = Object.keys(graph.workflows || {});
+        let workflowId = opts.workflow;
+        if (!workflowId) {
+          if (workflowIds.length === 1) workflowId = workflowIds[0];
+          else if (workflowIds.length === 0) { console.error('\u2717 No workflows found.'); process.exit(1); }
+          else { console.error(`\u2717 Multiple workflows found. Use --workflow <name>: ${workflowIds.join(', ')}`); process.exit(1); }
+        }
+        const outDir = opts.output || path.join('export', `${workflowId}-walkable`);
+        const result = emitWalkableDirectory(graph, outDir, { workflowId });
+        console.log(`\u2713 Exported walkable directory to ${outDir}/ (${result.filesWritten.length} files)`);
+        if (result.unresolved.length) {
+          console.log(`  \u26a0 ${result.unresolved.length} unresolved ref(s):`);
+          for (const u of result.unresolved) console.log(`    ${u.file}: {{${u.ref.raw}}}`);
+        }
+      } catch (err) { console.error(`\u2717 ${err.message}`); process.exit(1); }
       return;
     }
 
