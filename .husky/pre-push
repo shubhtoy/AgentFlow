@@ -6,6 +6,10 @@ echo "── pre-push: running tests ──"
 npm test
 
 echo ""
+echo "── pre-push: docs affinity (affected AGENTS.md must be updated — #54) ──"
+node scripts/check-docs-affinity.js
+
+echo ""
 echo "── pre-push: docs prune check (advisory — never fails the push on its own) ──"
 npm run docs:check
 

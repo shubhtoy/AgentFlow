@@ -63,4 +63,9 @@ already covered there.
 - `npm run lint` is 0 errors/0 warnings project-wide — keep it that way.
 - `npm run dashboard` — static living-status snapshot at `studio/public/dashboard.html`,
   deployed to GitHub Pages (https://shubhtoy.github.io/AgentFlow/) on every push to `main`.
+- **Branch protection + PR flow**: `main` is protected (no direct push). PRs use the
+  What/Why/How/Testing template (`.github/pull_request_template.md`) and `Closes #NN`.
+- **`npm run docs:affinity`** (`scripts/check-docs-affinity.js`, in `.husky/pre-push`) — blocks
+  a push if a changed source file's nearest `AGENTS.md` wasn't updated in the same push;
+  enforces the "docs move with the code" rule. Bypass: `SKIP_DOCS_CHECK=1` / `[skip-docs]`.
 - `npm ci` requires plain npm workspace syntax (`"*"`, not `"workspace:*"` — that's pnpm/yarn).

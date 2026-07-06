@@ -19,7 +19,8 @@
     "typecheck": "tsc --build",
     "docs:check": "node scripts/docs-prune-check.js",
     "dashboard": "node scripts/generate-dashboard.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs:affinity": "node scripts/check-docs-affinity.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
