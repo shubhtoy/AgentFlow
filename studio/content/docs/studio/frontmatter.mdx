@@ -28,72 +28,85 @@ Plain string fields render as single-line text inputs with placeholder hints fro
 
 ### Select Fields (Enums)
 
-Enum fields render as dropdown selects listing all valid values defined in the schema. For example, the `type` field on a node (`step`, `gateway`, `sub-workflow`) appears as a three-option dropdown. Selecting a value immediately updates the YAML and triggers validation.
+Enum fields render as dropdown selects listing all valid values defined in the schema. For example, the `type` field on a node appears as a two-option dropdown: `step` or `sub-workflow` (a step with conditional edges is automatically rendered as a gateway on the canvas — there is no separate `gateway` type value). Selecting a value immediately updates the YAML and triggers validation.
 
 ### Boolean Fields
 
-Boolean fields render as toggle switches. The toggle shows the field name on the left and the on/off state on the right. Clicking the toggle flips the value between `true` and `false`. Fields like `sign` in git configuration or `strict` in validation settings use this control.
+Boolean fields render as toggle switches. The toggle shows the field name on the left and the on/off state on the right. Clicking the toggle flips the value between `true` and `false`. `entry` on a node and `editable` on a memory entry use this control.
 
 ### Tag List Fields (Arrays of Strings)
 
-Array fields render as tag inputs. Each existing item appears as a removable tag. Type in the input field and press `Enter` to add a new item. Click the X on any tag to remove it. Arrays like `tags`, `instructions`, and `capabilities` use this control.
+Array fields render as tag inputs. Each existing item appears as a removable tag. Type in the input field and press `Enter` to add a new item. Click the X on any tag to remove it. `tags` (Instruction, Skill) and `constraints` (nested under a workflow's `identity` object) use this control.
 
 ### Key-Value Fields (Objects)
 
-Object fields render as collapsible nested forms. Click the field header to expand it and reveal sub-fields, each rendered with their own appropriate control type. For example, a `remote` object with `name` and `branch` string fields expands to show two text inputs.
+Object fields render as collapsible nested forms. Click the field header to expand it and reveal sub-fields, each rendered with their own appropriate control type. For example, a node's `context` object with `max_tokens`, `inputs`, and `exclude` fields expands to show one text input and two textareas.
 
 ### Number Fields
 
-Number fields render as numeric inputs with increment/decrement buttons. The schema may define minimum and maximum values which constrain the input range.
+Integer fields (`max_tokens` on a node's `context` or an instruction, `priority`-style ordering fields) render as numeric text inputs. The schema does not currently define minimum/maximum bounds — validation range checks, if any, come from the graph validator, not the form control itself.
 
 ## Form Fields by Resource Type
 
-<Tabs items={['Workflow (AGENTS.md)', 'Node (SKILL.md)', 'Capability', 'Instruction', 'Skill']}>
-<Tab value="Workflow (AGENTS.md)">
+<Tabs items={['Workflow / Workspace (AGENTS.md)', 'Node (SKILL.md)', 'Capability', 'Instruction', 'Skill', 'Memory']}>
+<Tab value="Workflow / Workspace (AGENTS.md)">
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | text | Workflow display name |
-| `description` | textarea | What this workflow does |
-| `model` | select | Default LLM model for nodes |
-| `temperature` | number | Sampling temperature (0.0 -- 2.0) |
-| `max_tokens` | number | Context budget ceiling |
-| `tools` | taglist | Array of capability references |
-| `instructions` | taglist | Array of instruction references |
+| `type` | text | Literal `agents`, identifying this as an agents descriptor |
+| `name` | text | Display name of the agent or workspace |
+| `description` | textarea | Short summary of the agent's purpose |
+| `identity` | group | Nested object: `name`, `role`, `personality`, `constraints` (taglist) |
 </Tab>
 <Tab value="Node (SKILL.md)">
 | Field | Type | Description |
 |-------|------|-------------|
-| `title` | text | Node display name |
+| `name` | text | Node display name |
+| `type` | select | `step` or `sub-workflow` (steps with conditional edges render as gateways on the canvas — there is no separate `gateway` value) |
 | `description` | textarea | What this node does |
-| `type` | select | `step`, `gateway`, or `sub-workflow` |
-| `conditions` | taglist | Edge condition expressions |
-| `capabilities` | taglist | Attached capability references |
-| `instructions` | taglist | Attached instruction references |
+| `workflow` | workflow-picker | Linked workflow — required when `type` is `sub-workflow` |
+| `entry` | boolean | Whether this node is the workflow entry point |
+| `agent` | text | Override agent persona for this node |
+| `model` | text | Preferred LLM model identifier |
+| `context` | group | Nested object: `max_tokens`, `inputs`, `exclude` |
+| `outputs` | object-list | Output declarations: `name`, `format`, `description` |
 </Tab>
 <Tab value="Capability">
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | text | Tool name |
-| `description` | textarea | What the tool does |
-| `type` | select | `mcp`, `function`, or `api` |
-| `endpoint` | text | Server URL or command |
-| `auth` | select | Authentication method |
+| `name` | text | Capability name |
+| `type` | select | `builtin`, `script`, `mcp`, or `package` |
+| `description` | textarea | What the capability does |
+| `command` | text | Shell command — required when `type` is `script` |
+| `mcp` | text | MCP server reference — required when `type` is `mcp` |
+| `package` | text | Package identifier — required when `type` is `package` |
+| `builtin_mapping` | text | Maps to a built-in tool implementation |
+| `parameters` | textarea | JSON Schema for tool parameters |
+| `outputs` | object-list | Output declarations: `name`, `format`, `description` |
 </Tab>
 <Tab value="Instruction">
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | text | Instruction identifier |
-| `description` | textarea | Summary of the guidance |
-| `scope` | select | `global`, `workflow`, or `node` |
-| `priority` | number | Ordering weight |
+| `name` | text | Instruction name |
+| `description` | textarea | What this instruction provides |
+| `domain` | text | Domain this instruction belongs to |
+| `tags` | taglist | Tags for categorization and filtering |
+| `max_tokens` | number | Token budget for this instruction's content |
+| `platforms` | textarea | Opaque platform-specific hints read by exporters |
 </Tab>
 <Tab value="Skill">
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | text | Skill identifier |
-| `description` | textarea | What this skill handles |
-| `trigger` | text | Activation condition |
-| `conditions` | taglist | Prerequisite checks |
+| `name` | text | Skill name |
+| `description` | textarea | What this skill does (required) |
+| `allowed-tools` | text | Agent Skills spec field |
+| `tags` | taglist | Tags for categorization and filtering |
+</Tab>
+<Tab value="Memory">
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | text | Memory entry name |
+| `description` | textarea | What this memory stores |
+| `editable` | boolean | Whether the agent can modify this memory at runtime |
 </Tab>
 </Tabs>
 
@@ -112,7 +125,7 @@ The form view shows validation state inline next to each field:
 A red border and red text appear on fields with invalid values. Hovering over the indicator shows the specific validation message:
 
 - "Required field" -- a mandatory field is empty
-- "Value must be one of: step, gateway, sub-workflow" -- an enum field has an invalid value
+- "Value must be one of: step, sub-workflow" -- an enum field has an invalid value
 - "Must be a positive integer" -- a number field is out of range
 
 ### Warning Indicators

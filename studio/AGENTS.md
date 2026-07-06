@@ -14,6 +14,8 @@ server-side fs/git/MCP operations the browser can't do directly.
 | `components/ExportDialog.tsx` | UI for `exportForPlatform` (packages/cli) |
 | `components/ValidationPanel.tsx` | Renders `validate()` (packages/core) results |
 | `components/MCPPanel.tsx`, `McpConnectionBadge.tsx` | MCP server config UI |
+| `components/FrontmatterForm.tsx` | Dynamic frontmatter editor — form schema built from `getFormSchema()` in `@agentflow/core/schemas/frontmatter-schemas` (never hand-duplicate the field list; the form is generated, not authored) |
+| `content/docs/` | Fumadocs-powered studio documentation site (`.mdx`). Narrative pages (e.g. `studio/frontmatter.mdx`) that restate schema field tables by hand can drift from the real schema — `reference/frontmatter-schema.mdx` and `reference/node-types.mdx` are the ones worth trusting as current since they're kept in lockstep with `frontmatter-schemas.ts`; if you change that schema, grep `content/docs/` for stale field names before calling the change done. |
 | `components/copilot/`, `lib/copilot/` | AI chat/copilot integration |
 | `app/api/` | Server routes wrapping `packages/cli` services (fs, git, MCP, export) |
 | `lib/types.ts` | Studio-local UI types — do not redefine `ParsedGraph`/`Ref`/etc., import from core |

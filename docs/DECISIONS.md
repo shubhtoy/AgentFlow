@@ -230,3 +230,31 @@ happening to be eager on a target host — not against anything the exporter int
 becomes fully load-bearing once #14 lands and the exporter starts writing host-native
 selector frontmatter. Both #13 and #14 read from the same `HOST_TARGET_REGISTRY`
 (`packages/core/src/host-targets.ts`), so there's no duplicated per-host logic between them.
+
+## studio/content/docs/ drift is a real, separate risk from docs/*.md drift (2026-07-06)
+
+Epic #39 consolidated `docs/` (the durable-memory + planning doc set). It didn't touch
+`studio/content/docs/` — the Fumadocs-powered user-facing studio site, a completely different
+doc tree with its own drift risk, discovered while checking whether frontmatter genuinely
+matters to the frontend (it does: `components/FrontmatterForm.tsx` builds its form schema
+live from `@agentflow/core/schemas/frontmatter-schemas.ts`'s `getFormSchema()` — the UI itself
+can't drift, since it's generated).
+
+**What was actually wrong**: `studio/content/docs/studio/frontmatter.mdx`'s hand-written
+"Form Fields by Resource Type" table didn't match the real schema at all — invented fields
+(`temperature`, `endpoint`, `auth`, `trigger`, `scope`, `priority`) that don't exist anywhere
+in `frontmatter-schemas.ts`, a fabricated `gateway` value for node `type` (real enum is only
+`step`/`sub-workflow` — gateway is a canvas *rendering* concept for a step with conditional
+edges, not a frontmatter value), and fabricated min/max number-range and git-config examples.
+Fixed to match the real schema exactly, using the field lists already correct in
+`reference/frontmatter-schema.mdx`/`reference/node-types.mdx` (checked those two against the
+real schema too — they're accurate, not drifted, so this was an isolated single-file problem,
+not a systemic one across the doc site).
+
+**Takeaway, captured in `studio/AGENTS.md`**: content pages that *narrate* a schema (prose +
+a hand-typed table) can silently drift from the schema they describe, even though the
+schema-consuming *component* (`FrontmatterForm.tsx`) cannot, because it's generated. When a
+schema changes, grep `studio/content/docs/` for the field names before calling the change
+done — this doc tree isn't covered by the docs-affinity pre-push hook (that only checks
+per-directory `AGENTS.md` for code changes, not narrative content pages), so it has to be a
+manual check, not an automated gate, until/unless that's worth building.
