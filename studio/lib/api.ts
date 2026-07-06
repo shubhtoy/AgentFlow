@@ -181,20 +181,33 @@ export const api = {
       return out
     }
 
-    // Parsed: same .md structure, {{ref}} templates resolved to bare paths
+    // Parsed: same .md structure, {{ref}} templates resolved to relative paths.
+    // Uses the same core resolveRefsToPaths the CLI's walkable export uses —
+    // correctly handles edge/data-flow refs (not just `category/name` mentions)
+    // and computes real relative paths between files instead of a bare category/name string.
     if (options.format === 'parsed') {
+      const { parseFromFiles } = await import('@agentflow/core/parser-browser')
+      const { resolveRefsToPaths } = await import('@agentflow/core/ref-paths')
+      const fileMap = Object.fromEntries(
+        (data.allFiles || []).map((f: any) => [f.relativePath, f.rawContent || ''])
+      )
+      const graph = parseFromFiles(fileMap)
+      const { files } = resolveRefsToPaths(graph)
+
+      // resolveRefsToPaths rewrites the frontmatter-stripped body only — reconstruct
+      // each file's original frontmatter block on top of the resolved body so the
+      // preview keeps the same .md structure as the source (matches "Raw" format's shape).
       const out: Record<string, string> = {}
       for (const f of (data.allFiles || []) as any[]) {
-        if (!f.relativePath || !f.rawContent) continue
-        let content = f.rawContent as string
-        const refs = (f.refs || []) as Array<{ raw: string; category: string; name: string }>
-        // Replace {{category/name}} with category/name (remove template braces)
-        for (const ref of [...refs].reverse()) {
-          const template = `{{${ref.raw}}}`
-          const resolved = `${ref.category}/${ref.name}`
-          content = content.replace(template, resolved)
+        if (!f.relativePath) continue
+        const body = files[f.relativePath] ?? f.content ?? ''
+        const fm = f.frontmatter && Object.keys(f.frontmatter).length ? f.frontmatter : null
+        if (!fm) {
+          out[f.relativePath] = body
+          continue
         }
-        out[f.relativePath] = content
+        const fmLines = ['---', ...Object.entries(fm).map(([k, v]) => `${k}: ${v}`), '---', '']
+        out[f.relativePath] = fmLines.join('\n') + body
       }
       return out
     }

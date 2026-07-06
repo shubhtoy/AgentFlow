@@ -26,3 +26,19 @@ putting cross-session memory somewhere only one host reads contradicts that. Dur
 (decisions, corrections, standards, feature map) belong under `docs/`, in plain markdown any
 host or human can read. Host-specific config (if ever needed) is the only thing that belongs
 in a dotfolder like `.kiro/`.
+
+## Read all three living docs before implementing, not just FEATURE-MAP/AGENTS.md (2026-07-06)
+
+Before starting an implementation task, read `docs/DECISIONS.md` and `docs/USER-CORRECTIONS.md`
+in addition to `docs/FEATURE-MAP.md` and the relevant `AGENTS.md` files — root `AGENTS.md`
+points at `CODING-STANDARDS.md` by name for exactly this reason ("read it before writing new
+code, not after lint turns up red"), and that file's own "Learning from corrections" section
+says to check `DECISIONS.md`/`USER-CORRECTIONS.md` before adding anything. Skipping straight to
+the feature map and planning docs missed this once (Epic 2 #11/#12 implementation) even though
+the pointer was sitting in the first file read. The three docs are meant to be read together,
+every time, not opportunistically.
+
+The other half of this: when a real bug or gap is found mid-implementation (not just "add a
+feature," but "discovered X is broken"), file it as a tracked issue *and* capture it here or in
+`DECISIONS.md` if it's a durable fact worth not re-discovering — a GitHub issue alone doesn't
+get re-surfaced next session the way these docs do.

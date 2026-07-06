@@ -8,6 +8,7 @@
     "./parser-core": "./src/parser-core.ts",
     "./parser-browser": "./src/parser-browser.ts",
     "./ref-paths": "./src/ref-paths.ts",
+    "./export/l0-contract": "./src/export/l0-contract.ts",
     "./validator": "./src/validator.ts",
     "./errors": "./src/errors.ts",
     "./taxonomy": "./src/taxonomy.ts",
