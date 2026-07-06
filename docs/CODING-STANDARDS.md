@@ -119,9 +119,9 @@ deletion, conversation resolution required before merge. Everything lands via PR
   `[skip-docs]` in the commit message.
 - **Required approvals: 0** (solo repo) — the PR *flow* is the gate, not review sign-off. Merge
   your own PRs once conversations are resolved.
-- **CI status check (`check`)** is not yet a required merge gate because it is red from
-  pre-existing typecheck debt (tracked under Epic 7, issue #50). Once CI is green, add `check`
-  as a required status check so every PR must pass lint + typecheck + tests to merge.
+- **CI status check (`check`) is a required merge gate** (as of #50/#56): every PR must pass
+  `npm run lint` + `npm run typecheck` + `npm test` before it can merge. Branch protection
+  enforces it.
 
 ## Learning from corrections (keep docs improving without bloat)
 
