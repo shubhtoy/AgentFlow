@@ -313,6 +313,24 @@ function render(data) {
       <noscript><p class="meta-line">Enable JavaScript, or view directly: ${link(`${REPO_URL}/issues`, 'issues')}.</p></noscript>
     </section>`
 
+  const p0Section = `
+    <section class="card" aria-labelledby="p0-heading">
+      <h2 id="p0-heading">P0 critical path <span class="live-badge">live</span></h2>
+      <p class="meta-line">The blocking sequence: everything else waits on these landing, in rough order.</p>
+      <table>
+        <caption class="sr-only">Open P0-labelled issues, the critical path</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">issue</th><th scope="col">area</th></tr></thead>
+        <tbody id="p0-rows"><tr><td colspan="3" class="muted">loading&hellip;</td></tr></tbody>
+      </table>
+      <noscript><p class="meta-line">Enable JavaScript, or view directly: ${link(`${REPO_URL}/issues?q=is%3Aopen+is%3Aissue+label%3AP0`, 'P0 issues')}.</p></noscript>
+    </section>`
+
+  const labelBreakdownSection = `
+    <section class="card" aria-labelledby="labels-heading">
+      <h2 id="labels-heading">Open work by priority &amp; area <span class="live-badge">live</span></h2>
+      <div id="label-breakdown" class="meta-line">loading&hellip;</div>
+    </section>`
+
   const codeSizeRows = codeSize.rows
     .map(r => `<tr><td>${esc(r.label)}</td><td class="num mono">${r.lines.toLocaleString()}</td></tr>`)
     .join('\n')
@@ -485,6 +503,11 @@ function render(data) {
   <div class="section-grid">
     ${boardSection}
     ${ciSection}
+  </div>
+
+  <div class="section-grid">
+    ${p0Section}
+    ${labelBreakdownSection}
   </div>
 
   <div class="section-grid">
@@ -676,11 +699,14 @@ function render(data) {
     })
     .catch(function (err) { fail(document.getElementById('commit-rows'), 'failed to load: ' + err.message); });
 
-  // Open issues + skipped-test tracking
+  // Open issues + skipped-test tracking + P0 critical path + label breakdown.
+  // Single fetch, four consumers — avoids hitting GitHub's rate limit with duplicate calls.
   fetch(API + '/issues?state=open&per_page=100')
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function (issues) {
       var real = issues.filter(function (i) { return !i.pull_request; });
+
+      // Open issues summary + skipped-test tracking
       var tracked = real.filter(function (i) {
         return (i.labels || []).some(function (l) { return (l.name || l) === 'skipped-test'; });
       });
@@ -692,12 +718,59 @@ function render(data) {
       }
       document.getElementById('issues-summary').innerHTML = html;
       document.getElementById('issues-count').innerHTML = '<a href="' + REPO_URL + '/issues">' + real.length + '</a>';
+
+      // P0 critical path — the issues that actually block everything else
+      var labelName = function (l) { return l.name || l; };
+      var p0 = real.filter(function (i) {
+        return (i.labels || []).some(function (l) { return labelName(l) === 'P0'; });
+      }).sort(function (a, b) { return a.number - b.number; });
+      var p0Rows = p0.map(function (i) {
+        var area = (i.labels || []).map(labelName).filter(function (l) { return l.indexOf('area:') === 0; })[0];
+        return '<tr><td class="mono"><a href="' + REPO_URL + '/issues/' + i.number + '">#' + i.number + '</a></td>' +
+          '<td>' + esc(i.title) + '</td><td class="muted">' + esc(area ? area.replace('area:', '') : '\u2014') + '</td></tr>';
+      });
+      var p0El = document.getElementById('p0-rows');
+      if (p0El) p0El.innerHTML = p0Rows.join('') || '<tr><td colspan="3" class="muted">no open P0 issues</td></tr>';
+
+      // Priority / area label breakdown
+      var counts = {};
+      real.forEach(function (i) {
+        (i.labels || []).forEach(function (l) {
+          var name = labelName(l);
+          if (name === 'P0' || name === 'P1' || name === 'P2' || name.indexOf('area:') === 0) {
+            counts[name] = (counts[name] || 0) + 1;
+          }
+        });
+      });
+      var priorityOrder = ['P0', 'P1', 'P2'];
+      var priorityHtml = priorityOrder
+        .filter(function (p) { return counts[p]; })
+        .map(function (p) {
+          return '<span class="mono">' + p + '</span> <span class="muted">' + counts[p] + '</span>';
+        })
+        .join(' &middot; ');
+      var areaEntries = Object.keys(counts)
+        .filter(function (k) { return k.indexOf('area:') === 0; })
+        .map(function (k) { return { name: k.replace('area:', ''), count: counts[k] }; })
+        .sort(function (a, b) { return b.count - a.count; });
+      var areaHtml = areaEntries
+        .map(function (a) { return '<span class="mono">' + esc(a.name) + '</span> <span class="muted">' + a.count + '</span>'; })
+        .join(' &middot; ');
+      var breakdownEl = document.getElementById('label-breakdown');
+      if (breakdownEl) {
+        breakdownEl.innerHTML =
+          '<div style="margin-bottom: 8px"><strong class="mono" style="color: var(--n-100)">Priority:</strong> ' + (priorityHtml || '<span class="muted">none</span>') + '</div>' +
+          '<div><strong class="mono" style="color: var(--n-100)">Area:</strong> ' + (areaHtml || '<span class="muted">none</span>') + '</div>';
+      }
     })
     .catch(function (err) {
       var el = document.getElementById('issues-summary');
       if (el) el.textContent = 'failed to load: ' + err.message;
       var count = document.getElementById('issues-count');
       if (count) count.textContent = 'n/a';
+      fail(document.getElementById('p0-rows'), 'failed to load: ' + err.message, 3);
+      var breakdownEl = document.getElementById('label-breakdown');
+      if (breakdownEl) breakdownEl.textContent = 'failed to load: ' + err.message;
     });
 
   // CI runs
