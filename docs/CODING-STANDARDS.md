@@ -87,6 +87,22 @@ warns (doesn't auto-commit — see git-safety) if the local snapshot changed and
   `fix: correct pnpm-style workspace refs breaking npm ci`) — not multi-paragraph explanations.
   Put rationale/detail in the PR description or a linked issue, not the commit subject.
 
+## Branch & PR workflow (branch protection is ON)
+
+`main` is protected: **no direct pushes** (enforced for admins too), no force-pushes, no branch
+deletion, conversation resolution required before merge. Everything lands via PR.
+
+- **Branch naming**: `type/short-slug` matching the commit type — `feat/*`, `fix/*`, `docs/*`,
+  `chore/*`, `ci/*`, `refactor/*`. One branch per logical change / issue.
+- **Flow**: branch off `main` → commit (semantic one-liners) → push → `gh pr create` → merge
+  (squash) → delete branch. Reference the issue it closes (`Closes #NN`) in the PR body.
+- **PR description** carries the detail (what/why/tested/found), since commit subjects stay terse.
+- **Required approvals: 0** (solo repo) — the PR *flow* is the gate, not review sign-off. Merge
+  your own PRs once conversations are resolved.
+- **CI status check (`check`)** is not yet a required merge gate because it is red from
+  pre-existing typecheck debt (tracked under Epic 7, issue #50). Once CI is green, add `check`
+  as a required status check so every PR must pass lint + typecheck + tests to merge.
+
 ## Learning from corrections (keep docs improving without bloat)
 
 When a human correction reveals something these docs got wrong or missed, don't just fix the
